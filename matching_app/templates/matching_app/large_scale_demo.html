@@ -1,0 +1,116 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Matching - Large-scale Test{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Matching Model: Large-scale Test</h1>
+    </div>
+
+    <p>대량의 CF 및 TFT 패널 데이터를 입력하거나 업로드하여 최적 매칭 결과를 확인합니다.</p>
+    <p>이 페이지에서는 상세한 시각화보다는 전체적인 수율, 매칭 쌍 리스트 등 요약 정보에 집중합니다.</p>
+
+    <form method="POST" enctype="multipart/form-data"> {# 파일 업로드를 위해 enctype 추가 가능 #}
+        {% csrf_token %}
+        {# 여기에 대량 데이터 입력 또는 파일 업로드 폼 요소들을 배치합니다. #}
+        <div class="form-group">
+            <label for="large_data_input_type">Input Type:</label>
+            <select class="form-control" id="large_data_input_type" name="large_data_input_type">
+                <option value="paste_json">Paste JSON Data</option>
+                <option value="upload_csv">Upload CSV File (CF Panels)</option> {# 예시 #}
+                <option value="upload_json">Upload JSON File</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="paste_json_group">
+            <label for="large_test_data_json">Paste JSON Data:</label>
+            <textarea class="form-control" id="large_test_data_json" name="large_test_data_json" rows="15" placeholder="Enter large dataset in JSON format."></textarea>
+        </div>
+
+        <div class="form-group" id="upload_file_group" style="display:none;">
+            <label for="data_file">Upload Data File:</label>
+            <input type="file" class="form-control-file" id="data_file" name="data_file">
+             <small class="form-text text-muted">Ensure TFT panel data is also provided or uploaded separately if needed.</small>
+        </div>
+        
+        <button type="submit" class="btn btn-info mt-2">Run Large-scale Matching</button>
+    </form>
+
+    <hr>
+
+    <h3 class="mt-4">Matching Results Summary</h3>
+    {# 여기에 매칭 결과 요약 (총 수율, 매칭된 쌍의 개수, 평균 수율 등)이 표시됩니다. #}
+    {# Django 뷰에서 처리된 결과를 context로 받아와서 표시합니다. #}
+
+    {% if large_scale_results %}
+        <div class="card">
+            <div class="card-header">
+                Results Overview
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">Total CF Panels Processed: {{ large_scale_results.num_cf }}</li>
+                <li class="list-group-item">Total TFT Panels Processed: {{ large_scale_results.num_tft }}</li>
+                <li class="list-group-item">Number of Optimal Matches Found: {{ large_scale_results.num_matches }}</li>
+                <li class="list-group-item"><strong>Total Yield (Good Cells): {{ large_scale_results.total_yield }}</strong></li>
+                <li class="list-group-item">Average Yield per Match: {{ large_scale_results.avg_yield|floatformat:2 }} good cells</li>
+                <li class="list-group-item">Processing Time: {{ large_scale_results.processing_time_seconds|floatformat:3 }} seconds</li>
+            </ul>
+        </div>
+
+        {# (선택 사항) 매칭된 쌍의 일부를 테이블로 표시 #}
+        {% if large_scale_results.sample_matches %}
+        <h4 class="mt-4">Sample Matching Pairs (First 10)</h4>
+        <div class="table-responsive">
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th>CF Panel ID</th>
+                        <th>TFT Panel ID</th>
+                        <th>Yield (Good Cells)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pair in large_scale_results.sample_matches %}
+                    <tr>
+                        <td>{{ pair.cf_id }}</td>
+                        <td>{{ pair.tft_id }}</td>
+                        <td>{{ pair.yield_value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+    {% elif error_message %}
+        <div class="alert alert-danger" role="alert">
+            {{ error_message }}
+        </div>
+    {% else %}
+        <p class="text-muted"><em>Submit data above to see matching results for a large dataset.</em></p>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    console.log("Large-scale Test page script loaded.");
+    // 입력 타입 변경 시 UI 업데이트 로직
+    document.getElementById('large_data_input_type').addEventListener('change', function() {
+        var pasteGroup = document.getElementById('paste_json_group');
+        var uploadGroup = document.getElementById('upload_file_group');
+        if (this.value === 'paste_json') {
+            pasteGroup.style.display = 'block';
+            uploadGroup.style.display = 'none';
+        } else {
+            pasteGroup.style.display = 'none';
+            uploadGroup.style.display = 'block';
+        }
+    });
+    // 페이지 로드 시 초기 상태 설정
+    document.getElementById('large_data_input_type').dispatchEvent(new Event('change'));
+</script>
+{% endblock %}

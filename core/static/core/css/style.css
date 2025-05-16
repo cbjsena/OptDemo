@@ -1,0 +1,245 @@
+/* OptDemo/core/static/core/css/style.css (새로운 레이아웃용) */
+
+html, body {
+    height: 100%; /* html과 body가 전체 높이를 차지하도록 */
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f8f9fa; /* 전체 페이지 배경색 */
+    color: #212529;
+    overflow: hidden; /* 전체 페이지 스크롤 방지 (각 컬럼 내부에서 스크롤) */
+}
+
+.page-wrapper {
+    display: flex;
+    height: 100vh; /* 뷰포트 전체 높이 사용 */
+}
+
+/* --- Left Column: Brand and Sidebar --- */
+.left-column {
+    width: 280px; /* 좌측 컬럼 너비 고정 */
+    background-color: #0e1a35; /* 어두운 배경색 */
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* 컬럼 너비 유지 */
+    height: 100%; /* 전체 높이 */
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    z-index: 1000; /* 다른 요소 위에 오도록 */
+}
+
+.brand-logo {
+    padding: 20px 25px;
+    text-align: left;
+    border-bottom: 1px solid #1c2b4a; /* 로고와 메뉴 구분선 */
+    background-color: #0a1224; /* 로고 영역 약간 다른 배경 */
+}
+
+.brand-logo a {
+    color: #ffffff;
+    font-size: 1.75rem; /* 로고 폰트 크기 */
+    font-weight: 700;
+    text-decoration: none;
+    letter-spacing: -0.5px;
+}
+
+.brand-logo a:hover {
+    color: #e0e7ff;
+}
+
+.sidebar-menu {
+    padding-top: 15px;
+    flex-grow: 1;
+    overflow-y: auto; /* 사이드바 내용 많을 시 스크롤 */
+}
+
+.sidebar-title {
+    color: #8a9bc0; /* 사이드바 섹션 제목 색상 */
+    font-size: 0.75rem; /* 작은 폰트 */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 12px 25px 8px 25px;
+    margin-bottom: 5px;
+}
+
+.sidebar-menu .nav-link {
+    color: #b0c0e0; /* 사이드바 링크 기본 색상 */
+    font-size: 0.9rem;
+    padding: 10px 25px;
+    border-left: 4px solid transparent; /* 활성 상태 표시를 위한 공간 */
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, border-left-color 0.15s ease-in-out;
+    border-radius: 0; /* 각진 스타일 */
+}
+
+.sidebar-menu .nav-link:hover {
+    background-color: #1c2b4a;
+    color: #ffffff;
+    border-left-color: #4a6fbf; /* 호버 시 왼쪽 테두리 색상 */
+}
+
+.sidebar-menu .nav-link.active {
+    background-color: #253858; /* 활성 링크 배경색 */
+    color: #ffffff;
+    font-weight: 500;
+    border-left-color: #6293f0; /* 활성 링크 왼쪽 테두리 색상 */
+}
+
+.sidebar-menu .nav-placeholder {
+    font-size: 0.85rem;
+    color: #6a7b9a;
+    padding: 10px 25px;
+}
+
+
+/* --- Right Column: Main Horizontal Menu and Content --- */
+.right-column {
+    flex-grow: 1; /* 남은 공간 모두 차지 */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden; /* 내부에서 스크롤 제어 */
+}
+
+.main-header-menu {
+    background-color: #ffffff; /* 상단 대메뉴 배경 흰색 */
+    border-bottom: 1px solid #dee2e6; /* 구분선 */
+    flex-shrink: 0; /* 높이 유지 */
+    padding: 0 1rem; /* 내부 패딩 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+.main-header-menu .navbar {
+    padding: 0; /* Bootstrap navbar 기본 패딩 제거 */
+}
+
+.main-header-menu .nav-link {
+    color: #495057; /* 대메뉴 링크 색상 */
+    font-weight: 500;
+    padding: 1rem 1.25rem; /* 대메뉴 링크 패딩 */
+    border-bottom: 3px solid transparent; /* 활성 상태 표시용 */
+    transition: color 0.15s ease-in-out, border-bottom-color 0.15s ease-in-out;
+    font-size: 0.95rem;
+}
+
+.main-header-menu .nav-link:hover {
+    color: #007bff;
+    border-bottom-color: #007bff; /* 호버 시 하단 테두리 */
+}
+
+.main-header-menu .nav-link.active {
+    color: #007bff;
+    font-weight: 600; /* 활성 메뉴 폰트 강조 */
+    border-bottom-color: #007bff; /* 활성 메뉴 하단 테두리 */
+}
+
+.content-area {
+    flex-grow: 1;
+    padding: 25px 30px; /* 컨텐츠 영역 패딩 */
+    background-color: #f8f9fa; /* 컨텐츠 영역 배경색 */
+    overflow-y: auto; /* 컨텐츠 많을 시 스크롤 */
+}
+
+.content-area h1, .content-area h2, .content-area h3 {
+    color: #1a2947;
+    margin-bottom: 1.5rem;
+}
+
+/* --- 기존 폼 및 유틸리티 스타일 (필요시 조정) --- */
+.form-group label {
+    font-weight: 500;
+    color: #343a40;
+}
+
+.form-control {
+    border-radius: 0.25rem;
+    border: 1px solid #ced4da;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+pre {
+    background-color: #e9ecef;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    font-size: 0.875em;
+    overflow-x: auto;
+}
+
+hr {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* 반응형 조정 (필요에 따라 수정) */
+@media (max-width: 992px) { /* 예: 태블릿 사이즈 */
+    .left-column {
+        width: 220px; /* 작은 화면에서 좌측 컬럼 너비 줄이기 */
+    }
+    .brand-logo a {
+        font-size: 1.5rem;
+    }
+    .sidebar-title {
+        font-size: 0.7rem;
+        padding: 10px 20px 6px 20px;
+    }
+    .sidebar-menu .nav-link {
+        font-size: 0.85rem;
+        padding: 8px 20px;
+    }
+    .main-header-menu .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 768px) { /* 예: 모바일 사이즈 */
+    .page-wrapper {
+        flex-direction: column; /* 컬럼들을 세로로 쌓음 */
+        height: auto; /* 높이 자동 조절 */
+        overflow: auto; /* 전체 페이지 스크롤 허용 */
+    }
+    .left-column {
+        width: 100%; /* 전체 너비 사용 */
+        height: auto;
+        box-shadow: none;
+        border-bottom: 1px solid #1c2b4a;
+        /* 모바일에서는 사이드바 메뉴를 토글 버튼으로 숨기거나 할 수 있음 */
+    }
+    .brand-logo {
+        text-align: center;
+    }
+    .sidebar-menu {
+        /* display: none; */ /* 예: 기본적으로 숨기고 토글로 보이게 */
+        /* 필요시 모바일용 사이드바 스타일 추가 */
+    }
+    .right-column {
+        height: auto;
+        overflow: visible;
+    }
+    .main-header-menu .navbar-nav {
+        /* 대메뉴가 많을 경우 스크롤 가능하도록 */
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+    }
+    .main-header-menu .nav-item {
+        display: inline-block; /* 가로 스크롤을 위해 */
+    }
+    .content-area {
+        overflow-y: visible; /* 기본 스크롤 동작 */
+    }
+}

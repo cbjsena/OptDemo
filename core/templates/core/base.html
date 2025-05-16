@@ -1,0 +1,83 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptDemo - {% block title %}Optimization Demo{% endblock %}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+</head>
+<body>
+    <div class="page-wrapper">
+        <aside class="left-column">
+            <div class="brand-logo">
+                <a href="{% url 'core:home' %}">OptDemo</a>
+            </div>
+            <nav class="sidebar-menu">
+                {% if active_model %}
+                    <h5 class="sidebar-title">{{ active_model }} Menu</h5>
+                    <ul class="nav flex-column">
+                        {% if active_model == 'Matching' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if active_submenu == 'data_generation' %}active{% endif %}" href="{% url 'matching_app:data_generation' %}">Data Generation</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if active_submenu == 'small_scale_demo' %}active{% endif %}" href="{% url 'matching_app:small_scale_demo' %}">Small-scale Test</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if active_submenu == 'large_scale_demo' %}active{% endif %}" href="{% url 'matching_app:large_scale_demo' %}">Large-scale Test</a>
+                        </li>
+                        {% elif active_model == 'Allocate' %}
+                        <li class="nav-item"><a class="nav-link {% if active_submenu == 'allocate_data_gen' %}active{% endif %}" href="#">Allocate Data Gen (준비중)</a></li>
+                        <li class="nav-item"><a class="nav-link {% if active_submenu == 'allocate_demo' %}active{% endif %}" href="#">Allocate Demo (준비중)</a></li>
+                        {% elif active_model == 'VCR' %}
+                        <li class="nav-item"><a class="nav-link {% if active_submenu == 'vcr_data_gen' %}active{% endif %}" href="#">VCR Data Gen (준비중)</a></li>
+                        <li class="nav-item"><a class="nav-link {% if active_submenu == 'vcr_demo' %}active{% endif %}" href="#">VCR Demo (준비중)</a></li>
+                        {% endif %}
+                    </ul>
+                {% else %}
+                    <h5 class="sidebar-title">Navigation</h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == home_url %}active{% endif %}" href="{% url 'core:home' %}">Home</a>
+                        </li>
+                        <li class="nav-item nav-placeholder">Select a model from the top menu.</li>
+                    </ul>
+                {% endif %}
+            </nav>
+        </aside>
+
+        <div class="right-column">
+            <header class="main-header-menu">
+                <nav class="navbar navbar-expand-lg">
+                    <div class="collapse navbar-collapse" id="mainMenuContent">
+                        <ul class="navbar-nav mr-auto">
+                            <li class="nav-item">
+                                <a class="nav-link {% if active_model == 'Matching' %}active{% endif %}" href="{% url 'matching_app:small_scale_demo' %}">Matching</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if active_model == 'Allocate' %}active{% endif %}" href="#">Allocate (준비중)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if active_model == 'VCR' %}active{% endif %}" href="#">VCR (준비중)</a>
+                            </li>
+                            </ul>
+                    </div>
+                </nav>
+            </header>
+
+            <main role="main" class="content-area">
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    {% block scripts %}
+    {% endblock %}
+</body>
+</html>

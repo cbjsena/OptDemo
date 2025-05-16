@@ -1,0 +1,68 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Matching - Small-scale Test{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Matching Model: Small-scale Test</h1>
+    </div>
+
+    <p>CF 및 TFT 패널 정보를 입력하거나 생성된 데이터를 불러와 매칭 결과를 시각적으로 확인합니다 (10개 이하 권장).</p>
+    
+    <form method="POST" action="{% url 'matching_app:small_scale_demo' %}"> {# 폼 제출 URL 명시 #}
+        {% csrf_token %}
+        {# 여기에 소량 테스트를 위한 입력 폼 요소들을 배치합니다. #}
+        {# 이전 답변에서 제공한 테스트 데이터 JSON을 활용하거나, 사용자가 직접 입력할 수 있도록 합니다. #}
+        
+        <div class="form-group">
+            <label for="test_data_json">Test Data (JSON format):</label>
+            <textarea class="form-control" id="test_data_json" name="test_data_json" rows="10" placeholder="Enter or paste test data in JSON format.">{% if submitted_json_data %}{{ submitted_json_data }}{% endif %}</textarea>
+            <small class="form-text text-muted">
+                Example JSON structure: <br>
+                <code>{"cf_panels": [{"id": "CF1", "rows": 2, "cols": 2, "defect_map": [[0,1],[0,0]]}, ...], "tft_panels": [...]}</code>
+            </small>
+        </div>
+
+        <button type="submit" class="btn btn-success mt-2">Run Matching Simulation</button>
+    </form>
+
+    <hr>
+
+    <h3 class="mt-4">Matching Results & Visualization</h3>
+    {# 여기에 매칭 결과 (예: 어떤 CF와 어떤 TFT가 매칭되었는지)와 시각화(패널 그림 등)가 표시됩니다. #}
+    {# Django 뷰에서 처리된 결과를 context로 받아와서 표시합니다. #}
+
+    {% if matching_pairs %}
+        <h4>Optimal Matching:</h4>
+        <ul>
+            {% for pair in matching_pairs %}
+                <li>{{ pair.cf.id }} (CF) <-> {{ pair.tft.id }} (TFT) : Yield = {{ pair.yield_value }} good cells</li>
+            {% endfor %}
+        </ul>
+        <p><strong>Total Yield: {{ total_yield }} good cells</strong></p>
+
+        {# 시각화 영역 (JavaScript 라이브러리 또는 직접 SVG/Canvas 렌더링) #}
+        <div id="visualization-area" style="margin-top: 20px; padding:10px; border:1px solid #ddd; background:#fff;">
+            <p class="text-center text-muted"><em>Visualization will appear here...</em></p>
+            {# 예시: 각 매칭 쌍의 CF, TFT, 그리고 결합된 패널 시각화 #}
+        </div>
+    {% elif error_message %}
+        <div class="alert alert-danger" role="alert">
+            {{ error_message }}
+        </div>
+    {% else %}
+        <p class="text-muted"><em>Submit data above to see matching results.</em></p>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    console.log("Small-scale Test page script loaded.");
+    // 여기에 매칭 시각화 관련 JavaScript 로직 추가 가능
+    // (예: Chart.js, D3.js, 또는 간단한 HTML 테이블/div 동적 생성)
+</script>
+{% endblock %}
