@@ -1,7 +1,96 @@
 {% extends "core/base.html" %}
 {% load static %}
+{% load matching_filters %} {# 커스텀 필터 로드 #}
 
 {% block title %}Matching - Small-scale Test{% endblock %}
+
+{% block styles %}
+<style>
+    .panel-visualization-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #eee;
+    }
+    .panel-display {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    .panel-display h6 { /* 패널 ID 글자 크기 및 마진 조정 */
+        font-size: 0.9rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .panel-grid {
+        border-collapse: collapse;
+        margin: 5px auto;
+        border: 1px solid #ccc;
+    }
+    .panel-grid td.cell {
+        width: 28px; /* 셀 크기 약간 조정 */
+        height: 28px; /* 셀 크기 약간 조정 */
+        border: 1px solid #ddd;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 0.85em; /* 셀 내부 글자 크기 */
+    }
+    .cell-good { background-color: #d4edda; color: #155724; }
+    .cell-defect { background-color: #f8d7da; color: #721c24; }
+    .cell-combined-good { background-color: #a3d9a5; color: #155724; font-weight: bold;}
+    .cell-combined-defect { background-color: #f5c6cb; color: #721c24; font-weight: bold;}
+    .bg-light-q { background-color: #f8f9fa; color: #6c757d; } /* 물음표 셀 스타일 */
+
+    .operator-symbol {
+        font-size: 2em;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 10px; /* 간격 약간 줄임 */
+        min-width: 40px;
+        color: #555;
+    }
+    .matched-pair-row {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 25px;
+        padding: 20px; /* 내부 패딩 증가 */
+        border: 1px solid #d1d9e0; /* 테두리 색상 변경 */
+        border-radius: 8px; /* 둥근 모서리 증가 */
+        background-color: #fdfdff; /* 배경색 약간 변경 */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* 약간의 그림자 */
+    }
+    .matched-pair-row .panel-display {
+        flex: 1;
+        min-width: 160px; /* 최소 너비 확보 */
+        padding: 0 5px; /* 패널 간 약간의 내부 여백 */
+    }
+    .matched-pair-row .panel-display:last-child { /* 마지막 결합 패널은 좀 더 강조 */
+        flex: 1.2; /* 약간 더 넓게 */
+    }
+    .error-message {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        padding: .75rem 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid transparent;
+        border-radius: .25rem;
+    }
+    .success-message {
+         color: #155724;
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        padding: .75rem 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid transparent;
+        border-radius: .25rem;
+    }
+</style>
+{% endblock %}
+
 
 {% block content %}
 <div class="container-fluid">
@@ -10,50 +99,186 @@
     </div>
 
     <p>CF 및 TFT 패널 정보를 입력하거나 생성된 데이터를 불러와 매칭 결과를 시각적으로 확인합니다 (10개 이하 권장).</p>
-    
-    <form method="POST" action="{% url 'matching_app:small_scale_demo' %}"> {# 폼 제출 URL 명시 #}
+
+    <form method="POST" action="{% url 'matching_app:small_scale_demo' %}">
         {% csrf_token %}
-        {# 여기에 소량 테스트를 위한 입력 폼 요소들을 배치합니다. #}
-        {# 이전 답변에서 제공한 테스트 데이터 JSON을 활용하거나, 사용자가 직접 입력할 수 있도록 합니다. #}
-        
         <div class="form-group">
             <label for="test_data_json">Test Data (JSON format):</label>
-            <textarea class="form-control" id="test_data_json" name="test_data_json" rows="10" placeholder="Enter or paste test data in JSON format.">{% if submitted_json_data %}{{ submitted_json_data }}{% endif %}</textarea>
+            <textarea class="form-control" id="test_data_json" name="test_data_json" rows="10" placeholder="Enter or paste test data in JSON format...">{% if submitted_json_data %}{{ submitted_json_data }}{% endif %}</textarea>
             <small class="form-text text-muted">
                 Example JSON structure: <br>
                 <code>{"cf_panels": [{"id": "CF1", "rows": 2, "cols": 2, "defect_map": [[0,1],[0,0]]}, ...], "tft_panels": [...]}</code>
             </small>
         </div>
-
         <button type="submit" class="btn btn-success mt-2">Run Matching Simulation</button>
     </form>
 
     <hr>
 
     <h3 class="mt-4">Matching Results & Visualization</h3>
-    {# 여기에 매칭 결과 (예: 어떤 CF와 어떤 TFT가 매칭되었는지)와 시각화(패널 그림 등)가 표시됩니다. #}
-    {# Django 뷰에서 처리된 결과를 context로 받아와서 표시합니다. #}
 
+    {% if error_message %}
+        <div class="error-message" role="alert">
+            <strong>Error:</strong> {{ error_message }}
+        </div>
+    {% endif %}
+
+    {% if success_message and not error_message %} {# 에러가 없을 때만 성공 메시지 표시 #}
+        <div class="success-message" role="alert">
+            {{ success_message }}
+        </div>
+    {% endif %}
+
+    {# --- 1. 입력된 모든 CF 및 TFT 패널 표시 --- #}
+    {% if input_cf_panels or input_tft_panels %}
+        <h4 class="mt-4">Input Panels:</h4>
+        {% if input_cf_panels %}
+            <h5>CF Panels:</h5>
+            <div class="panel-visualization-container">
+                {% for panel in input_cf_panels %}
+                <div class="panel-display">
+                    <h6>{{ panel.id }} ({{panel.rows}}x{{panel.cols}})</h6>
+                    <table class="panel-grid">
+                        <tbody>
+                        {% for r_idx in panel.rows|get_range %}
+                        <tr>
+                            {% for c_idx in panel.cols|get_range %}
+                                {% with indices=r_idx|stringformat:"s"|add:","|add:c_idx|stringformat:"s" %}
+                                    {% with cell_val=panel.defect_map|get_cell_value:indices %}
+                                    <td class="cell {% if cell_val == 0 %}cell-good{% elif cell_val == 1 %}cell-defect{% else %}bg-light-q{% endif %}">
+                                        {% if cell_val is not None %}{{ cell_val }}{% else %}?{% endif %}
+                                    </td>
+                                    {% endwith %}
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if input_tft_panels %}
+            <h5>TFT Panels:</h5>
+            <div class="panel-visualization-container">
+                {% for panel in input_tft_panels %}
+                <div class="panel-display">
+                    <h6>{{ panel.id }} ({{panel.rows}}x{{panel.cols}})</h6>
+                    <table class="panel-grid">
+                        <tbody>
+                        {% for r_idx in panel.rows|get_range %}
+                        <tr>
+                            {% for c_idx in panel.cols|get_range %}
+                                {% with indices=r_idx|stringformat:"s"|add:","|add:c_idx|stringformat:"s" %}
+                                    {% with cell_val=panel.defect_map|get_cell_value:indices %}
+                                    <td class="cell {% if cell_val == 0 %}cell-good{% elif cell_val == 1 %}cell-defect{% else %}bg-light-q{% endif %}">
+                                        {% if cell_val is not None %}{{ cell_val }}{% else %}?{% endif %}
+                                    </td>
+                                    {% endwith %}
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <hr class="my-4"> {# 구분선 강화 #}
+    {% endif %}
+
+
+    {# --- 2. 매칭된 쌍 및 결합 형태 표시 --- #}
     {% if matching_pairs %}
-        <h4>Optimal Matching:</h4>
-        <ul>
-            {% for pair in matching_pairs %}
-                <li>{{ pair.cf.id }} (CF) <-> {{ pair.tft.id }} (TFT) : Yield = {{ pair.yield_value }} good cells</li>
-            {% endfor %}
-        </ul>
-        <p><strong>Total Yield: {{ total_yield }} good cells</strong></p>
+        <h4 class="mt-4">Optimal Matching Pairs (Total Yield: {{ total_yield|floatformat:0 }}):</h4>
+        {% for pair in matching_pairs %}
+            <div class="matched-pair-row">
+                <div class="panel-display">
+                    <h6>CF: {{ pair.cf_id }}</h6>
+                    <table class="panel-grid">
+                        <tbody>
+                        {% for r_idx in pair.cf.rows|get_range %}
+                        <tr>
+                            {% for c_idx in pair.cf.cols|get_range %}
+                                {% with indices=r_idx|stringformat:"s"|add:","|add:c_idx|stringformat:"s" %}
+                                    {% with cell_val=pair.cf.defect_map|get_cell_value:indices %}
+                                    <td class="cell {% if cell_val == 0 %}cell-good{% elif cell_val == 1 %}cell-defect{% else %}bg-light-q{% endif %}">
+                                        {% if cell_val is not None %}{{ cell_val }}{% else %}?{% endif %}
+                                    </td>
+                                    {% endwith %}
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
-        {# 시각화 영역 (JavaScript 라이브러리 또는 직접 SVG/Canvas 렌더링) #}
-        <div id="visualization-area" style="margin-top: 20px; padding:10px; border:1px solid #ddd; background:#fff;">
-            <p class="text-center text-muted"><em>Visualization will appear here...</em></p>
-            {# 예시: 각 매칭 쌍의 CF, TFT, 그리고 결합된 패널 시각화 #}
-        </div>
-    {% elif error_message %}
-        <div class="alert alert-danger" role="alert">
-            {{ error_message }}
-        </div>
-    {% else %}
-        <p class="text-muted"><em>Submit data above to see matching results.</em></p>
+                <div class="operator-symbol">+</div>
+
+                <div class="panel-display">
+                    <h6>TFT: {{ pair.tft_id }}</h6>
+                    <table class="panel-grid">
+                        <tbody>
+                        {% for r_idx in pair.tft.rows|get_range %}
+                        <tr>
+                            {% for c_idx in pair.tft.cols|get_range %}
+                                {% with indices=r_idx|stringformat:"s"|add:","|add:c_idx|stringformat:"s" %}
+                                    {% with cell_val=pair.tft.defect_map|get_cell_value:indices %}
+                                    <td class="cell {% if cell_val == 0 %}cell-good{% elif cell_val == 1 %}cell-defect{% else %}bg-light-q{% endif %}">
+                                         {% if cell_val is not None %}{{ cell_val }}{% else %}?{% endif %}
+                                    </td>
+                                    {% endwith %}
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="operator-symbol">=</div>
+
+                <div class="panel-display">
+                    <h6>Combined (Yield: {{ pair.yield_value|floatformat:0 }})</h6>
+                    <table class="panel-grid">
+                        <tbody>
+                        {% for r_idx in pair.cf.rows|get_range %} {# 매칭된 쌍은 크기가 같다고 가정 #}
+                        <tr>
+                            {% for c_idx in pair.cf.cols|get_range %}
+                                {% with cf_indices=r_idx|stringformat:"s"|add:","|add:c_idx|stringformat:"s" %}
+                                    {% with tft_indices=r_idx|stringformat:"s"|add:","|add:c_idx|stringformat:"s" %} {# 동일 인덱스 사용 #}
+                                        {% with cf_cell_val=pair.cf.defect_map|get_cell_value:cf_indices tft_cell_val=pair.tft.defect_map|get_cell_value:tft_indices %}
+                                            {% if cf_cell_val == 0 and tft_cell_val == 0 %}
+                                                <td class="cell cell-combined-good">0</td>
+                                            {% elif cf_cell_val is None or tft_cell_val is None %}
+                                                <td class="cell bg-light-q">?</td> {# 데이터 오류 시 #}
+                                            {% else %}
+                                                <td class="cell cell-combined-defect">1</td>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endwith %}
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% empty %}
+            {% if not error_message and submitted_json_data and not success_message %}
+            <p class="text-muted mt-3"><em>No matching pairs found or yield is zero.</em></p>
+            {% endif %}
+        {% endfor %}
+
+    {% elif not error_message and submitted_json_data and not success_message %}
+        <p class="text-muted mt-3"><em>Submit data above to see matching results. No solution found with current data or solver issue.</em></p>
+    {% elif not submitted_json_data and not error_message %}
+         <p class="text-muted mt-3"><em>Submit data above to see matching results.</em></p>
     {% endif %}
 
 </div>
@@ -62,7 +287,5 @@
 {% block scripts %}
 <script>
     console.log("Small-scale Test page script loaded.");
-    // 여기에 매칭 시각화 관련 JavaScript 로직 추가 가능
-    // (예: Chart.js, D3.js, 또는 간단한 HTML 테이블/div 동적 생성)
 </script>
 {% endblock %}
