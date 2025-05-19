@@ -7,6 +7,9 @@
     <title>OptDemo - {% block title %}Optimization Demo{% endblock %}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+    {% block styles %}
+    {# 여기에 small_scale_demo.html의 스타일이 삽입됩니다. #}
+    {% endblock styles %}
 </head>
 <body>
     <div class="page-wrapper">
