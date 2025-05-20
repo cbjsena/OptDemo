@@ -1,0 +1,23 @@
+django-admin startproject optdemo_project .
+
+# 기본 레이아웃 및 핵심 기능을 담당할 'core' 앱 생성
+python manage.py startapp core
+
+# 'Matching' 모델 관련 기능을 담당할 'matching_app' 생성
+python manage.py startapp matching_app
+
+# (추후 필요시) 다른 모델들을 위한 앱 생성
+# python manage.py startapp allocate_app
+# python manage.py startapp vcr_app
+복사한 후
+python manage.py makemigrations
+python manage.py migrate
+python manage.py runserver
+
+# rebase
+1. git rebase -i HEAD~3
+2. i 입력하면 텍스트 수정 모드
+3. 수정 후 ESC ->:wq -> Enter
+
+# 마지막 커밋 메시지 변경 명령어
+1. git commit --amend -m "Refactor: unify validation and data generation logic"
