@@ -12,30 +12,78 @@
     <p>대량의 CF 및 TFT 패널 데이터를 입력하거나 업로드하여 최적 매칭 결과를 확인합니다.</p>
     <p>이 페이지에서는 상세한 시각화보다는 전체적인 수율, 매칭 쌍 리스트 등 요약 정보에 집중합니다.</p>
 
-    <form method="POST" enctype="multipart/form-data"> {# 파일 업로드를 위해 enctype 추가 가능 #}
+    <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
-        {# 여기에 대량 데이터 입력 또는 파일 업로드 폼 요소들을 배치합니다. #}
         <div class="form-group">
             <label for="large_data_input_type">Input Type:</label>
             <select class="form-control" id="large_data_input_type" name="large_data_input_type">
-                <option value="paste_json">Paste JSON Data</option>
-                <option value="upload_csv">Upload CSV File (CF Panels)</option> {# 예시 #}
-                <option value="upload_json">Upload JSON File</option>
+                <option value="make_json">Make JSON Data</option>
+                <option value="select_json">Select Existing JSON File (from server)</option>
+                <option value="upload_json">Upload JSON File (from your computer)</option>
             </select>
         </div>
 
-        <div class="form-group" id="paste_json_group">
-            <label for="large_test_data_json">Paste JSON Data:</label>
-            <textarea class="form-control" id="large_test_data_json" name="large_test_data_json" rows="15" placeholder="Enter large dataset in JSON format."></textarea>
+        <div id="make_json_group" style="display:none;">
+            <h4 class="mt-3">Generate New JSON Data</h4>
+            <p>아래 파라미터를 입력하여 대량 테스트용 JSON 데이터를 생성하고 서버에 저장합니다. 저장된 파일명은 <code>test_cf{num_cf_panels}_tft{num_tft_panels}_row{panel_rows}_col{panel_cols}_rate{defect_rate}_seq.json</code> 형식을 따릅니다.</p>
+            <div class="form-row">
+                <div class="form-group col-md-3">
+                    <label for="num_cf_panels">Number of CF Panels:</label>
+                    <input type="number" class="form-control" id="num_cf_panels" name="num_cf_panels" placeholder="e.g., 100" value="100">
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="num_tft_panels">Number of TFT Panels:</label>
+                    <input type="number" class="form-control" id="num_tft_panels" name="num_tft_panels" placeholder="e.g., 100" value="100">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-3">
+                    <label for="panel_rows">Panel Rows:</label>
+                    <input type="number" class="form-control" id="panel_rows" name="panel_rows" placeholder="e.g., 4" value="4">
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="panel_cols">Panel Columns:</label>
+                    <input type="number" class="form-control" id="panel_cols" name="panel_cols" placeholder="e.g., 4" value="4">
+                </div>
+                <div class="form-group mt-4">
+                    <label for="defect_rate">Approximate Defect Rate (%):</label>
+                    <input type="number" class="form-control" id="defect_rate" name="defect_rate" min="0" max="100" value="10" style="width: 150px;">
+                    <small class="form-text text-muted">Defects will be randomly assigned based on this rate.</small>
+                </div>
+            </div>
+            <small class="form-text text-muted mb-2">
+                The "Run Large-scale Matching" button below will first generate and save this data on the server, then proceed with the matching.
+            </small>
+        </div>
+
+        <div class="form-group" id="select_json_group" style="display:none;">
+            <h4 class="mt-3">Select Existing JSON File</h4>
+            <label for="selected_json_file">Choose a JSON file from the server's designated folder:</label>
+            <select class="form-control" id="selected_json_file" name="selected_json_file">
+                {# This part needs to be populated by your Django view with available JSON files #}
+                {% if available_json_files %}
+                    {% for file_info in available_json_files %}
+                        <option value="{{ file_info.value }}">{{ file_info.name }}</option>
+                    {% endfor %}
+                {% else %}
+                    <option value="" disabled>No files found in the designated folder or folder not scanned.</option>
+                {% endif %}
+            </select>
+            <small class="form-text text-muted">
+                Your backend should list files (e.g., <code>test_cf*_tft*_row*_col*_rate*_seq.json</code>) from a predefined directory.
+            </small>
         </div>
 
         <div class="form-group" id="upload_file_group" style="display:none;">
+            <h4 class="mt-3">Upload JSON Data File</h4>
             <label for="data_file">Upload Data File:</label>
-            <input type="file" class="form-control-file" id="data_file" name="data_file">
-             <small class="form-text text-muted">Ensure TFT panel data is also provided or uploaded separately if needed.</small>
+            <input type="file" class="form-control-file" id="data_file" name="data_file" accept=".json">
+             <small class="form-text text-muted">
+                 Ensure the JSON file contains both CF and TFT panel data in the expected format.
+             </small>
         </div>
-        
-        <button type="submit" class="btn btn-info mt-2">Run Large-scale Matching</button>
+
+        <button type="submit" class="btn btn-info mt-3">Run Large-scale Matching</button>
     </form>
 
     <hr>
@@ -55,7 +103,7 @@
                 <li class="list-group-item">Number of Optimal Matches Found: {{ large_scale_results.num_matches }}</li>
                 <li class="list-group-item"><strong>Total Yield (Good Cells): {{ large_scale_results.total_yield }}</strong></li>
                 <li class="list-group-item">Average Yield per Match: {{ large_scale_results.avg_yield|floatformat:2 }} good cells</li>
-                <li class="list-group-item">Processing Time: {{ large_scale_results.processing_time_seconds|floatformat:3 }} seconds</li>
+                <li class="list-group-item">Processing Time: {{ large_scale_results.processing_time_seconds|floatformat:1 }} seconds</li>
             </ul>
         </div>
 
@@ -99,18 +147,42 @@
 <script>
     console.log("Large-scale Test page script loaded.");
     // 입력 타입 변경 시 UI 업데이트 로직
-    document.getElementById('large_data_input_type').addEventListener('change', function() {
-        var pasteGroup = document.getElementById('paste_json_group');
-        var uploadGroup = document.getElementById('upload_file_group');
-        if (this.value === 'paste_json') {
-            pasteGroup.style.display = 'block';
-            uploadGroup.style.display = 'none';
-        } else {
-            pasteGroup.style.display = 'none';
-            uploadGroup.style.display = 'block';
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputTypeSelect = document.getElementById('large_data_input_type');
+        const makeJsonGroup = document.getElementById('make_json_group');
+        const selectJsonGroup = document.getElementById('select_json_group');
+        const uploadFileGroup = document.getElementById('upload_file_group');
+
+        function updateFormDisplay() {
+            // Hide all groups first
+            makeJsonGroup.style.display = 'none';
+            selectJsonGroup.style.display = 'none';
+            uploadFileGroup.style.display = 'none';
+
+            // Disable inputs in hidden groups to prevent them from being submitted
+            // This is a good practice, though backend should also validate based on inputTypeSelect
+            makeJsonGroup.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+            selectJsonGroup.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+            uploadFileGroup.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+
+            const selectedValue = inputTypeSelect.value;
+
+            if (selectedValue === 'make_json') {
+                makeJsonGroup.style.display = 'block';
+                makeJsonGroup.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
+            } else if (selectedValue === 'select_json') {
+                selectJsonGroup.style.display = 'block';
+                selectJsonGroup.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
+            } else if (selectedValue === 'upload_json') {
+                uploadFileGroup.style.display = 'block';
+                uploadFileGroup.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
+            }
         }
+
+        inputTypeSelect.addEventListener('change', updateFormDisplay);
+
+        // Call it once on page load to set the initial state
+        updateFormDisplay();
     });
-    // 페이지 로드 시 초기 상태 설정
-    document.getElementById('large_data_input_type').dispatchEvent(new Event('change'));
 </script>
 {% endblock %}

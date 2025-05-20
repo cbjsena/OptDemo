@@ -16,10 +16,16 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_URL = '/static/'
-
+# MEDIA_URL 및 MEDIA_ROOT 설정 (파일 업로드 시 필요에 따라 사용)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+if not os.path.exists(MEDIA_ROOT):
+    os.makedirs(MEDIA_ROOT)
+LARGE_SCALE_DATA_DIR = os.path.join(MEDIA_ROOT, 'large_scale_test_data')
+if not os.path.exists(LARGE_SCALE_DATA_DIR):
+    os.makedirs(LARGE_SCALE_DATA_DIR)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
 dotenv_path = BASE_DIR / '.env'
 load_dotenv(dotenv_path=dotenv_path)
 
@@ -28,6 +34,7 @@ SECRET_KEY=os.environ.get('SECRET_KEY', 'django-insecure-5)=z06nprnb$ua_#)c**%n0
 DEBUG=os.environ.get('DEBUG', 'False').upper()=='TRUE'
 allowed_hosts_str=os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -202,7 +209,7 @@ LOGGING = {
     },
     'root': {  # 루트 로거 설정: 모든 로거의 기본 설정
         'handlers': ['console_debug', 'console_info_plus', 'file_app'],  # 사용할 핸들러 지정
-        'level': 'INFO',  # 루트 로거의 레벨을 DEBUG로 설정해야 하위 핸들러들이 동작 가능
+        'level': 'DEBUG',  # 루트 로거의 레벨을 DEBUG로 설정해야 하위 핸들러들이 동작 가능
     },
     'loggers': {
         'django': { # Django 프레임워크 로그
@@ -217,7 +224,7 @@ LOGGING = {
         },
         'matching_app': { # 우리 앱 로거
             'handlers': ['console_debug', 'console_info_plus', 'file_app'], # DEBUG는 debug_colored, INFO 이상은 info_colored
-            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'DEBUG', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,
         },
     },
