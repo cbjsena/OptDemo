@@ -264,6 +264,13 @@ def create_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defe
     return generated_data
 
 
+def matching_introduction_view(request):
+    context = {
+        'active_model': 'Matching',
+        'active_submenu': 'introduction',
+    }
+    return render(request, 'matching_app/introduction.html', context)
+
 def matching_data_generation_view(request):
     context = {
         'active_model': 'Matching',
