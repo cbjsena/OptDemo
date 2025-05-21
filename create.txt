@@ -1,3 +1,5 @@
+pip install -r requirements.txt
+
 django-admin startproject optdemo_project .
 
 # 기본 레이아웃 및 핵심 기능을 담당할 'core' 앱 생성
@@ -5,6 +7,12 @@ python manage.py startapp core
 
 # 'Matching' 모델 관련 기능을 담당할 'matching_app' 생성
 python manage.py startapp matching_app
+
+python manage.py startapp matching_assignment_app
+python manage.py startapp resource_allocation_app
+python manage.py startapp routing_logistics_app
+python manage.py startapp production_scheduling_app
+
 
 # (추후 필요시) 다른 모델들을 위한 앱 생성
 # python manage.py startapp allocate_app

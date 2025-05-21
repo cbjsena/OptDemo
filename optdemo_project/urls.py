@@ -20,7 +20,8 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),  # core 앱의 URL들을 포함
-    path('matching/', include('matching_app.urls')), # matching_app의 URL들을 포함
-    # path('allocate/', include('allocate_app.urls')), # 추후 추가
-    # path('vcr/', include('vcr_app.urls')),         # 추후 추가
+    path('matching-assignment/', include('matching_assignment_app.urls')),  # 예시
+    path('resource-allocation/', include('resource_allocation_app.urls')),  # 예시
+    path('routing-logistics/', include('routing_logistics_app.urls')),  # 예시
+    path('production-scheduling/', include('production_scheduling_app.urls')),
 ]

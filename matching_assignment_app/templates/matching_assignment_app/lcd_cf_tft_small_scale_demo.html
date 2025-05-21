@@ -130,7 +130,7 @@
 
     <p>CF 및 TFT 패널 정보를 입력하거나 생성된 데이터를 불러와 매칭 결과를 시각적으로 확인합니다 (10개 이하 권장).</p>
 
-    <form method="POST" action="{% url 'matching_app:small_scale_demo' %}">
+    <form method="POST" action="{% url 'matching_assignment_app:lcd_cf_tft_small_scale_demo' %}">
         {% csrf_token %}
         <div class="form-group">
             <label for="test_data_json">Test Data (JSON format):</label>

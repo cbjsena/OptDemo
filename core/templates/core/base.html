@@ -19,27 +19,47 @@
             </div>
             <nav class="sidebar-menu">
                 {% if active_model %}
-                    <h5 class="sidebar-title">{{ active_model }} Menu</h5>
+                    <h5 class="sidebar-title">{{ active_model }}</h5>
                     <ul class="nav flex-column">
-                        {% if active_model == 'Matching' %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if active_submenu == 'introduction' %}active{% endif %}" href="{% url 'matching_app:introduction' %}">Introduction</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if active_submenu == 'data_generation' %}active{% endif %}" href="{% url 'matching_app:data_generation' %}">Data Generation</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if active_submenu == 'small_scale_demo' %}active{% endif %}" href="{% url 'matching_app:small_scale_demo' %}">Small-scale Test</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if active_submenu == 'large_scale_demo' %}active{% endif %}" href="{% url 'matching_app:large_scale_demo' %}">Large-scale Test</a>
-                        </li>
-                        {% elif active_model == 'Allocate' %}
-                        <li class="nav-item"><a class="nav-link {% if active_submenu == 'allocate_data_gen' %}active{% endif %}" href="#">Allocate Data Gen (준비중)</a></li>
-                        <li class="nav-item"><a class="nav-link {% if active_submenu == 'allocate_demo' %}active{% endif %}" href="#">Allocate Demo (준비중)</a></li>
-                        {% elif active_model == 'VCR' %}
-                        <li class="nav-item"><a class="nav-link {% if active_submenu == 'vcr_data_gen' %}active{% endif %}" href="#">VCR Data Gen (준비중)</a></li>
-                        <li class="nav-item"><a class="nav-link {% if active_submenu == 'vcr_demo' %}active{% endif %}" href="#">VCR Demo (준비중)</a></li>
+                        {% if active_model == 'Matching & Assignment' %}
+                            <li class="nav-item"><strong class="sidebar-subtitle">LCD TFT-CF Matching</strong></li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'lcd_cf_tft_introduction' %}active{% endif %}" href="{% url 'matching_assignment_app:lcd_cf_tft_introduction' %}">Introduction</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'lcd_cf_tft_data_generation' %}active{% endif %}" href="{% url 'matching_assignment_app:lcd_cf_tft_data_generation' %}">Data Generation</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'lcd_cf_tft_small_scale_demo' %}active{% endif %}" href="{% url 'matching_assignment_app:lcd_cf_tft_small_scale_demo' %}">Small-scale Test</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'lcd_cf_tft_large_scale_demo' %}active{% endif %}" href="{% url 'matching_assignment_app:lcd_cf_tft_large_scale_demo' %}">Large-scale Test</a>
+                            </li>
+
+                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">작업 배정 문제</strong></li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'assignment_problem_introduction' %}active{% endif %}" href="{% url 'matching_assignment_app:assignment_problem_introduction' %}">소개 (준비중)</a>
+                            </li>
+                            {# ... 작업 배정 문제의 다른 하위 메뉴 ... #}
+
+                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">안정적인 매칭 문제</strong></li>
+                            {# ... 안정적인 매칭 문제 메뉴 ... #}
+                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">자원-기술 매칭</strong></li>
+                            {# ... 자원-기술 매칭 메뉴 ... #}
+
+                        {% elif active_model == 'Resource Allocation' %}
+                            <li class="nav-item"><strong class="sidebar-subtitle">예산 분배 최적화</strong></li>
+                            {# ... 예산 분배 메뉴 ... #}
+                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">포트폴리오 최적화</strong></li>
+                            {# ... 포트폴리오 메뉴 ... #}
+                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">설비 투자 및 생산 능력 할당</strong></li>
+                            {# ... 설비 투자 메뉴 ... #}
+
+                        {% elif active_model == 'Routing & Logistics' %}
+                            {# ... VRP, CVRP, VRPTW, PDP 등 하위 메뉴 ... #}
+
+                        {% elif active_model == 'Production & Scheduling' %}
+                            {# ... Lot Sizing, Job Shop, RCPSP 등 하위 메뉴 ... #}
                         {% endif %}
                     </ul>
                 {% else %}
@@ -60,15 +80,22 @@
                     <div class="collapse navbar-collapse" id="mainMenuContent">
                         <ul class="navbar-nav mr-auto">
                             <li class="nav-item">
-                                <a class="nav-link {% if active_model == 'Matching' %}active{% endif %}" href="{% url 'matching_app:small_scale_demo' %}">Matching</a>
+                                <a class="nav-link {% if active_model == 'Matching & Assignment' %}active{% endif %}"
+                                   href="{% url 'matching_assignment_app:lcd_cf_tft_introduction' %}">Matching & Assignment</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if active_model == 'Allocate' %}active{% endif %}" href="#">Allocate (준비중)</a>
+                                <a class="nav-link {% if active_model == 'Resource Allocation' %}active{% endif %}"
+                                   href="#">Resource Allocation (준비중)</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if active_model == 'VCR' %}active{% endif %}" href="#">VCR (준비중)</a>
+                                <a class="nav-link {% if active_model == 'Routing & Logistics' %}active{% endif %}"
+                                   href="#">Routing & Logistics (준비중)</a>
                             </li>
-                            </ul>
+                            <li class="nav-item">
+                                <a class="nav-link {% if active_model == 'Production & Scheduling' %}active{% endif %}"
+                                   href="#">Production & Scheduling (준비중)</a>
+                            </li>
+                        </ul>
                     </div>
                 </nav>
             </header>

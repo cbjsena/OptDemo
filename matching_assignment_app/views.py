@@ -1,17 +1,17 @@
+from django.shortcuts import render
+
+# Create your views here.
 from django.conf import settings
 from django.shortcuts import render
-from django.core.files.storage import FileSystemStorage # 파일 저장을 위해 (선택 사항)
 
 import json
 import random
 import os
-import datetime # 파일명에 타임스탬프 사용 등
 from ortools.linear_solver import pywraplp  # OR-Tools MIP solver
 
 import logging
 
 logger = logging.getLogger(__name__)
-
 
 def validate_panel_data_structure(panel_list_items, panel_type_name):
     """
@@ -264,16 +264,16 @@ def create_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defe
     return generated_data
 
 
-def matching_introduction_view(request):
+def lcd_cf_tft_introduction_view(request):
     context = {
-        'active_model': 'Matching',
+        'active_model': 'Matching & Assignment',
         'active_submenu': 'introduction',
     }
-    return render(request, 'matching_app/introduction.html', context)
+    return render(request, 'matching_assignment_app/lcd_cf_tft_introduction.html', context)
 
-def matching_data_generation_view(request):
+def lcd_cf_tft_data_generation_view(request):
     context = {
-        'active_model': 'Matching',
+        'active_model': 'Matching & Assignment',
         'active_submenu': 'data_generation',
         'cf_tft_panel_range': range(3, 11),
         'cell_dimension_range': range(3, 6),
@@ -300,12 +300,12 @@ def matching_data_generation_view(request):
             context['error_message'] = f"데이터 생성 중 오류 발생: {str(e)}"
             logger.error(f"Unexpected error during data generation: {e}", exc_info=True)
 
-    return render(request, 'matching_app/data_generation.html', context)
+    return render(request, 'matching_assignment_app/lcd_cf_tft_data_generation.html', context)
 
 
-def matching_small_scale_demo_view(request):
+def lcd_cf_tft_small_scale_demo_view(request):
     context = {
-        'active_model': 'Matching',
+        'active_model': 'Matching & Assignment',
         'active_submenu': 'small_scale_demo'
     }
     if request.method == 'POST':
@@ -325,13 +325,13 @@ def matching_small_scale_demo_view(request):
                 if validation_error_cf:
                     logger.error(f"CF Panel Validation Error: {validation_error_cf}")
                     context['error_message'] = validation_error_cf
-                    return render(request, 'matching_app/small_scale_demo.html', context)
+                    return render(request, 'matching_assignment_app/lcd_cf_tft_small_scale_demo.html', context)
 
                 validation_error_tft = validate_panel_data_structure(tft_panels, "TFT")
                 if validation_error_tft:
                     logger.error(f"TFT Panel Validation Error: {validation_error_tft}")
                     context['error_message'] = validation_error_tft
-                    return render(request, 'matching_app/small_scale_demo.html', context)
+                    return render(request, 'matching_assignment_app/lcd_cf_tft_small_scale_demo.html', context)
 
                 # 유효성 검사 통과 후
                 context['input_cf_panels'] = cf_panels
@@ -371,12 +371,12 @@ def matching_small_scale_demo_view(request):
             context['error_message'] = "오류: 테스트 데이터가 제공되지 않았습니다."
             logger.warning("No test data provided for small scale demo.")
 
-    return render(request, 'matching_app/small_scale_demo.html', context)
+    return render(request, 'matching_assignment_app/lcd_cf_tft_small_scale_demo.html', context)
 
 
-def matching_large_scale_demo_view(request):
+def lcd_cf_tft_large_scale_demo_view(request):
     context = {
-        'active_model': 'Matching',
+        'active_model': 'Matching & Assignment',
         'active_submenu': 'large_scale_demo',
         'available_json_files': []
     }
@@ -449,7 +449,7 @@ def matching_large_scale_demo_view(request):
                         if seq > 100:  # 무한 루프 방지
                             logger.error("Could not find a unique filename after 100 attempts for make_json.")
                             context['error_message'] = "생성된 데이터를 저장할 고유한 파일 이름을 찾는 데 실패했습니다."
-                            return render(request, 'matching_app/large_scale_demo.html', context)
+                            return render(request, 'matching_assignment_app/lcd_cf_tft_large_scale_demo.html', context)
                 else:
                     logger.warning("LARGE_SCALE_DATA_DIR not set. Generated data will not be saved.")
                     context['info_message'] = "데이터가 생성되었지만, 서버 저장 경로가 설정되지 않아 저장되지 않았습니다. 매칭은 진행됩니다."
@@ -513,13 +513,13 @@ def matching_large_scale_demo_view(request):
                 if validation_error_cf:
                     logger.error(f"Large Scale CF Panel Validation Error: {validation_error_cf}")
                     context['error_message'] = validation_error_cf
-                    return render(request, 'matching_app/large_scale_demo.html', context)
+                    return render(request, 'matching_assignment_app/lcd_cf_tft_large_scale_demo.html', context)
 
                 validation_error_tft = validate_panel_data_structure(tft_panels, "TFT")
                 if validation_error_tft:
                     logger.error(f"Large Scale TFT Panel Validation Error: {validation_error_tft}")
                     context['error_message'] = validation_error_tft
-                    return render(request, 'matching_app/large_scale_demo.html', context)
+                    return render(request, 'matching_assignment_app/lcd_cf_tft_large_scale_demo.html', context)
 
                 logger.info(
                     f"Data for large scale matching validated. CF: {len(cf_panels)}, TFT: {len(tft_panels)}. Source: {loaded_filename}")
@@ -560,4 +560,16 @@ def matching_large_scale_demo_view(request):
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"
             logger.error(f"Unexpected error in large_scale_demo_view: {e}", exc_info=True)
 
-    return render(request, 'matching_app/large_scale_demo.html', context)
+    return render(request, 'matching_assignment_app/lcd_cf_tft_large_scale_demo.html', context)
+
+
+def assignment_problem_introduction_view():
+    return None
+
+
+def stable_matching_introduction_view():
+    return None
+
+
+def resource_skill_matching_introduction_view():
+    return None

@@ -63,8 +63,6 @@
         <h1 class="h2">LCD TFT-CF Matching: 최적화를 통한 수율 극대화</h1>
     </div>
 
-    <p>본 페이지는 POSTECH 이강복 교수님의 "산업 응용을 위한 최적화: 실질적인 권장 사항" 발표 자료에서 소개된 LCD 패널 생산 공정의 TFT-CF 매칭 최적화 사례 연구를 바탕으로 작성되었습니다.</p>
-
     <h4>1. 문제 배경 및 정의</h4>
     <p>
         액정 디스플레이(LCD) 패널 제조 공정은 매우 복잡하며, 높은 수율을 달성하는 것이 생산 효율성 및 비용 절감에 매우 중요합니다. LCD 패널은 주로 하부의 박막 트랜지스터(Thin Film Transistor, TFT) 기판과 상부의 컬러 필터(Color Filter, CF) 기판을 정밀하게 결합하여 셀(Cell)을 조립하는 과정을 거칩니다.
@@ -72,8 +70,8 @@
 
     {# --- 그림 1: LCD 제조 공정 개요 --- #}
     <figure>
-        <img src="{% static 'matching_app/images/lcd_process_overview.png' %}" alt="LCD 제조 공정 및 매칭 단계" class="intro-image" style="max-width: 700px;">
-        <figcaption class="image-caption">그림 1: LCD 제조 공정 개요 (출처: PDF Page 32)</figcaption>
+        <img src="{% static 'matching_assignment_app/images/lcd_process_overview.png' %}" alt="LCD 제조 공정 및 매칭 단계" class="intro-image" style="max-width: 700px;">
+        <figcaption class="image-caption">그림 1: LCD 제조 공정 개요</figcaption>
     </figure>
 
     <p>
@@ -84,20 +82,20 @@
     <div class="row">
         <div class="col-md-7">
             <figure>
-                <img src="{% static 'matching_app/images/cell_defect_matching.png' %}" alt="결함 셀 매칭 예시" class="intro-image" style="height: 400px; object-fit: contain;">
-                <figcaption class="image-caption">그림 2: CF와 TFT의 결함 셀 매칭 (출처: PDF Page 33)</figcaption>
+                <img src="{% static 'matching_assignment_app/images/cell_defect_matching.png' %}" alt="결함 셀 매칭 예시" class="intro-image" style="height: 400px; object-fit: contain;">
+                <figcaption class="image-caption">그림 2: CF와 TFT의 결함 셀 매칭</figcaption>
             </figure>
         </div>
         <div class="col-md-5">
             <figure>
-                 <img src="{% static 'matching_app/images/panel_inventories.png' %}" alt="CF 및 TFT 패널 재고" class="intro-image" style="height: 400px; object-fit: contain;">
-                 <figcaption class="image-caption">그림 3: CF 및 TFT 패널 (출처: PDF Page 33)</figcaption>
+                 <img src="{% static 'matching_assignment_app/images/panel_inventories.png' %}" alt="CF 및 TFT 패널 재고" class="intro-image" style="height: 400px; object-fit: contain;">
+                 <figcaption class="image-caption">그림 3: CF 및 TFT 패널</figcaption>
             </figure>
         </div>
     </div>
 
     <p>
-        발표 자료에 따르면, 이 LCD TFT-CF 매칭 문제는 다음과 같은 이유로 최적화 기법을 적용하기에 이상적인 사례로 평가되었습니다:
+        이 LCD TFT-CF 매칭 문제는 다음과 같은 이유로 최적화 기법을 적용하기에 이상적인 사례로 평가되었습니다:
         <ul>
             <li>데이터 관련 이슈가 적음 (Low data issue)</li>
             <li>성과 측정을 위한 명확하고 설명 가능한 지표 존재 (Explainable measure)</li>
@@ -115,7 +113,7 @@
 
     {# --- 그림 4: 이분 매칭 다이어그램 --- #}
     <figure>
-        <img src="{% static 'matching_app/images/bipartite_graph_matching.png' %}" alt="최대 가중 이분 매칭 문제" class="intro-image" style="max-width: 400px;">
+        <img src="{% static 'matching_assignment_app/images/bipartite_graph_matching.png' %}" alt="최대 가중 이분 매칭 문제" class="intro-image" style="max-width: 400px;">
         <figcaption class="image-caption">그림 4: 최대 가중 이분 매칭 문제 표현 (출처: PDF Page 34)</figcaption>
     </figure>
 
@@ -136,7 +134,7 @@
 
     <h4>3. 최적화 도입 효과</h4>
     <p>
-        발표 자료에 따르면, 이 최적 매칭 알고리즘을 실제 5개 LCD 생산 공장에 적용한 결과 다음과 같은 다양한 이점을 얻을 수 있었습니다:
+        이 최적 매칭 알고리즘을 실제 5개 LCD 생산 공장에 적용한 결과 다음과 같은 다양한 이점을 얻을 수 있었습니다:
         <ul>
             <li><strong>수율 향상 (Yield &uarr;):</strong> 정확한 수치는 명시되지 않았으나, 매칭 최적화를 통해 전반적인 양품 수율이 개선되었습니다.</li>
             <li><strong>분류 로봇 감소 (Sorting robots &darr;):</strong> 수동 또는 반자동 분류 과정에 필요한 로봇 설비 투자를 줄이고, 관련 공간을 절약할 수 있었습니다.</li>
@@ -155,5 +153,6 @@
         </ul>
         이 데모를 통해 수학적 최적화가 실제 산업 현장에서 어떻게 가치를 창출하는지 간접적으로나마 체험해보시기 바랍니다.
     </p>
+    <p>해당 케이스는 POSTECH 이강복 교수님의 "산업 응용을 위한 최적화: 실질적인 권장 사항" 발표 자료에서 소개된 LCD 패널 생산 공정의 TFT-CF 매칭 최적화 사례 연구를 바탕으로 작성되었습니다.</p>
 </div>
 {% endblock %}

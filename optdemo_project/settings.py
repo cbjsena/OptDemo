@@ -45,9 +45,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',          # core 앱 추가
-    'matching_app',  # matching_app 추가
-    # 'allocate_app',  # 추후 추가  python manage.py startapp allocate_app
-    # 'vcr_app',       # 추후 추가  python manage.py startapp vcr_app
+    'matching_assignment_app',  # matching_assignment_app 추가
+    'resource_allocation_app',  # 예시
+    'routing_logistics_app',  # 예시
+    'production_scheduling_app',  # 예시
 ]
 
 MIDDLEWARE = [
@@ -222,7 +223,7 @@ LOGGING = {
              'level': 'INFO', # APScheduler 자체 로그도 INFO 이상
              'propagate': False,
         },
-        'matching_app': { # 우리 앱 로거
+        'matching_assignment_app': { # 우리 앱 로거
             'handlers': ['console_debug', 'console_info_plus', 'file_app'], # DEBUG는 debug_colored, INFO 이상은 info_colored
             'level': 'DEBUG', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,

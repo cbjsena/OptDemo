@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class MatchingAppConfig(AppConfig):
+class RoutingLogisticsAppConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'matching_app'
+    name = 'routing_logistics_app'
