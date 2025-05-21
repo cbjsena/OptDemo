@@ -48,8 +48,16 @@
                             {# ... 자원-기술 매칭 메뉴 ... #}
 
                         {% elif active_model == 'Resource Allocation' %}
-                            <li class="nav-item"><strong class="sidebar-subtitle">예산 분배 최적화</strong></li>
-                            {# ... 예산 분배 메뉴 ... #}
+                            <li class="nav-item"><strong class="sidebar-subtitle">Budget Allocation</strong></li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'budget_allocation_introduction' %}active{% endif %}" href="{% url 'resource_allocation_app:budget_allocation_introduction' %}">Introduction</a>
+                            </li>
+<!--                            <li class="nav-item nested">-->
+<!--                                <a class="nav-link {% if active_submenu == 'budget_allocation_data' %}active{% endif %}" href="#">데이터 입력 (준비중)</a>-->
+<!--                            </li>-->
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'budget_allocation_demo' %}active{% endif %}" href="{% url 'resource_allocation_app:budget_allocation_demo' %}">Demo</a>
+                            </li>
                              <li class="nav-item mt-2"><strong class="sidebar-subtitle">포트폴리오 최적화</strong></li>
                             {# ... 포트폴리오 메뉴 ... #}
                              <li class="nav-item mt-2"><strong class="sidebar-subtitle">설비 투자 및 생산 능력 할당</strong></li>
@@ -85,7 +93,8 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if active_model == 'Resource Allocation' %}active{% endif %}"
-                                   href="#">Resource Allocation (준비중)</a>
+                                   href="{% url 'resource_allocation_app:budget_allocation_introduction' %}">Resource Allocation</a>
+
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if active_model == 'Routing & Logistics' %}active{% endif %}"

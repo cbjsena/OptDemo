@@ -1,0 +1,206 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load matching_filters %} {# get_range, get_item_simple 필터 사용 #}
+
+{% block title %}Budget Allocation - Demo{% endblock %}
+
+{% block styles %}
+<style>
+    .item-input-row { /* 이 클래스는 현재 직접 사용되지 않음, fieldset으로 대체 */
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+    }
+    .item-input-row label {
+        margin-bottom: 0;
+        white-space: nowrap;
+    }
+    .item-input-row .form-control {
+        margin-right: 5px;
+    }
+    .results-table th, .results-table td {
+        text-align: right;
+        vertical-align: middle;
+    }
+    .results-table th:first-child, .results-table td:first-child {
+        text-align: left;
+    }
+    .error-message, .success-message, .info-message { /* info-message 추가 */
+        padding: .75rem 1.25rem; margin-bottom: 1rem;
+        border: 1px solid transparent; border-radius: .25rem;
+    }
+    .error-message { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+    .success-message { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+    .info-message { color: #004085; background-color: #cce5ff; border-color: #b8daff; } /* 정보 메시지용 스타일 */
+
+    fieldset {
+        background-color: #fcfdff; /* 약간 다른 배경색 */
+    }
+    legend.h6 {
+        font-size: 1rem;
+        font-weight: bold;
+        color: #0056b3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Budget Allocation Optimization Demo</h1>
+    </div>
+
+    <p>총 예산과 각 투자 항목의 기대 수익률, 최소/최대 투자액을 입력하여 최적의 예산 배분 결과를 확인합니다.</p>
+
+    <form method="GET" class="mb-3 form-inline">
+        <div class="form-group mr-2">
+            <label for="num_items_to_show" class="mr-2">투자 항목 수 (1-10):</label>
+            <select name="num_items_to_show" id="num_items_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in num_items_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_items %}selected{% endif %}>{{ i }}개</option>
+                {% endfor %}
+            </select>
+        </div>
+         <noscript><button type="submit" class="btn btn-sm btn-secondary">항목 수 변경</button></noscript>
+    </form>
+
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="num_items" value="{{ submitted_num_items }}">
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>1. 기본 정보 입력</strong>
+            </div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <label for="total_budget" class="col-sm-3 col-form-label">총 예산 (Total Budget):</label>
+                    <div class="col-sm-9">
+                        <input type="number" step="any" min="0" class="form-control" id="total_budget" name="total_budget"
+                               value="{{ form_data.total_budget|default_if_none:'1000' }}" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>2. 투자 항목별 정보 입력 (총 {{ submitted_num_items }}개)</strong>
+            </div>
+            <div class="card-body">
+                {% for i in submitted_num_items|get_range %}
+                <fieldset class="mb-3 p-3 border rounded">
+                    <legend class="h6">항목 {{ i|add:1 }}</legend>
+                    <div class="form-group">
+                        <label for="item_name_{{ i }}">항목 이름:</label>
+                        <input type="text" class="form-control form-control-sm" id="item_name_{{ i }}" name="item_name_{{ i }}"
+                               value="{% with key_name='item_name_'|add:i|stringformat:'s' %}{{ form_data|get_item_simple:key_name|default_if_none:'항목 '|add:i|add:1 }}{% endwith %}">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="item_return_coeff_{{ i }}">기대 수익률 계수 (Return Coeff.):</label>
+                            <input type="number" step="any" class="form-control form-control-sm" id="item_return_coeff_{{ i }}" name="item_return_coeff_{{ i }}"
+                                   value="{% with key_name='item_return_coeff_'|add:i|stringformat:'s' %}{{ form_data|get_item_simple:key_name|default_if_none:'0.1' }}{% endwith %}" required>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="item_min_alloc_{{ i }}">최소 투자액 (Min Alloc):</label>
+                            <input type="number" step="any" min="0" class="form-control form-control-sm" id="item_min_alloc_{{ i }}" name="item_min_alloc_{{ i }}"
+                                   value="{% with key_name='item_min_alloc_'|add:i|stringformat:'s' %}{{ form_data|get_item_simple:key_name|default_if_none:'0' }}{% endwith %}">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="item_max_alloc_{{ i }}">최대 투자액 (Max Alloc):</label>
+                            <input type="number" step="any" min="0" class="form-control form-control-sm" id="item_max_alloc_{{ i }}" name="item_max_alloc_{{ i }}"
+                                   value="{% with key_name='item_max_alloc_'|add:i|stringformat:'s' %}{{ form_data|get_item_simple:key_name|default_if_none:form_data.total_budget|default_if_none:'1000' }}{% endwith %}">
+                        </div>
+                    </div>
+                </fieldset>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 예산 분배 실행</button>
+    </form>
+
+    {% if results is not None or error_message or success_message %} {# 메시지 또는 결과가 있을 때만 구분선과 제목 표시 #}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Results</h3>
+    {% endif %}
+
+    {% if error_message %}
+        <div class="error-message" role="alert">
+            <strong>오류:</strong> {{ error_message }}
+        </div>
+    {% endif %}
+
+    {% if success_message and not error_message %} {# 에러 없을 때만 성공/정보 메시지 #}
+        <div class="success-message" role="alert">
+            {{ success_message }}
+        </div>
+    {% endif %}
+
+    {% if info_message and not error_message and not success_message %} {# 기타 정보 메시지 #}
+        <div class="info-message" role="alert">
+            {{ info_message }}
+        </div>
+    {% endif %}
+
+
+    {% if results %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <strong>결과 요약</strong>
+        </div>
+        <div class="card-body">
+            <p><strong>총 사용 가능 예산:</strong>
+                {# form_data.total_budget은 POST 시에만 존재, GET 시에는 context.form_data.total_budget_float 사용 불가 #}
+                {# total_budget은 POST 시에만 form_data로 설정됨. GET에서는 기본값 또는 URL 파라미터로 설정되도록 수정 필요. #}
+                {# 여기서는 POST 후의 form_data.total_budget을 사용한다고 가정 #}
+                {{ form_data.total_budget|default_if_none:"N/A" }}
+            </p>
+            <p><strong>계산된 최대 기대 수익:</strong> {{ total_maximized_return|floatformat:2 }}</p>
+            <p><strong>실제 할당된 총 예산:</strong> {{ total_allocated_budget|floatformat:2 }}
+               (활용률: {{ budget_utilization_percent }}{% if budget_utilization_percent != "N/A" %}%{% endif %})
+            </p>
+            <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped results-table mb-0"> {# mb-0 추가 #}
+                <thead class="thead-light"> {# thead 스타일 변경 #}
+                    <tr>
+                        <th>항목 이름</th>
+                        <th>수익률 계수</th>
+                        <th>최소 투자액</th>
+                        <th>최대 투자액</th>
+                        <th>배분된 예산</th>
+                        <th>항목별 기대 수익</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in results %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.return_coefficient|floatformat:3 }}</td>
+                        <td>{{ item.min_alloc|floatformat:2 }}</td>
+                        <td>{{ item.max_alloc|floatformat:2 }}</td>
+                        <td><strong>{{ item.allocated_budget|floatformat:2 }}</strong></td>
+                        <td>{{ item.expected_return|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% elif request.method == 'POST' and not error_message and not success_message %}
+        {# POST 요청이었으나 결과도, 에러도, 성공 메시지도 없는 경우 (예: 해 없음) #}
+        <p class="text-muted mt-3"><em>최적화 결과가 없습니다. 입력값을 확인하거나, 솔버가 해를 찾지 못했을 수 있습니다.</em></p>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    console.log("Budget Allocation Demo page script loaded.");
+</script>
+{% endblock %}
