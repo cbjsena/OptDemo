@@ -257,3 +257,19 @@ def budget_allocation_demo_view(request):
             logger.error(f"Unexpected error in budget_allocation_demo_view: {e}", exc_info=True)
 
     return render(request, 'resource_allocation_app/budget_allocation_demo.html', context)
+
+
+def financial_portfolio_introduction_view(request):
+    """
+    Financial Portfolio Optimization introduction page.
+    """
+    context = {
+        'active_model': 'Resource Allocation',
+        'active_submenu': 'financial_portfolio_introduction'
+    }
+    logger.debug("Rendering financial portfolio optimization introduction page.")
+    return render(request, 'resource_allocation_app/financial_portfolio_introduction.html', context)
+
+
+def financial_portfolio_demo_view():
+    return None

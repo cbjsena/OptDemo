@@ -38,30 +38,36 @@
 
                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">작업 배정 문제</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'assignment_problem_introduction' %}active{% endif %}" href="{% url 'matching_assignment_app:assignment_problem_introduction' %}">소개 (준비중)</a>
+                                <a class="nav-link {% if active_submenu == 'assignment_problem_introduction' %}active{% endif %}" href="{% url 'core:ready' %}">소개 (준비중)</a>
                             </li>
-                            {# ... 작업 배정 문제의 다른 하위 메뉴 ... #}
-
                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">안정적인 매칭 문제</strong></li>
-                            {# ... 안정적인 매칭 문제 메뉴 ... #}
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'assignment_problem_introduction' %}active{% endif %}" href="{% url 'core:ready' %}">소개 (준비중)</a>
+                            </li>
                              <li class="nav-item mt-2"><strong class="sidebar-subtitle">자원-기술 매칭</strong></li>
-                            {# ... 자원-기술 매칭 메뉴 ... #}
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'assignment_problem_introduction' %}active{% endif %}" href="{% url 'core:ready' %}">소개 (준비중)</a>
+                            </li>
 
                         {% elif active_model == 'Resource Allocation' %}
                             <li class="nav-item"><strong class="sidebar-subtitle">Budget Allocation</strong></li>
                             <li class="nav-item nested">
                                 <a class="nav-link {% if active_submenu == 'budget_allocation_introduction' %}active{% endif %}" href="{% url 'resource_allocation_app:budget_allocation_introduction' %}">Introduction</a>
                             </li>
-<!--                            <li class="nav-item nested">-->
-<!--                                <a class="nav-link {% if active_submenu == 'budget_allocation_data' %}active{% endif %}" href="#">데이터 입력 (준비중)</a>-->
-<!--                            </li>-->
                             <li class="nav-item nested">
                                 <a class="nav-link {% if active_submenu == 'budget_allocation_demo' %}active{% endif %}" href="{% url 'resource_allocation_app:budget_allocation_demo' %}">Demo</a>
                             </li>
-                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">포트폴리오 최적화</strong></li>
-                            {# ... 포트폴리오 메뉴 ... #}
+                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">financial Portfolio</strong></li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'financial_portfolio_introduction' %}active{% endif %}" href="{% url 'resource_allocation_app:financial_portfolio_introduction' %}">Introduction</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'financial_portfolio_demo' %}active{% endif %}" href="{% url 'resource_allocation_app:financial_portfolio_demo' %}">Demo</a>
+                            </li>
                              <li class="nav-item mt-2"><strong class="sidebar-subtitle">설비 투자 및 생산 능력 할당</strong></li>
-                            {# ... 설비 투자 메뉴 ... #}
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'assignment_problem_introduction' %}active{% endif %}" href="{% url 'core:ready' %}">소개 (준비중)</a>
+                            </li>
 
                         {% elif active_model == 'Routing & Logistics' %}
                             {# ... VRP, CVRP, VRPTW, PDP 등 하위 메뉴 ... #}

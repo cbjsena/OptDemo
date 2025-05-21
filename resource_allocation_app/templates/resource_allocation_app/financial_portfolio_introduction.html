@@ -1,0 +1,123 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Financial Portfolio Optimization - Introduction{% endblock %}
+
+{% block styles %}
+<style>
+    .introduction-content {
+        line-height: 1.8;
+        font-size: 1.05rem;
+    }
+    .introduction-content h4 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #0056b3;
+        padding-bottom: 0.25rem;
+        border-bottom: 2px solid #007bff;
+    }
+    .introduction-content ul {
+        padding-left: 20px;
+    }
+    .introduction-content li {
+        margin-bottom: 0.5rem;
+    }
+    .math-model-section {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    .math-model-section p {
+        margin-bottom: 0.5rem;
+    }
+    .math-model-section strong {
+        color: #333;
+    }
+    .math-formula { /* 수식 표시를 위한 스타일 */
+        font-family: 'Courier New', Courier, monospace;
+        background-color: #e9ecef;
+        padding: 10px;
+        border-radius: 3px;
+        display: block;
+        white-space: pre;
+        margin: 10px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">금융 포트폴리오 최적화 (Financial Portfolio Optimization)</h1>
+    </div>
+
+    <p><strong>범주: Ⅱ. 자원 할당 (Resource Allocation)</strong></p>
+    <p>금융 포트폴리오 최적화는 투자자가 여러 금융 자산에 투자할 때, 주어진 제약 조건 하에서 투자 목표를 가장 잘 달성할 수 있는 자산 배분 비율을 찾는 문제입니다. 이는 현대 포트폴리오 이론(Modern Portfolio Theory, MPT)의 핵심적인 부분입니다.</p>
+
+    <h4>1. 문제 설명</h4>
+    <p>
+        투자자는 일반적으로 높은 수익률을 원하지만, 동시에 낮은 위험을 선호합니다. 그러나 수익률과 위험은 상충 관계(trade-off)에 있는 경우가 많습니다. 포트폴리오 최적화는 이러한 상충 관계를 고려하여, 투자자의 위험 선호도나 투자 목표에 맞는 최적의 포트폴리오를 구성하는 것을 목표로 합니다.
+    </p>
+    <p>
+        주요 고려 사항은 다음과 같습니다:
+        <ul>
+            <li><strong>기대 수익률 (Expected Return):</strong> 각 자산 또는 전체 포트폴리오에서 기대되는 평균 수익률입니다.</li>
+            <li><strong>위험 (Risk):</strong> 수익률의 변동성으로, 주로 분산(variance) 또는 표준편차(standard deviation)로 측정됩니다. 자산 간의 상관관계를 나타내는 공분산(covariance)도 중요한 요소입니다.</li>
+            <li><strong>제약 조건 (Constraints):</strong> 총 투자 예산, 각 자산별 최소/최대 투자 비율, 특정 산업군 투자 한도 등이 포함될 수 있습니다.</li>
+        </ul>
+    </p>
+
+    <h4>2. 산업 응용 분야</h4>
+    <ul>
+        <li><strong>자산 관리 (Asset Management):</strong> 개인 및 기관 투자자를 위한 펀드 매니저들이 고객의 목표에 맞춰 포트폴리오를 구성하고 운용합니다.</li>
+        <li><strong>투자 전략 수립 (Investment Strategy Development):</strong> 투자 회사나 금융 컨설턴트가 시장 분석과 투자자 성향을 바탕으로 맞춤형 투자 전략을 개발합니다.</li>
+        <li><strong>연기금 운용 (Pension Fund Management):</strong> 장기적인 관점에서 안정적인 수익을 추구해야 하는 연기금의 자산 배분 전략을 수립합니다.</li>
+        <li><strong>로보-어드바이저 (Robo-Advisors):</strong> 알고리즘 기반으로 자동화된 포트폴리오 관리 및 투자 자문 서비스를 제공합니다.</li>
+    </ul>
+
+    <h4>3. 수학적 모델 (Markowitz 평균-분산 모델 기초)</h4>
+    <div class="math-model-section">
+        <p>가장 기본적인 포트폴리오 최적화 모델 중 하나는 해리 마코위츠(Harry Markowitz)에 의해 제안된 평균-분산 모델입니다. 이 모델은 다음과 같은 두 가지 주요 접근 방식을 가집니다.</p>
+        
+        <p><strong>접근 방식 1: 주어진 위험 수준에서 기대 수익률 극대화</strong></p>
+        <ul>
+            <li><strong>결정 변수:</strong> $w_i$ (자산 $i$에 대한 투자 비율/가중치)</li>
+            <li><strong>목표 함수:</strong> Maximize  $\sum_{i=1}^{n} w_i \mu_i$  (포트폴리오의 총 기대 수익률)
+                <br>(여기서 $\mu_i$는 자산 $i$의 기대 수익률)
+            </li>
+            <li><strong>제약 조건:</strong>
+                <ul>
+                    <li>$\sum_{i=1}^{n} w_i = 1$ (모든 투자 비율의 합은 1)</li>
+                    <li>$w_i \ge 0$ (공매도 금지, 선택 사항)</li>
+                    <li>$\sum_{i=1}^{n} \sum_{j=1}^{n} w_i w_j \sigma_{ij} \le \sigma_{target}^2$ (포트폴리오의 총 분산이 목표 위험 수준($\sigma_{target}^2$) 이하)
+                        <br>(여기서 $\sigma_{ij}$는 자산 $i$와 자산 $j$ 간의 공분산)
+                    </li>
+                    <li>기타 특정 자산 투자 비율 제약 등</li>
+                </ul>
+            </li>
+        </ul>
+
+        <p><strong>접근 방식 2: 주어진 기대 수익률 수준에서 위험 최소화</strong></p>
+         <ul>
+            <li><strong>결정 변수:</strong> $w_i$ (자산 $i$에 대한 투자 비율/가중치)</li>
+            <li><strong>목표 함수:</strong> Minimize $\sum_{i=1}^{n} \sum_{j=1}^{n} w_i w_j \sigma_{ij}$ (포트폴리오의 총 분산/위험)</li>
+            <li><strong>제약 조건:</strong>
+                <ul>
+                    <li>$\sum_{i=1}^{n} w_i = 1$</li>
+                    <li>$w_i \ge 0$ (선택 사항)</li>
+                    <li>$\sum_{i=1}^{n} w_i \mu_i \ge \mu_{target}$ (포트폴리오의 총 기대 수익률이 목표 수익률($\mu_{target}$) 이상)</li>
+                    <li>기타 특정 자산 투자 비율 제약 등</li>
+                </ul>
+            </li>
+        </ul>
+        <p>위험(분산)을 최소화하는 목표 함수는 이차 함수 형태이므로, 이 문제는 이차 계획법(Quadratic Programming, QP) 문제가 됩니다. OR-Tools는 QP 문제를 풀 수 있는 솔버(예: SCIP, Gurobi 연동 등)를 제공하거나, 특정 조건 하에서는 다른 형태로 변환하여 풀 수 있습니다.</p>
+    </div>
+
+    <h4>4. OptDemo에서의 체험</h4>
+    <p>
+        본 데모의 "금융 포트폴리오 최적화" 섹션에서는 사용자가 투자 가능한 자산들의 기대 수익률, 표준편차 (또는 공분산 데이터), 총 투자금액 등을 입력하고, 목표 위험 수준 또는 목표 수익률을 설정하여 최적의 투자 배분 비율과 해당 포트폴리오의 특성(기대 수익률, 위험)을 확인하는 과정을 체험할 수 있도록 구성될 예정입니다.
+    </p>
+</div>
+{% endblock %}
