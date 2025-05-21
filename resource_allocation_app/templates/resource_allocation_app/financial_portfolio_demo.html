@@ -1,0 +1,168 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load matching_filters %} {# get_range, get_item_simple are needed #}
+
+{% block title %}Financial Portfolio Optimization - Demo{% endblock %}
+
+{% block styles %}
+<style>
+    .asset-input-group {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border: 1px solid #eee;
+        border-radius: 0.25rem;
+        background-color: #fdfdfd;
+    }
+    .asset-input-group legend {
+        font-size: 1rem;
+        font-weight: bold;
+    }
+    .results-table th, .results-table td {
+        text-align: right;
+        vertical-align: middle;
+    }
+    .results-table th:first-child, .results-table td:first-child {
+        text-align: left;
+    }
+    .error-message, .success-message {
+        padding: .75rem 1.25rem; margin-bottom: 1rem;
+        border: 1px solid transparent; border-radius: .25rem;
+    }
+    .error-message { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+    .success-message { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Financial Portfolio Optimization Demo</h1>
+    </div>
+    <p>목표 포트폴리오 수익률을 설정하고, 각 자산의 기대 수익률과 표준편차(위험)를 입력하여 위험(분산)을 최소화하는 최적의 투자 비율을 계산합니다.</p>
+    <p><small class="text-muted">참고: 현재 데모는 자산 간 상관계수를 일괄적으로 0.3으로 가정하여 공분산 행렬을 내부적으로 생성합니다. 또한, 사용되는 OR-Tools 선형 솔버(pywraplp)는 이차 계획법(QP)을 직접적으로 완벽히 지원하지 않을 수 있어, 결과는 제약조건을 만족하는 해이며 실제 최소 분산 포트폴리오가 아닐 수 있습니다. 정확한 QP 솔루션을 위해서는 CP-SAT 또는 Gurobi/CPLEX와 같은 QP 전문 솔버 연동이 필요합니다.</small></p>
+
+    <form method="GET" class="mb-3 form-inline">
+        <div class="form-group mr-2">
+            <label for="num_assets_to_show" class="mr-2">투자 자산 수 (2-5):</label>
+            <select name="num_assets_to_show" id="num_assets_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in num_assets_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_assets %}selected{% endif %}>{{ i }}개</option>
+                {% endfor %}
+            </select>
+        </div>
+        <noscript><button type="submit" class="btn btn-sm btn-secondary">자산 수 변경</button></noscript>
+    </form>
+
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="num_assets" value="{{ submitted_num_assets }}">
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>1. 포트폴리오 목표 설정</strong>
+            </div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <label for="target_portfolio_return" class="col-sm-4 col-form-label">목표 포트폴리오 수익률 (예: 0.10 = 10%):</label>
+                    <div class="col-sm-8">
+                        <input type="number" step="0.001" class="form-control form-control-sm" id="target_portfolio_return" name="target_portfolio_return"
+                               value="{% with key_name='target_portfolio_return' %}{{ form_data|get_item_simple:key_name|default_if_none:'0.10' }}{% endwith %}" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>2. 개별 자산 정보 입력 (총 {{ submitted_num_assets }}개)</strong>
+            </div>
+            <div class="card-body">
+                {% for i in submitted_num_assets|get_range %}
+                <fieldset class="asset-input-group">
+                    <legend>{% with key_name='asset_name_'|add:i|stringformat:'s' %}{{ form_data|get_item_simple:key_name|default_if_none:'자산 '|add:i|add:1 }}{% endwith %}</legend> {# Display name from form_data if available #}
+
+                    {# Hidden input for name if we don't want it to be editable after initial GET population #}
+                    <input type="hidden" name="asset_name_{{ i }}" value="{% with key_name='asset_name_'|add:i|stringformat:'s' %}{{ form_data|get_item_simple:key_name|default_if_none:'자산 '|add:i|add:1 }}{% endwith %}">
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="asset_return_{{ i }}">기대 수익률 (예: 0.12 = 12%):</label>
+                            <input type="number" step="0.001" class="form-control form-control-sm" id="asset_return_{{ i }}" name="asset_return_{{ i }}"
+                                   value="{% with key_name='asset_return_'|add:i|stringformat:'s' %}{{ form_data|get_item_simple:key_name }}{% endwith %}" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="asset_stddev_{{ i }}">표준편차(위험) (예: 0.20 = 20%):</label>
+                            <input type="number" step="0.001" min="0" class="form-control form-control-sm" id="asset_stddev_{{ i }}" name="asset_stddev_{{ i }}"
+                                   value="{% with key_name='asset_stddev_'|add:i|stringformat:'s' %}{{ form_data|get_item_simple:key_name }}{% endwith %}" required>
+                        </div>
+                    </div>
+                </fieldset>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">포트폴리오 최적화 실행</button>
+    </form>
+
+    {% if results is not None or error_message or success_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Results</h3>
+    {% endif %}
+
+    {% if error_message %}
+        <div class="error-message" role="alert">
+            <strong>오류:</strong> {{ error_message }}
+        </div>
+    {% endif %}
+
+    {% if success_message and not error_message %}
+        <div class="success-message" role="alert">
+            {{ success_message }}
+        </div>
+    {% endif %}
+
+    {% if results and portfolio_metrics %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <strong>포트폴리오 요약</strong>
+        </div>
+        <div class="card-body">
+            <p><strong>입력된 목표 수익률:</strong> {{ portfolio_metrics.target_return_input }}%</p>
+            <p><strong>계산된 포트폴리오 기대 수익률:</strong> {{ portfolio_metrics.expected_return }}%</p>
+            <p><strong>계산된 포트폴리오 분산:</strong> {{ portfolio_metrics.variance|floatformat:6 }}</p>
+            <p><strong>계산된 포트폴리오 표준편차 (위험):</strong> {{ portfolio_metrics.std_dev }}{% if portfolio_metrics.std_dev != "N/A" %}%{% endif %}</p>
+            <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped results-table mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th>자산 이름</th>
+                        <th>입력된 기대 수익률</th>
+                        <th>계산된 최적 투자 비율 (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in results %}
+                    <tr>
+                        <td>{{ item.asset_name }}</td>
+                        <td>{{ item.expected_return_asset|multiply_by_100|floatformat:2 }}%</td> {# Custom filter or pre-calculate #}
+                        <td><strong>{{ item.weight|floatformat:2 }}%</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% elif request.method == 'POST' and not error_message and not success_message %}
+        <p class="text-muted mt-3"><em>최적화 결과가 없습니다. 입력값을 확인하거나, 솔버가 해를 찾지 못했을 수 있습니다.</em></p>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    console.log("Financial Portfolio Optimization Demo page script loaded.");
+</script>
+{% endblock %}
