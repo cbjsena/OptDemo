@@ -191,21 +191,13 @@ LOGGING = {
         },
         'file_app': { # 애플리케이션 로그 파일 핸들러
             'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler', # 파일 크기 기반 로테이션
+            'class': f'{LOGGING_CONFIG_MODULE_PATH}.SafeRotatingFileHandler',
+            # 'class': 'logging.handlers.RotatingFileHandler', # 파일 크기 기반 로테이션
             'filename': BASE_DIR / 'logs/app.log', # 로그 파일 경로
             'maxBytes': 1024*1024*5, # 5 MB
             'backupCount': 5, # 최대 5개 백업 파일 유지
             'formatter': 'file_verbose', # 파일에는 상세한 형식 사용
             'encoding': 'utf-8', # UTF-8 인코딩 사용
-        },
-        'file_scheduler': { # 스케줄러 관련 로그 파일 핸들러
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs/scheduler.log', # 스케줄러 로그 파일 경로
-            'maxBytes': 1024*1024*5, # 5 MB
-            'backupCount': 5,
-            'formatter': 'file_verbose',
-            'encoding': 'utf-8',
         },
     },
     'root': {  # 루트 로거 설정: 모든 로거의 기본 설정
@@ -219,8 +211,8 @@ LOGGING = {
             'propagate': False,
         },
         'core': {
-             'handlers': ['console_info_plus', 'file_scheduler'],
-             'level': 'INFO', # APScheduler 자체 로그도 INFO 이상
+             'handlers': ['console_info_plus'],
+             'level': 'INFO',
              'propagate': False,
         },
         'matching_assignment_app': { # 우리 앱 로거

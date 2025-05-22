@@ -1,4 +1,6 @@
 import logging
+from logging import Handler
+from logging.handlers import RotatingFileHandler
 
 # ANSI 색상 코드 정의
 LOG_COLORS = {
@@ -23,6 +25,7 @@ info_format  = '[%(asctime)s] [%(levelname)s] %(message)s'
 
 debug_formatter = ColoredFormatter(debug_format, datefmt='%Y-%m-%d %H:%M:%S')
 info_formatter  = ColoredFormatter(info_format,  datefmt='%Y-%m-%d %H:%M:%S')
+plain_formatter = logging.Formatter(debug_format, datefmt='%Y-%m-%d %H:%M:%S')
 
 # DEBUG 전용 필터
 class LevelFilter(logging.Filter):
@@ -40,6 +43,9 @@ def setup_logger():
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
     # INFO 이상 출력 핸들러
     info_handler = logging.StreamHandler()
     info_handler.setLevel(logging.INFO)
@@ -52,3 +58,17 @@ def setup_logger():
     debug_handler.addFilter(LevelFilter(logging.DEBUG))
     debug_handler.setFormatter(debug_formatter)
     logger.addHandler(debug_handler)
+
+# Windows에서도 파일 잠금 문제를 피하려면 아래 패키지를 사용 권장
+from concurrent_log_handler import ConcurrentRotatingFileHandler
+
+try:
+    from concurrent_log_handler import ConcurrentRotatingFileHandler
+except ImportError:
+    ConcurrentRotatingFileHandler = RotatingFileHandler
+class SafeRotatingFileHandler(ConcurrentRotatingFileHandler):
+    """
+    RotatingFileHandler that is safe for use on Windows and in multiprocess scenarios.
+    Can replace 'logging.handlers.RotatingFileHandler' in Django settings.
+    """
+    pass
