@@ -62,11 +62,14 @@
                                 <a class="nav-link {% if active_submenu == 'financial_portfolio_introduction' %}active{% endif %}" href="{% url 'resource_allocation_app:financial_portfolio_introduction' %}">Introduction</a>
                             </li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'financial_portfolio_demo' %}active{% endif %}" href="{% url 'resource_allocation_app:financial_portfolio_demo' %}">Demo</a>
+                                <a class="nav-link {% if active_submenu == 'financial_portfolio_demo' %}active{% endif %}" href="{% url 'resource_allocation_app:financial_portfolio_demo' %}">Demo(준비중)</a>
                             </li>
                              <li class="nav-item mt-2"><strong class="sidebar-subtitle">설비 투자 및 생산 능력 할당</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'assignment_problem_introduction' %}active{% endif %}" href="{% url 'core:ready' %}">소개 (준비중)</a>
+                                <a class="nav-link {% if active_submenu == 'data_center_capacity_introduction' %}active{% endif %}" href="{% url 'resource_allocation_app:data_center_capacity_introduction' %}">Introduction</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'data_center_capacity_demo' %}active{% endif %}" href="{% url 'resource_allocation_app:data_center_capacity_demo' %}">Demo</a>
                             </li>
 
                         {% elif active_model == 'Routing & Logistics' %}

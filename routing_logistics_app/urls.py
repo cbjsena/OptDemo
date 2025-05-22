@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 
-app_name = 'matching_assignment_app' # 앱 네임스페이스
+app_name = 'routing_logistics_app' # 앱 네임스페이스
 
 urlpatterns = [
 

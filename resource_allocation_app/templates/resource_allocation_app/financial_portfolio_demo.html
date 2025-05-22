@@ -1,6 +1,6 @@
 {% extends "core/base.html" %}
 {% load static %}
-{% load matching_filters %} {# get_range, get_item_simple are needed #}
+{% load resource_allocation_filters %} {# get_range, get_item_simple are needed #}
 
 {% block title %}Financial Portfolio Optimization - Demo{% endblock %}
 
@@ -146,7 +146,7 @@
                     {% for item in results %}
                     <tr>
                         <td>{{ item.asset_name }}</td>
-                        <td>{{ item.expected_return_asset|multiply_by_100|floatformat:2 }}%</td> {# Custom filter or pre-calculate #}
+                        <td>{{ item.expected_return_asset|floatformat:2 }}%</td> {# Custom filter or pre-calculate #}
                         <td><strong>{{ item.weight|floatformat:2 }}%</strong></td>
                     </tr>
                     {% endfor %}

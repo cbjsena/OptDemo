@@ -1,0 +1,114 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Data Center Capacity Planning - Introduction{% endblock %}
+
+{% block styles %}
+<style>
+    .introduction-content {
+        line-height: 1.8;
+        font-size: 1.05rem;
+    }
+    .introduction-content h4 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #0056b3;
+        padding-bottom: 0.25rem;
+        border-bottom: 2px solid #007bff;
+    }
+    .introduction-content ul {
+        padding-left: 20px;
+    }
+    .introduction-content li {
+        margin-bottom: 0.5rem;
+    }
+    .math-model-section {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    .math-model-section p, .math-model-section li {
+        margin-bottom: 0.5rem;
+    }
+    .math-model-section strong {
+        color: #333;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">데이터 센터 용량 계획 (Data Center Capacity Planning)</h1>
+    </div>
+
+    <p><strong>범주: Ⅱ. 자원 할당 (Resource Allocation)</strong></p>
+    <p><strong>소메뉴: 설비 투자 및 생산 능력 할당 (Capacity Investment & Allocation)</strong></p>
+    <p>
+        데이터 센터 용량 계획은 미래의 컴퓨팅 수요를 예측하고, 이를 충족시키기 위해 필요한 서버, 스토리지, 네트워크, 전력, 냉각 등의 인프라 자원에 대한 투자 및 할당을 최적화하는 과정입니다. 이는 막대한 초기 투자 비용과 지속적인 운영 비용을 수반하므로, 효율적인 계획은 기업의 수익성과 서비스 품질에 직접적인 영향을 미칩니다.
+    </p>
+
+    <h4>1. 문제 설명</h4>
+    <p>
+        현대의 기업 및 서비스 제공자에게 데이터 센터는 핵심 인프라입니다. 클라우드 컴퓨팅, 빅데이터 분석, AI 서비스 등의 확대로 인해 데이터 센터의 용량 수요는 지속적으로 증가하고 있습니다. 용량 계획 담당자는 다음과 같은 복잡한 질문에 답해야 합니다:
+    </p>
+    <ul>
+        <li>언제, 어떤 유형의 설비(서버, 스토리지 등)에 얼마나 투자해야 하는가?</li>
+        <li>기존 설비와 신규 설비의 용량을 다양한 내부 서비스 또는 외부 고객에게 어떻게 할당해야 하는가?</li>
+        <li>증가하는 전력 소비와 발열 문제를 어떻게 효율적으로 관리할 것인가?</li>
+        <li>물리적 공간 제약, 예산 한도, 서비스 수준 협약(SLA) 등 다양한 제약 조건을 어떻게 만족시킬 것인가?</li>
+    </ul>
+    <p>
+        목표는 일반적으로 총 소유 비용(TCO) 최소화, 투자 수익률(ROI) 극대화, 또는 특정 서비스 수준을 만족시키면서 자원 활용률을 최적화하는 것입니다.
+    </p>
+
+    <h4>2. 산업 응용 분야</h4>
+    <ul>
+        <li><strong>클라우드 서비스 제공업체 (AWS, Azure, GCP 등):</strong> 대규모 데이터 센터의 용량 확장 및 지역별 서비스 수요에 따른 자원 배분 계획.</li>
+        <li><strong>대기업 IT 부서:</strong> 자체 데이터 센터 운영 시 내부 사업부별 IT 자원 수요 예측 및 할당, 신규 설비 도입 결정.</li>
+        <li><strong>코로케이션(Co-location) 서비스 업체:</strong> 고객사들에게 상면, 전력, 냉각 등의 데이터 센터 인프라를 제공하기 위한 용량 계획 및 관리.</li>
+        <li><strong>통신 사업자:</strong> 네트워크 기능 가상화(NFV) 및 5G 서비스 확장에 따른 데이터 센터 및 엣지 컴퓨팅 노드 용량 계획.</li>
+        <li><strong>금융 기관:</strong> 고성능 컴퓨팅(HPC) 및 데이터 분석을 위한 전용 데이터 센터 용량 관리 및 투자.</li>
+    </ul>
+
+    <h4>3. 수학적 모델 (개념)</h4>
+    <div class="math-model-section">
+        <p>데이터 센터 용량 계획 문제는 다양한 변형이 가능하지만, 일반적으로 다음과 같은 요소를 포함하는 혼합 정수 계획법(Mixed-Integer Programming, MIP) 또는 선형 계획법(LP) 문제로 모델링될 수 있습니다.</p>
+        <ul>
+            <li>
+                <strong>결정 변수 (Decision Variables):</strong>
+                <ul>
+                    <li>$I_{jt}$: 기간 $t$에 설비 유형 $j$(예: 서버 모델, 스토리지 종류)에 대한 투자 여부 (이진 변수)</li>
+                    <li>$C_{jt}$: 기간 $t$에 신규로 확보하는 설비 유형 $j$의 용량 (연속 또는 정수 변수)</li>
+                    <li>$A_{jst}$: 기간 $t$에 서비스 $s$에 할당되는 설비 유형 $j$의 용량 (연속 변수)</li>
+                </ul>
+            </li>
+            <li>
+                <strong>목표 함수 (Objective Function):</strong>
+                <ul>
+                    <li>총 비용 최소화: Minimize $\sum_{t} \sum_{j} (\text{투자비용}_{jt} \cdot C_{jt} + \text{운영비용}_{jt} \cdot (\text{기존용량}_{jt} + C_{jt}))$</li>
+                    <li>또는 순현재가치(NPV) 극대화 등</li>
+                </ul>
+            </li>
+            <li>
+                <strong>제약 조건 (Constraints):</strong>
+                <ul>
+                    <li>수요 충족 제약: 각 서비스 $s$의 기간 $t$별 수요 $D_{st}$는 할당된 용량으로 충족되어야 함 ($\sum_{j} A_{jst} \ge D_{st}$)</li>
+                    <li>용량 한도 제약: 각 설비 유형 $j$에 할당된 총 용량은 가용 용량을 초과할 수 없음 ($\sum_{s} A_{jst} \le \text{기존용량}_{jt} + C_{jt}$)</li>
+                    <li>예산 제약: 기간별 총 투자 비용은 예산 한도를 초과할 수 없음 ($\sum_{j} \text{투자비용}_{jt} \cdot C_{jt} \le \text{총투자예산}_t$)</li>
+                    <li>물리적 제약: 공간, 전력, 냉각 용량 한도 등</li>
+                    <li>설비 간 의존성 제약 (예: 서버 10대당 특정 냉각 용량 필요)</li>
+                </ul>
+            </li>
+        </ul>
+        <p>이러한 모델은 OR-Tools와 같은 최적화 솔버를 통해 다양한 시나리오에 대한 최적의 투자 및 할당 계획을 도출하는 데 사용될 수 있습니다.</p>
+    </div>
+
+    <h4>4. OptDemo에서의 체험</h4>
+    <p>
+        본 데모의 "데이터 센터 용량 계획" 섹션에서는 사용자가 간략화된 시나리오(예: 여러 유형의 서버와 서비스 수요)를 설정하고, 제한된 예산 및 공간 하에서 어떤 서버를 얼마나 도입하고 각 서비스에 어떻게 할당해야 총 비용을 최소화하거나 서비스 만족도를 높일 수 있는지 확인하는 과정을 체험할 수 있도록 구성될 예정입니다.
+    </p>
+</div>
+{% endblock %}

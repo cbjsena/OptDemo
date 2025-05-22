@@ -640,3 +640,399 @@ def financial_portfolio_demo_view(request):
             logger.error(f"Unexpected error in financial_portfolio_demo_view: {e}", exc_info=True)
 
     return render(request, 'resource_allocation_app/financial_portfolio_demo.html', context)
+
+
+def data_center_capacity_introduction_view(request): # Renamed to be more general for the sub-menu
+    """
+    Capacity Investment & Allocation (Data Center Capacity Planning) introduction page.
+    """
+    context = {
+        'active_model': 'Resource Allocation',
+        'active_submenu': 'data_center_capacity_introduction' # Key for the specific intro page
+    }
+    logger.debug("Rendering data center capacity planning introduction page.")
+    return render(request, 'resource_allocation_app/data_center_capacity_introduction.html', context)
+
+
+def run_data_center_capacity_optimizer(global_constraints, server_types_data, service_demands_data):
+    """
+    데이터 센터 용량 계획 문제를 해결합니다.
+    global_constraints: {'total_budget': 100000, 'total_power_kva': 500, 'total_space_sqm': 200}
+    server_types_data: [{'id': 'S1', 'cost': 5000, 'cpu_cores': 64, 'ram_gb': 256, 'storage_tb': 10, 'power_kva': 0.5, 'space_sqm': 0.2}, ...]
+    service_demands_data: [{'id': 'WEB', 'revenue_per_unit': 100, 'req_cpu_cores': 8, 'req_ram_gb': 32, 'req_storage_tb': 1, 'max_units': 50}, ...]
+    """
+    logger.info("Running Data Center Capacity Optimizer...")
+    logger.debug(f"Global Constraints: {global_constraints}")
+    logger.debug(f"Server Types: {server_types_data}")
+    logger.debug(f"Service Demands: {service_demands_data}")
+
+    solver = pywraplp.Solver.CreateSolver('CBC')  # 또는 'SCIP' 등 MIP 지원 솔버
+    if not solver:
+        logger.error("CBC/SCIP MIP Solver not available for data center capacity planning.")
+        return None, "오류: MIP 솔버를 생성할 수 없습니다.", 0.0
+
+    infinity = solver.infinity()
+    num_server_types = len(server_types_data)
+    num_services = len(service_demands_data)
+
+    # --- 결정 변수 ---
+    # Ns[i]: 구매/설치할 서버 유형 i의 수 (정수 변수)
+    Ns = [solver.IntVar(0, infinity, f'Ns_{i}') for i in range(num_server_types)]
+
+    # As[j][i]: 서비스 j에 할당된 서버 유형 i에서 제공되는 서비스 단위의 수 (연속 또는 정수 변수)
+    # 이 데모에서는 서비스 단위를 '서버가 제공하는 용량 단위'로 단순화하고,
+    # 각 서비스가 특정 서버 유형에서 몇 개의 '인스턴스' 또는 '용량 블록'을 사용하는지로 모델링 가능.
+    # 더 간단하게는, 서비스 j를 위해 사용되는 서버 i의 "비율" 또는 "개수"로 볼 수 있음.
+    # 여기서는 서비스 j를 위해 사용되는 서버 유형 i의 개수 (Ns_i 중 일부)로 가정.
+    # 이는 너무 복잡해지므로, 총 가용 용량을 계산하고 서비스에 할당하는 방식으로 변경.
+
+    # Xsj: 서비스 s를 서버 유형 j에 몇 개나 배치할 것인가 (또는 서비스 s에 서버 j의 자원을 얼마나 할당할 것인가)
+    # 이 데모에서는 "서비스 유닛"이라는 추상적인 단위를 사용.
+    # U sj: 서비스 s의 유닛 j (0 to max_units_s-1) - 사용 안함.
+
+    # As_sj: 서비스 s에 할당된 서버 유형 j의 용량 단위 수 (예: CPU 코어 수)
+    # 더 명확한 모델:
+    # N_server[i]: 구매할 서버 i의 개수 (정수)
+    # Alloc_service_server[s][i]: 서비스 s를 위해 서버 i에 할당된 "자원 단위" 또는 "서비스 인스턴스 수"
+    # 여기서는, 각 서비스가 특정 양의 CPU, RAM, Storage를 요구하고,
+    # 각 서버 유형이 특정 양의 CPU, RAM, Storage를 제공한다고 가정.
+
+    # X_si: 서비스 s를 서버 유형 i에서 몇 유닛(instance) 실행할 것인가 (정수)
+    # max_units_s는 서비스 s의 최대 수요 또는 제공 가능한 최대 유닛.
+    # 각 서비스 유닛은 특정 자원을 소모함.
+    X_si = {}
+    for s_idx in range(num_services):
+        service = service_demands_data[s_idx]
+        # 서비스 s의 최대 유닛 수 (수요) 만큼 변수 생성 고려
+        # 또는, 총 제공 가능한 서비스 유닛을 변수로 할 수도 있음.
+        # 여기서는 서비스 s를 서버 유형 i에서 몇 '유닛'만큼 제공할지를 변수로 설정.
+        # 이 '유닛'은 해당 서비스의 요구 자원에 맞춰짐.
+        max_units_s = service.get('max_units', infinity) if service.get('max_units') is not None else infinity
+        for i_idx in range(num_server_types):
+            # 서비스 s를 서버 i에서 몇 유닛 제공할지 (이산적인 서비스 유닛으로 가정)
+            X_si[s_idx, i_idx] = solver.IntVar(0, max_units_s if max_units_s != infinity else solver.infinity(),
+                                               f'X_s{s_idx}_i{i_idx}')
+
+    logger.debug(f"Created {len(Ns)} Ns variables and {len(X_si)} X_si variables.")
+
+    # --- 제약 조건 ---
+    # 1. 총 예산 제약
+    total_budget_constraint = solver.Constraint(0, global_constraints.get('total_budget', infinity), 'total_budget')
+    for i in range(num_server_types):
+        total_budget_constraint.SetCoefficient(Ns[i], server_types_data[i].get('cost', 0))
+    logger.debug("Added total budget constraint.")
+
+    # 2. 총 전력 제약
+    total_power_constraint = solver.Constraint(0, global_constraints.get('total_power_kva', infinity), 'total_power')
+    for i in range(num_server_types):
+        total_power_constraint.SetCoefficient(Ns[i], server_types_data[i].get('power_kva', 0))
+    logger.debug("Added total power constraint.")
+
+    # 3. 총 공간 제약
+    total_space_constraint = solver.Constraint(0, global_constraints.get('total_space_sqm', infinity), 'total_space')
+    for i in range(num_server_types):
+        total_space_constraint.SetCoefficient(Ns[i], server_types_data[i].get('space_sqm', 0))
+    logger.debug("Added total space constraint.")
+
+    # 4. 각 자원(CPU, RAM, Storage)에 대한 용량 제약
+    # 각 서버 유형 i가 제공하는 총 CPU = Ns[i] * server_types_data[i]['cpu_cores']
+    # 각 서비스 s의 유닛이 요구하는 CPU = service_demands_data[s]['req_cpu_cores']
+    # 총 요구 CPU = sum over s,i (X_si[s,i] * service_demands_data[s]['req_cpu_cores'])
+    # 이는 잘못된 접근. X_si는 서비스 s를 서버 i에서 몇 유닛 제공하는지.
+    # 서버 i에 할당된 서비스들의 총 요구 자원이 서버 i의 총 제공 자원을 넘을 수 없음.
+
+    # 수정된 제약: 각 서버 유형 i에 대해, 해당 서버 유형에 할당된 모든 서비스의 자원 요구량 합계는
+    # 해당 서버 유형의 총 구매된 용량을 초과할 수 없음.
+    resource_types = ['cpu_cores', 'ram_gb', 'storage_tb']
+    for i_idx in range(num_server_types):  # 각 서버 유형에 대해
+        server_type = server_types_data[i_idx]
+        for res_idx, resource in enumerate(resource_types):  # 각 자원 유형에 대해
+            # 서버 유형 i가 제공하는 총 자원량
+            # Ns[i_idx] * server_type.get(resource, 0)
+
+            # 서버 유형 i에 할당된 모든 서비스 유닛들이 소모하는 총 자원량
+            # sum (X_si[s_idx, i_idx] * service_demands_data[s_idx].get(f'req_{resource}', 0) for s_idx in range(num_services))
+
+            constraint_res = solver.Constraint(-infinity, 0, f'res_{resource}_server_type_{i_idx}')
+            # 제공량 (우변으로 넘기면 <= 0)
+            constraint_res.SetCoefficient(Ns[i_idx], -server_type.get(resource, 0))  # 제공량은 음수로
+            # 소비량 (좌변에 그대로)
+            for s_idx in range(num_services):
+                if (s_idx, i_idx) in X_si:  # 해당 변수가 존재할 때만
+                    service = service_demands_data[s_idx]
+                    constraint_res.SetCoefficient(X_si[s_idx, i_idx], service.get(f'req_{resource}', 0))  # 소비량은 양수로
+            logger.debug(f"Added resource constraint for {resource} on server type {server_type.get('id', i_idx)}.")
+
+    # 5. 각 서비스의 최대 수요(유닛) 제약 (선택 사항, X_si 변수 상한으로 이미 반영됨)
+    # sum over i (X_si[s,i]) <= service_demands_data[s]['max_units'] (또는 == nếu 정확히 수요 충족)
+    for s_idx in range(num_services):
+        service = service_demands_data[s_idx]
+        max_units_s = service.get('max_units')
+        if max_units_s is not None and max_units_s != infinity:
+            # 서비스 s에 대해 모든 서버 유형에서 제공되는 총 유닛 수는 max_units_s를 넘을 수 없음
+            constraint_demand_s = solver.Constraint(0, max_units_s, f'demand_service_{s_idx}')
+            for i_idx in range(num_server_types):
+                if (s_idx, i_idx) in X_si:
+                    constraint_demand_s.SetCoefficient(X_si[s_idx, i_idx], 1)
+            logger.debug(f"Added max demand constraint for service {service.get('id', s_idx)}: <= {max_units_s}")
+
+    # --- 목표 함수 ---
+    # 총 이익 = (각 서비스 유닛 수익 합계) - (총 서버 구매 비용)
+    objective = solver.Objective()
+    # 서버 구매 비용 (음수)
+    for i in range(num_server_types):
+        objective.SetCoefficient(Ns[i], -server_types_data[i].get('cost', 0))
+
+    # 서비스 수익 (양수)
+    for s_idx in range(num_services):
+        service = service_demands_data[s_idx]
+        for i_idx in range(num_server_types):
+            if (s_idx, i_idx) in X_si:
+                objective.SetCoefficient(X_si[s_idx, i_idx], service.get('revenue_per_unit', 0))
+
+    objective.SetMaximization()
+    logger.debug("Objective function set for total profit maximization.")
+
+    # --- 문제 해결 ---
+    logger.info("Solving Data Center Capacity model...")
+    solve_start_time = datetime.datetime.now()
+    status = solver.Solve()
+    solve_end_time = datetime.datetime.now()
+    processing_time_ms = (solve_end_time - solve_start_time).total_seconds() * 1000
+    logger.info(f"Solver status: {status}, Time: {processing_time_ms:.2f} ms")
+
+    # --- 결과 추출 ---
+    results = {
+        'purchased_servers': [],
+        'service_allocations': [],
+        'total_profit': 0,
+        'total_server_cost': 0,
+        'total_service_revenue': 0,
+        'total_power_used': 0,
+        'total_space_used': 0,
+    }
+    error_msg = None
+
+    if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
+        if status == pywraplp.Solver.FEASIBLE:
+            logger.warning("Feasible solution found for data center plan, but it might not be optimal.")
+            # error_msg 설정은 선택사항
+
+        results['total_profit'] = round(solver.Objective().Value(), 2)
+
+        current_total_server_cost = 0
+        current_total_power = 0
+        current_total_space = 0
+        for i in range(num_server_types):
+            num_purchased = Ns[i].solution_value()
+            if abs(num_purchased) < 1e-6: num_purchased = 0  # 부동소수점 정리
+            num_purchased = int(round(num_purchased))  # 정수 변수이므로 반올림
+
+            if num_purchased > 0:
+                server_type = server_types_data[i]
+                results['purchased_servers'].append({
+                    'type_id': server_type.get('id', f'Type{i}'),
+                    'count': num_purchased,
+                    'unit_cost': server_type.get('cost', 0),
+                    'total_cost_for_type': round(num_purchased * server_type.get('cost', 0), 2)
+                })
+                current_total_server_cost += num_purchased * server_type.get('cost', 0)
+                current_total_power += num_purchased * server_type.get('power_kva', 0)
+                current_total_space += num_purchased * server_type.get('space_sqm', 0)
+
+        results['total_server_cost'] = round(current_total_server_cost, 2)
+        results['total_power_used'] = round(current_total_power, 2)
+        results['total_space_used'] = round(current_total_space, 2)
+
+        current_total_service_revenue = 0
+        service_details = []
+        for s_idx in range(num_services):
+            service = service_demands_data[s_idx]
+            total_units_for_service_s = 0
+            allocation_details_s = []
+            for i_idx in range(num_server_types):
+                if (s_idx, i_idx) in X_si:
+                    units_on_server_i = X_si[s_idx, i_idx].solution_value()
+                    if abs(units_on_server_i) < 1e-6: units_on_server_i = 0
+                    units_on_server_i = int(round(units_on_server_i))
+
+                    if units_on_server_i > 0:
+                        total_units_for_service_s += units_on_server_i
+                        allocation_details_s.append({
+                            'server_type_id': server_types_data[i_idx].get('id', f'Type{i_idx}'),
+                            'units_allocated': units_on_server_i
+                        })
+
+            if total_units_for_service_s > 0:
+                service_revenue_s = total_units_for_service_s * service.get('revenue_per_unit', 0)
+                current_total_service_revenue += service_revenue_s
+                service_details.append({
+                    'service_id': service.get('id', f'Service{s_idx}'),
+                    'total_units_provided': total_units_for_service_s,
+                    'revenue_from_service': round(service_revenue_s, 2),
+                    'allocations': allocation_details_s
+                })
+        results['service_allocations'] = service_details
+        results['total_service_revenue'] = round(current_total_service_revenue, 2)
+
+        # 최종 이익 확인 (솔버 목표값과 수동 계산 일치 여부)
+        manual_profit = results['total_service_revenue'] - results['total_server_cost']
+        logger.info(f"Solver Objective (Profit): {results['total_profit']}, Manual Calc Profit: {manual_profit:.2f}")
+
+
+    else:  # OPTIMAL 또는 FEASIBLE이 아닌 경우
+        solver_status_map = {
+            pywraplp.Solver.INFEASIBLE: "실행 불가능한 문제입니다. 제약 조건(예산, 전력, 공간, 자원 요구량 등)을 확인하세요.",
+            pywraplp.Solver.UNBOUNDED: "목표 함수가 무한합니다. 수익이 비용보다 과도하게 높거나 제약이 누락되었을 수 있습니다.",
+            pywraplp.Solver.ABNORMAL: "솔버가 비정상적으로 종료되었습니다.",
+            pywraplp.Solver.MODEL_INVALID: "모델이 유효하지 않습니다.",
+            pywraplp.Solver.NOT_SOLVED: "솔버가 문제를 풀지 못했습니다."
+        }
+        error_msg = solver_status_map.get(status, f"최적해를 찾지 못했습니다. (솔버 상태 코드: {status})")
+        logger.error(f"Data center capacity solver failed. Status: {status}. Message: {error_msg}")
+
+    return results, error_msg, processing_time_ms
+
+
+def data_center_capacity_demo_view(request):
+    default_num_server_types = 2
+    default_num_services = 2
+
+    # GET 요청 시 또는 POST 후 폼 값 유지를 위한 form_data 초기화
+    form_data = {}
+
+    # GET 요청 시 기본 폼 데이터 채우기
+    if request.method == 'GET':
+        # URL 파라미터 또는 기본값으로 항목 수 결정
+        submitted_num_server_types = int(request.GET.get('num_server_types_to_show', default_num_server_types))
+        submitted_num_services = int(request.GET.get('num_services_to_show', default_num_services))
+
+        # 범위 제한
+        submitted_num_server_types = max(1, min(3, submitted_num_server_types))
+        submitted_num_services = max(1, min(3, submitted_num_services))
+
+        # 기본 글로벌 제약 조건 값 설정
+        form_data['total_budget'] = request.GET.get('total_budget', '100000')
+        form_data['total_power_kva'] = request.GET.get('total_power_kva', '50')
+        form_data['total_space_sqm'] = request.GET.get('total_space_sqm', '10')
+
+        # 기본 서버 유형 데이터 (ID 포함)
+        default_servers_preset = [
+            {'id': 'SrvA', 'cost': '5000', 'cpu_cores': '64', 'ram_gb': '256', 'storage_tb': '10', 'power_kva': '0.5',
+             'space_sqm': '0.2'},
+            {'id': 'SrvB', 'cost': '3000', 'cpu_cores': '32', 'ram_gb': '128', 'storage_tb': '5', 'power_kva': '0.3',
+             'space_sqm': '0.1'},
+            {'id': 'SrvC', 'cost': '8000', 'cpu_cores': '128', 'ram_gb': '512', 'storage_tb': '20', 'power_kva': '0.8',
+             'space_sqm': '0.3'}
+        ]
+        for i in range(submitted_num_server_types):
+            preset = default_servers_preset[i % len(default_servers_preset)]
+            for key, default_val in preset.items():
+                form_data[f'server_{i}_{key}'] = request.GET.get(f'server_{i}_{key}', default_val)
+
+            # 기본 서비스 수요 데이터 (ID 포함)
+        default_services_preset = [
+            {'id': 'WebPool', 'revenue_per_unit': '100', 'req_cpu_cores': '4', 'req_ram_gb': '8',
+             'req_storage_tb': '0.1', 'max_units': '50'},
+            {'id': 'DBFarm', 'revenue_per_unit': '200', 'req_cpu_cores': '8', 'req_ram_gb': '16',
+             'req_storage_tb': '0.5', 'max_units': '20'},
+            {'id': 'BatchProc', 'revenue_per_unit': '150', 'req_cpu_cores': '16', 'req_ram_gb': '32',
+             'req_storage_tb': '0.2', 'max_units': '30'}
+        ]
+        for i in range(submitted_num_services):
+            preset = default_services_preset[i % len(default_services_preset)]
+            for key, default_val in preset.items():
+                form_data[f'service_{i}_{key}'] = request.GET.get(f'service_{i}_{key}', default_val)
+
+    elif request.method == 'POST':
+        form_data = request.POST.copy()  # POST 요청 시에는 제출된 데이터 사용
+        submitted_num_server_types = int(form_data.get('num_server_types', default_num_server_types))
+        submitted_num_services = int(form_data.get('num_services', default_num_services))
+
+    context = {
+        'active_model': 'Resource Allocation',
+        'active_submenu_category': 'capacity_investment_allocation',
+        'active_submenu_case': 'data_center_capacity_demo',
+        'form_data': form_data, # GET 또는 POST로부터 채워진 form_data
+        'results': None,
+        'error_message': None,
+        'success_message': None,
+        'processing_time_seconds': "N/A",
+        'num_server_types_options': range(1, 4),
+        'num_services_options': range(1, 4),
+        'submitted_num_server_types': submitted_num_server_types,
+        'submitted_num_services': submitted_num_services,
+    }
+
+    if request.method == 'POST':
+        logger.info("Data Center Capacity Demo POST processing.")
+        try:
+            global_constraints = {
+                'total_budget': float(form_data.get('total_budget', '0')),
+                'total_power_kva': float(form_data.get('total_power_kva', '0')),
+                'total_space_sqm': float(form_data.get('total_space_sqm', '0')),
+            }
+            if not (global_constraints['total_budget'] >= 0 and \
+                    global_constraints['total_power_kva'] >= 0 and \
+                    global_constraints['total_space_sqm'] >= 0):
+                raise ValueError("총 예산, 전력, 공간은 음수가 될 수 없습니다.")
+
+            server_types_data = []
+            for i in range(submitted_num_server_types):
+                cost_str = form_data.get(f'server_{i}_cost', '0')
+                # ... (다른 서버 필드들도 유사하게 float/int 변환 및 유효성 검사)
+                server_types_data.append({
+                    'id': form_data.get(f'server_{i}_id', f'SrvType{i + 1}'),
+                    'cost': float(cost_str),
+                    'cpu_cores': int(form_data.get(f'server_{i}_cpu_cores', '0')),
+                    'ram_gb': int(form_data.get(f'server_{i}_ram_gb', '0')),
+                    'storage_tb': float(form_data.get(f'server_{i}_storage_tb', '0')),
+                    'power_kva': float(form_data.get(f'server_{i}_power_kva', '0')),
+                    'space_sqm': float(form_data.get(f'server_{i}_space_sqm', '0')),
+                })
+                if server_types_data[-1]['cost'] < 0: raise ValueError(
+                    f"서버 유형 {server_types_data[-1]['id']}의 비용은 음수가 될 수 없습니다.")
+                # 기타 필드에 대한 음수 및 유효성 검사 추가...
+
+            service_demands_data = []
+            for i in range(submitted_num_services):
+                max_units_str = form_data.get(f'service_{i}_max_units')
+                # ... (다른 서비스 필드들도 유사하게 float/int 변환 및 유효성 검사)
+                service_demands_data.append({
+                    'id': form_data.get(f'service_{i}_id', f'Svc{i + 1}'),
+                    'revenue_per_unit': float(form_data.get(f'service_{i}_revenue_per_unit', '0')),
+                    'req_cpu_cores': int(form_data.get(f'service_{i}_req_cpu_cores', '0')),
+                    'req_ram_gb': int(form_data.get(f'service_{i}_req_ram_gb', '0')),
+                    'req_storage_tb': float(form_data.get(f'service_{i}_req_storage_tb', '0')),
+                    'max_units': int(max_units_str) if max_units_str and max_units_str.strip().isdigit() else None,
+                })
+                # 기타 필드에 대한 음수 및 유효성 검사 추가...
+
+            logger.debug(f"Parsed Global Constraints: {global_constraints}")
+            logger.debug(f"Parsed Server Types: {server_types_data}")
+            logger.debug(f"Parsed Service Demands: {service_demands_data}")
+
+            results_data, error_msg_opt, processing_time_ms = run_data_center_capacity_optimizer(global_constraints,
+                                                                                                 server_types_data,
+                                                                                                 service_demands_data)
+            context[
+                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+
+            if error_msg_opt:
+                context['error_message'] = error_msg_opt
+            elif results_data:
+                context['results'] = results_data
+                context['success_message'] = "데이터 센터 용량 계획 최적화 완료!"
+                logger.info(
+                    f"Data center capacity optimization successful. Total Profit: {results_data.get('total_profit')}")
+            else:
+                context['error_message'] = "최적화 결과를 가져오지 못했습니다 (결과 없음)."
+
+        except ValueError as ve:
+            context['error_message'] = f"입력값 오류: {str(ve)}"
+            logger.error(f"ValueError in data_center_capacity_demo_view (POST): {ve}", exc_info=True)
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+            logger.error(f"Unexpected error in data_center_capacity_demo_view (POST): {e}", exc_info=True)
+
+    return render(request, 'resource_allocation_app/data_center_capacity_demo.html', context)
