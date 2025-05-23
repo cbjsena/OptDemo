@@ -245,7 +245,7 @@ def create_panel_data(panel_id_prefix, num_panels, rows, cols, rate):
     return panels
 
 
-def create_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defect_rate):
+def create_matching_cf_tft_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defect_rate):
     generated_cf_panels = create_panel_data("CF", num_cf_panels, panel_rows, panel_cols, defect_rate)
     generated_tft_panels = create_panel_data("TFT", num_tft_panels, panel_rows, panel_cols, defect_rate)
 
@@ -289,7 +289,7 @@ def lcd_cf_tft_data_generation_view(request):
             panel_cols = int(request.POST.get('panel_cols', 3))
             defect_rate = int(request.POST.get('defect_rate', 10))
 
-            generated_data = create_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defect_rate)
+            generated_data = create_matching_cf_tft_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defect_rate)
             context['generated_data'] = generated_data
             context['generated_data_json_pretty'] = json.dumps(generated_data, indent=4)
             logger.info("Panel data generated successfully.")
@@ -381,7 +381,7 @@ def lcd_cf_tft_large_scale_demo_view(request):
         'available_json_files': []
     }
 
-    large_data_dir = getattr(settings, 'LARGE_SCALE_DATA_DIR', None)
+    large_data_dir = getattr(settings, 'MATCH_CF_TFT_DATA_DIR', None)
     if large_data_dir and os.path.isdir(large_data_dir):
         try:
             files = [f for f in os.listdir(large_data_dir) if f.endswith('.json') and f.startswith('test_cf')]
@@ -390,7 +390,7 @@ def lcd_cf_tft_large_scale_demo_view(request):
             logger.error(f"Error listing files in {large_data_dir}: {e}")
             context['error_message'] = f"서버의 데이터 디렉토리에서 파일 목록을 읽어오는 데 실패했습니다."
     elif not large_data_dir:
-        logger.warning("LARGE_SCALE_DATA_DIR is not defined in settings. File selection will not work.")
+        logger.warning("MATCH_CF_TFT_DATA_DIR is not defined in settings. File selection will not work.")
         # context['error_message'] = "서버 데이터 디렉토리가 설정되지 않았습니다." # 사용자에게 보여줄 필요는 없을 수도 있음
 
     if request.method == 'POST':
@@ -416,7 +416,7 @@ def lcd_cf_tft_large_scale_demo_view(request):
                 panel_c = int(panel_c)
                 defect_rate_percent  = int(defect_rate_str)
 
-                generated_data = create_json_data(num_cf, num_tft, panel_r, panel_c, defect_rate_percent )
+                generated_data = create_matching_cf_tft_json_data(num_cf, num_tft, panel_r, panel_c, defect_rate_percent )
                 if large_data_dir:
                     # 중복 방지를 위해 시퀀스 번호 또는 타임스탬프 사용
                     seq = 0
@@ -451,7 +451,7 @@ def lcd_cf_tft_large_scale_demo_view(request):
                             context['error_message'] = "생성된 데이터를 저장할 고유한 파일 이름을 찾는 데 실패했습니다."
                             return render(request, 'matching_assignment_app/lcd_cf_tft_large_scale_demo.html', context)
                 else:
-                    logger.warning("LARGE_SCALE_DATA_DIR not set. Generated data will not be saved.")
+                    logger.warning("MATCH_CF_TFT_DATA_DIR not set. Generated data will not be saved.")
                     context['info_message'] = "데이터가 생성되었지만, 서버 저장 경로가 설정되지 않아 저장되지 않았습니다. 매칭은 진행됩니다."
 
 

@@ -42,6 +42,7 @@ def get_item(dictionary, key_or_printf_args):
 #
 # 더 나은 방법: 템플릿에서 문자열 결합은 add 필터를 사용
 # 예: {% with item_name_key="item_name_"|add:i|stringformat:"s" %}
+# 예: {% with key_name='total_space_sqm' %}{{ form_data|get_item_simple:key_name|default_if_none:'10' }}{% endwith %}
 #         {{ form_data|get_item:item_name_key }}
 #     {% endwith %}
 # 아래는 get_item을 위한 간단한 버전. 템플릿의 printf는 제거.
@@ -51,5 +52,10 @@ def get_item_simple(dictionary, key):
     if isinstance(dictionary, dict):
         return dictionary.get(key)
     return None
+
+@register.simple_tag(name='make_key')
+def make_key(prefix, index, suffix):
+    return f"{prefix}_{index}_{suffix}"
+
 
 # floatformat, default_if_none, add 등은 Django 내장 필터 사용.

@@ -2,10 +2,20 @@ import logging
 from logging import Handler
 from logging.handlers import RotatingFileHandler
 
+SOLVE_LOG_LEVEL = 15  # INFO는 20, WARNING은 30이므로 그 사이 값
+logging.addLevelName(SOLVE_LOG_LEVEL, 'SOLVE')
+
+def solve(self, message, *args, **kwargs):
+    if self.isEnabledFor(SOLVE_LOG_LEVEL):
+        self._log(SOLVE_LOG_LEVEL, message, args, **kwargs)
+
+logging.Logger.solve = solve
+
 # ANSI 색상 코드 정의
 LOG_COLORS = {
     'DEBUG':    '\033[90m',   # 회색
     'INFO':     '\033[92m',   # 초록
+    'SOLVE':  '\033[96m',
     'WARNING':  '\033[93m',   # 노랑
     'ERROR':    '\033[91m',   # 빨강
     'CRITICAL': '\033[1;91m', # 굵은 빨강
@@ -26,6 +36,7 @@ info_format  = '[%(asctime)s] [%(levelname)s] %(message)s'
 debug_formatter = ColoredFormatter(debug_format, datefmt='%Y-%m-%d %H:%M:%S')
 info_formatter  = ColoredFormatter(info_format,  datefmt='%Y-%m-%d %H:%M:%S')
 plain_formatter = logging.Formatter(debug_format, datefmt='%Y-%m-%d %H:%M:%S')
+solve_formatter = ColoredFormatter(info_format, datefmt='%Y-%m-%d %H:%M:%S')
 
 # DEBUG 전용 필터
 class LevelFilter(logging.Filter):
@@ -59,9 +70,15 @@ def setup_logger():
     debug_handler.setFormatter(debug_formatter)
     logger.addHandler(debug_handler)
 
+    solve_handler = logging.StreamHandler()
+    solve_handler.setLevel(SOLVE_LOG_LEVEL)
+    solve_handler.addFilter(LevelFilter(SOLVE_LOG_LEVEL))
+    solve_handler.setFormatter(info_formatter)
+    logger.addHandler(solve_handler)
+
+
 # Windows에서도 파일 잠금 문제를 피하려면 아래 패키지를 사용 권장
 from concurrent_log_handler import ConcurrentRotatingFileHandler
-
 try:
     from concurrent_log_handler import ConcurrentRotatingFileHandler
 except ImportError:

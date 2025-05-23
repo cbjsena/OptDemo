@@ -16,16 +16,18 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_URL = '/static/'
+
 # MEDIA_URL 및 MEDIA_ROOT 설정 (파일 업로드 시 필요에 따라 사용)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 if not os.path.exists(MEDIA_ROOT):
     os.makedirs(MEDIA_ROOT)
-LARGE_SCALE_DATA_DIR = os.path.join(MEDIA_ROOT, 'large_scale_test_data')
-if not os.path.exists(LARGE_SCALE_DATA_DIR):
-    os.makedirs(LARGE_SCALE_DATA_DIR)
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+MATCH_CF_TFT_DATA_DIR = os.path.join(MEDIA_ROOT, 'match_cf_tft_test_data')
+if not os.path.exists(MATCH_CF_TFT_DATA_DIR):
+    os.makedirs(MATCH_CF_TFT_DATA_DIR)
+ALLOCATION_DATA_CENTER_DATA_DIR = os.path.join(MEDIA_ROOT, 'allocation_data_center_data')
+# if not os.path.exists(ALLOCATION_DATA_CENTER_DATA_DIR):
+#     os.makedirs(ALLOCATION_DATA_CENTER_DATA_DIR)
 dotenv_path = BASE_DIR / '.env'
 load_dotenv(dotenv_path=dotenv_path)
 
@@ -124,11 +126,6 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = 'static/'
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -153,6 +150,11 @@ LOGGING = {
             'format': '[%(asctime)s] [%(levelname)s] %(message)s', # info_format
             'datefmt': '%Y-%m-%d %H:%M:%S',
         },
+        'solve_colored': {
+            '()': f'{LOGGING_CONFIG_MODULE_PATH}.ColoredFormatter',
+            'format': '[%(asctime)s] [%(levelname)s] %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
         # 파일용 기본 포맷터 (색상 코드 없이)
         'file_verbose': {
             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
@@ -162,12 +164,20 @@ LOGGING = {
             'format': '{levelname} {asctime} {message}',
             'style': '{',
         },
+        'file_solve': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
     },
     'filters': {
         'debug_only': {
             # '()'는 사용할 필터 클래스의 경로를 지정합니다.
             '()': f'{LOGGING_CONFIG_MODULE_PATH}.LevelFilter',
             'level': 'DEBUG', # logging.DEBUG 값을 직접 쓰기보다 문자열로 지정
+        },
+        'solve_only': {
+            '()': f'{LOGGING_CONFIG_MODULE_PATH}.LevelFilter',
+            'level': 'SOLVE', # 문자열로 'SOLVE' 지정
         },
         # INFO 레벨만 처리하는 필터 (선택 사항)
         # 'info_only': {
@@ -189,6 +199,12 @@ LOGGING = {
             # 이 핸들러는 DEBUG를 제외한 INFO, WARNING, ERROR, CRITICAL을 처리
             # 별도 필터 없으면 INFO 이상 모두 처리
         },
+        'console_solve': {
+            'level': 'SOLVE',
+            'class': 'logging.StreamHandler',
+            'formatter': 'solve_colored',
+            'filters': ['solve_only'], # SOLVE 레벨 로그만 이 핸들러가 처리
+        },
         'file_app': { # 애플리케이션 로그 파일 핸들러
             'level': 'DEBUG',
             'class': f'{LOGGING_CONFIG_MODULE_PATH}.SafeRotatingFileHandler',
@@ -199,9 +215,19 @@ LOGGING = {
             'formatter': 'file_verbose', # 파일에는 상세한 형식 사용
             'encoding': 'utf-8', # UTF-8 인코딩 사용
         },
+        'file_solve': { # SOLVE 레벨 로그 파일 핸들러
+            'level': 'SOLVE', # SOLVE 레벨만 기록
+            'class': f'{LOGGING_CONFIG_MODULE_PATH}.SafeRotatingFileHandler',
+            'filename': BASE_DIR / 'logs/solve.log', # SOLVE 로그 파일 경로
+            'maxBytes': 1024*1024*2, # 2 MB (필요에 따라 조절)
+            'backupCount': 3, # 최대 3개 백업 파일 유지
+            'formatter': 'file_solve', # 또는 'file_simple' 등 원하는 포맷터 사용
+            'encoding': 'utf-8',
+            'filters': ['solve_only'], # 이 핸들러는 SOLVE 레벨 로그만 처리
+        },
     },
     'root': {  # 루트 로거 설정: 모든 로거의 기본 설정
-        'handlers': ['console_debug', 'console_info_plus', 'file_app'],  # 사용할 핸들러 지정
+        'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app','file_solve'],  # 사용할 핸들러 지정
         'level': 'DEBUG',  # 루트 로거의 레벨을 DEBUG로 설정해야 하위 핸들러들이 동작 가능
     },
     'loggers': {
@@ -216,8 +242,23 @@ LOGGING = {
              'propagate': False,
         },
         'matching_assignment_app': { # 우리 앱 로거
-            'handlers': ['console_debug', 'console_info_plus', 'file_app'], # DEBUG는 debug_colored, INFO 이상은 info_colored
+            'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
             'level': 'DEBUG', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'propagate': False,
+        },
+        'resource_allocation_app': { # 우리 앱 로거
+            'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
+            'level': 'SOLVE', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'propagate': False,
+        },
+        'routing_logistics_app': { # 우리 앱 로거
+            'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
+            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'propagate': False,
+        },
+        'production_scheduling_app': { # 우리 앱 로거
+            'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
+            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,
         },
     },
