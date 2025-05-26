@@ -90,31 +90,35 @@
             </div>
             <div class="card-body">
                 {% for i in submitted_num_items|get_range %}
-                <fieldset class="mb-3 p-3 border rounded">
-                    <legend class="h6">항목 {{ i|add:1 }}</legend>
-                    <div class="form-group">
-                        <label for="item_name_{{ i }}">항목 이름:</label>
-                        <input type="text" class="form-control form-control-sm" id="item_name_{{ i }}" name="item_name_{{ i }}"
-                               value="{% with key_name='item_name_'|add:i|stringformat:'s' %}{{ form_data|get_item_simple:key_name|default_if_none:'항목 '|add:i|add:1 }}{% endwith %}">
-                    </div>
                     <div class="form-row">
-                        <div class="form-group col-md-4">
-                            <label for="item_return_coeff_{{ i }}">기대 수익률 계수 (Return Coeff.):</label>
-                            <input type="number" step="any" class="form-control form-control-sm" id="item_return_coeff_{{ i }}" name="item_return_coeff_{{ i }}"
-                                   value="{% with key_name='item_return_coeff_'|add:i|stringformat:'s' %}{{ form_data|get_item_simple:key_name|default_if_none:'0.1' }}{% endwith %}" required>
+                        {% make_key 'item' i|add:1 'id' as key_name %}
+                        <div class="form-group col-md-3">
+                            <label for="{{ key_name }}">항목 이름:</label>
+                            <input type="text" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
+                                   value="{{ form_data|get_item_simple:key_name|default_if_none:key_name }}">
                         </div>
-                        <div class="form-group col-md-4">
-                            <label for="item_min_alloc_{{ i }}">최소 투자액 (Min Alloc):</label>
-                            <input type="number" step="any" min="0" class="form-control form-control-sm" id="item_min_alloc_{{ i }}" name="item_min_alloc_{{ i }}"
-                                   value="{% with key_name='item_min_alloc_'|add:i|stringformat:'s' %}{{ form_data|get_item_simple:key_name|default_if_none:'0' }}{% endwith %}">
+
+                        {% make_key 'item' i|add:1 'return_coeff' as key_name %}
+                        <div class="form-group col-md-3">
+                            <label for="{{ key_name }}">기대 수익률 계수 (Return Coeff.):</label>
+                            <input type="number" step="any" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
+                                   value="{{ form_data|get_item_simple:key_name|default_if_none:'0.1' }}" required>
                         </div>
-                        <div class="form-group col-md-4">
-                            <label for="item_max_alloc_{{ i }}">최대 투자액 (Max Alloc):</label>
-                            <input type="number" step="any" min="0" class="form-control form-control-sm" id="item_max_alloc_{{ i }}" name="item_max_alloc_{{ i }}"
-                                   value="{% with key_name='item_max_alloc_'|add:i|stringformat:'s' %}{{ form_data|get_item_simple:key_name|default_if_none:form_data.total_budget|default_if_none:'1000' }}{% endwith %}">
+
+                        {% make_key 'item' i|add:1 'min_alloc' as key_name %}
+                        <div class="form-group col-md-3">
+                            <label for="{{ key_name }}">최소 투자액 (Min Alloc):</label>
+                            <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
+                                   value="{{ form_data|get_item_simple:key_name|default_if_none:'0' }}">
+                        </div>
+
+                        {% make_key 'item' i|add:1 'max_alloc' as key_name %}
+                        <div class="form-group col-md-3">
+                            <label for="{{ key_name }}">최대 투자액 (Max Alloc):</label>
+                            <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
+                                   value="{{ form_data|get_item_simple:key_name|default_if_none:form_data.total_budget|default_if_none:'1000' }}">
                         </div>
                     </div>
-                </fieldset>
                 {% endfor %}
             </div>
         </div>

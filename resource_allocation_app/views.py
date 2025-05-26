@@ -72,12 +72,11 @@ def budget_allocation_demo_view(request):
 
             num_items = context['submitted_num_items']
             items_data = []
-            for i in range(num_items):
-                name = form_data_from_post.get(f'item_name_{i}', f'항목 {i + 1}')
-                return_coeff_str = form_data_from_post.get(f'item_return_coeff_{i}')
-                min_alloc_str = form_data_from_post.get(f'item_min_alloc_{i}', '0')
-                max_alloc_str = form_data_from_post.get(f'item_max_alloc_{i}', str(total_budget))
-
+            for i in range(1, num_items+1):
+                name = form_data_from_post.get(f'item_{i}_name', f'item_{i}_name')
+                return_coeff_str = form_data_from_post.get(f'item_{i}_return_coeff')
+                min_alloc_str = form_data_from_post.get(f'item_{i}_min_alloc', '0')
+                max_alloc_str = form_data_from_post.get(f'item_{i}_max_alloc', str(total_budget))
                 if not return_coeff_str:
                     raise ValueError(f"'{name}'의 기대 수익률 계수가 입력되지 않았습니다.")
 
@@ -345,8 +344,7 @@ def data_center_capacity_demo_view(request):
 
     context = {
         'active_model': 'Resource Allocation',
-        'active_submenu_category': 'capacity_investment_allocation',
-        'active_submenu_case': 'data_center_capacity_demo',
+        'active_submenu': 'data_center_capacity_demo',
         'form_data': form_data, # GET 또는 POST로부터 채워진 form_data
         'results': None,
         'error_message': None,
