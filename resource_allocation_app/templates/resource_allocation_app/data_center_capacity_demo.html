@@ -99,43 +99,43 @@
                     {% make_key 'server' i 'id' as key_name %}
                     <div class="form-group col-md-1">
                         <label for="{{ key_name }}">서버 ID:</label>
-                        <input type="text" class="form-control form-control-sm" id="server_{{ i }}_id" name="{{ key_name }}"
+                        <input type="text" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                     {% make_key 'server' i 'cost' as key_name %}
                     <div class="form-group col-md-1">
                         <label for="{{ key_name }}">비용:</label>
-                        <input type="number" step="any" min="0" class="form-control form-control-sm" name="{{ key_name }}"
+                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                     {% make_key 'server' i 'cpu_cores' as key_name %}
                     <div class="form-group col-md-1">
                         <label for="{{ key_name }}">CPU(코어):</label>
-                        <input type="number" min="0" class="form-control form-control-sm" name="{{ key_name }}"
+                        <input type="number" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                     {% make_key 'server' i 'ram_gb' as key_name %}
                     <div class="form-group col-md-1">
                         <label for="{{ key_name }}">RAM(GB):</label>
-                        <input type="number" min="0" class="form-control form-control-sm" name="{{ key_name }}"
+                        <input type="number" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                     {% make_key 'server' i 'storage_tb' as key_name %}
                     <div class="form-group col-md-2">
                         <label for="{{ key_name }}">스토리지(TB):</label>
-                        <input type="number" step="any" min="0" class="form-control form-control-sm" name="{{ key_name }}"
+                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                     {% make_key 'server' i 'power_kva' as key_name %}
                     <div class="form-group col-md-1">
                         <label for="{{ key_name }}">전력(kVA):</label>
-                        <input type="number" step="any" min="0" class="form-control form-control-sm" name="{{ key_name }}"
+                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                     {% make_key 'server' i 'space_sqm' as key_name %}
                     <div class="form-group col-md-1">
                         <label for="{{ key_name }}">공간(sqm):</label>
-                        <input type="number" step="any" min="0" class="form-control form-control-sm" name="{{ key_name }}"
+                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                 </div>
@@ -149,37 +149,37 @@
                     {% make_key 'service' i 'id' as key_name %}
                     <div class="form-group">
                          <label for="{{ key_name }}">서비스 ID:</label>
-                         <input type="text" class="form-control form-control-sm" id="service_{{ i }}_id" name="{{ key_name }}"
+                         <input type="text" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                 value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                     {% make_key 'service' i 'revenue_per_unit' as key_name %}
                     <div class="form-group col-md-1">
                         <label for="{{ key_name }}">단위당 수익:</label>
-                        <input type="number" step="any" min="0" class="form-control form-control-sm" name="{{ key_name }}"
+                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                     {% make_key 'service' i 'req_cpu_cores' as key_name %}
                     <div class="form-group col-md-1">
                         <label for="{{ key_name }}">요구CPU:</label>
-                        <input type="number" min="0" class="form-control form-control-sm" name="{{ key_name }}"
+                        <input type="number" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                     {% make_key 'service' i 'req_ram_gb' as key_name %}
                     <div class="form-group col-md-1">
                         <label for="{{ key_name }}">요구RAM:</label>
-                        <input type="number" min="0" class="form-control form-control-sm" name="{{ key_name }}"
+                        <input type="number" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                     {% make_key 'service' i 'req_storage_tb' as key_name %}
                     <div class="form-group col-md-1">
                         <label for="{{ key_name }}">요구 strg:</label>
-                        <input type="number" step="any" min="0" class="form-control form-control-sm" name="{{ key_name }}"
+                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                     {% make_key 'service' i 'max_units' as key_name %}
                     <div class="form-group col-md-1">
                         <label for="{{ key_name }}">최대유닛:</label>
-                        <input type="number" min="0" class="form-control form-control-sm" name="{{ key_name }}"
+                        <input type="number" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                 </div>
@@ -188,6 +188,10 @@
 
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">데이터 센터 용량 계획 최적화 실행</button>
     </form>
+
+    {% if success_save_message%}
+        <div class="success-message" role="alert">{{ success_save_message }}</div>
+    {% endif %}
 
     {% if results is not None or error_message or success_message %}
     <hr class="my-4">

@@ -126,6 +126,10 @@
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 예산 분배 실행</button>
     </form>
 
+    {% if success_save_message%}
+        <div class="success-message" role="alert">{{ success_save_message }}</div>
+    {% endif %}
+
     {% if results is not None or error_message or success_message %} {# 메시지 또는 결과가 있을 때만 구분선과 제목 표시 #}
     <hr class="my-4">
     <h3 class="mt-4">Optimization Results</h3>

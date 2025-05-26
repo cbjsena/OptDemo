@@ -22,12 +22,18 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 if not os.path.exists(MEDIA_ROOT):
     os.makedirs(MEDIA_ROOT)
-MATCH_CF_TFT_DATA_DIR = os.path.join(MEDIA_ROOT, 'match_cf_tft_test_data')
-if not os.path.exists(MATCH_CF_TFT_DATA_DIR):
-    os.makedirs(MATCH_CF_TFT_DATA_DIR)
-ALLOCATION_DATA_CENTER_DATA_DIR = os.path.join(MEDIA_ROOT, 'allocation_data_center_data')
-# if not os.path.exists(ALLOCATION_DATA_CENTER_DATA_DIR):
-#     os.makedirs(ALLOCATION_DATA_CENTER_DATA_DIR)
+
+DEMO_DIR = MEDIA_ROOT/ 'demo'
+DEMO_DIR_MAP ={'allocation_datacenter_input':DEMO_DIR/'allocation_datacenter_data',
+               'allocation_budjet_input':DEMO_DIR/'allocation_budjet_data',
+               'matching_cf_tft_input':DEMO_DIR/'match_cf_tft_data'}
+
+# DEMO_DIR_MAP에 정의된 모든 디렉토리 생성 (없으면)
+for demo_key, dir_path in DEMO_DIR_MAP.items():
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path, exist_ok=True)
+
+
 dotenv_path = BASE_DIR / '.env'
 load_dotenv(dotenv_path=dotenv_path)
 

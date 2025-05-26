@@ -2,9 +2,10 @@ from django.shortcuts import render
 import numpy as np
 import logging
 
+
 from .utils import data_utils
 from .validate import validate_data
-from .solve import run_opt
+from .solve import *
 logger = logging.getLogger(__name__)  # settings.py에 정의된 'resource_allocation_app' 로거 사용
 
 
@@ -71,37 +72,17 @@ def budget_allocation_demo_view(request):
             # context['form_data']['total_budget_float'] = total_budget # Not strictly needed if form_data['total_budget'] is used carefully
 
             num_items = context['submitted_num_items']
-            items_data = []
-            for i in range(1, num_items+1):
-                name = form_data_from_post.get(f'item_{i}_name', f'item_{i}_name')
-                return_coeff_str = form_data_from_post.get(f'item_{i}_return_coeff')
-                min_alloc_str = form_data_from_post.get(f'item_{i}_min_alloc', '0')
-                max_alloc_str = form_data_from_post.get(f'item_{i}_max_alloc', str(total_budget))
-                if not return_coeff_str:
-                    raise ValueError(f"'{name}'의 기대 수익률 계수가 입력되지 않았습니다.")
-
-                try:
-                    return_coeff = float(return_coeff_str)
-                    min_alloc = float(min_alloc_str)
-                    max_alloc = float(max_alloc_str)
-                except ValueError:
-                    raise ValueError(f"'{name}'의 숫자 입력값(수익률, 최소/최대 투자액)이 올바르지 않습니다.")
-
-                if min_alloc < 0 or max_alloc < 0:
-                    raise ValueError(f"'{name}'의 최소/최대 투자액은 음수가 될 수 없습니다.")
-                if min_alloc > max_alloc:
-                    raise ValueError(f"'{name}'의 최소 투자액({min_alloc})이 최대 투자액({max_alloc})보다 클 수 없습니다.")
-
-                items_data.append({
-                    'name': name,
-                    'return_coefficient': return_coeff,
-                    'min_alloc': min_alloc,
-                    'max_alloc': max_alloc
-                })
-
+            items_data, json_data = data_utils.parse_allocation_budjet_data(form_data_from_post, num_items, total_budget)
             logger.debug(f"Parsed items_data for optimizer: {items_data}")
 
-            results, total_maximized_return, error_msg, processing_time_ms = run_opt.run_budget_allocation_optimizer(
+            saved_filename, save_error = data_utils.save_allocation_budjet_json_data(json_data)
+            if save_error:
+                context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
+            elif saved_filename:
+                context['success_save_message'] = (
+                            context.get('info_message', '') + f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.").strip()
+
+            results, total_maximized_return, error_msg, processing_time_ms = run_budget_allocation_optimizer(
                 total_budget, items_data)
 
             context[
@@ -125,8 +106,8 @@ def budget_allocation_demo_view(request):
                 else:
                     context[
                         'budget_utilization_percent'] = 0.0 if calculated_total_allocated == 0 else "N/A (Total Budget is 0)"
-
-                context['success_message'] = "최적 예산 분배 계산 완료!"
+                current_success = context.get('info_message', "")  # 파일 저장 성공 메시지가 있다면 이어붙임
+                context['success_message'] = f'최적 예산 분배 계산 완료!'.strip()
                 logger.info(
                     f"Budget allocation successful. Max return: {total_maximized_return}, Total allocated: {calculated_total_allocated}, Utilization: {context['budget_utilization_percent']}%")
 
@@ -237,7 +218,7 @@ def financial_portfolio_demo_view(request):
                 f"Data for portfolio optimizer: ER={expected_returns}, COV={covariance_matrix}, TargetRet={target_portfolio_return}")
 
             results, calc_portfolio_return, calc_portfolio_variance, error_msg, processing_time_ms = \
-                run_opt.run_portfolio_optimization_optimizer(submitted_num_assets_val, expected_returns, covariance_matrix,
+                run_portfolio_optimization_optimizer(submitted_num_assets_val, expected_returns, covariance_matrix,
                                                      target_portfolio_return)
 
             context[
@@ -306,18 +287,18 @@ def data_center_capacity_demo_view(request):
         submitted_num_services = max(1, min(3, submitted_num_services))
 
         # 기본 글로벌 제약 조건 값 설정
-        form_data['total_budget'] = request.GET.get('total_budget', 100)
+        form_data['total_budget'] = request.GET.get('total_budget', 100000)
         form_data['total_power_kva'] = request.GET.get('total_power_kva', 50)
         form_data['total_space_sqm'] = request.GET.get('total_space_sqm', 10)
 
         # 기본 서버 유형 데이터 (ID 포함)
         default_servers_preset = [
-            {'id': 'Srv_1', 'cost': 3, 'cpu_cores': 4, 'ram_gb': 2, 'storage_tb': 1, 'power_kva': 2,
-             'space_sqm': 0.2},
-            {'id': 'Srv_2', 'cost': 2, 'cpu_cores': 2, 'ram_gb': 1, 'storage_tb': 0.5, 'power_kva': 1,
-             'space_sqm': 0.1},
-            {'id': 'Srv_3', 'cost': 5, 'cpu_cores': 8, 'ram_gb': 4, 'storage_tb': 2, 'power_kva': 4,
-             'space_sqm': 0.3}
+            {'id': 'SrvA', 'cost': '500', 'cpu_cores': '48', 'ram_gb': '256', 'storage_tb': '10', 'power_kva': '0.5',
+             'space_sqm': '0.2'},
+            {'id': 'SrvB', 'cost': '300', 'cpu_cores': '32', 'ram_gb': '128', 'storage_tb': '5', 'power_kva': '0.3',
+             'space_sqm': '0.1'},
+            {'id': 'SrvC', 'cost': '800', 'cpu_cores': '128', 'ram_gb': '512', 'storage_tb': '20', 'power_kva': '0.8',
+             'space_sqm': '0.3'}
         ]
         for i in range(submitted_num_server_types):
             preset = default_servers_preset[i % len(default_servers_preset)]
@@ -326,12 +307,12 @@ def data_center_capacity_demo_view(request):
 
             # 기본 서비스 수요 데이터 (ID 포함)
         default_services_preset = [
-            {'id': 'WebPool', 'revenue_per_unit': 100, 'req_cpu_cores': 40, 'req_ram_gb': 80,
-             'req_storage_tb': 1, 'max_units': 50},
-            {'id': 'DBFarm', 'revenue_per_unit': 200, 'req_cpu_cores': 80, 'req_ram_gb': 160,
-             'req_storage_tb': 5, 'max_units': 20},
-            {'id': 'BatchProc', 'revenue_per_unit': 150, 'req_cpu_cores': 160, 'req_ram_gb': 320,
-             'req_storage_tb': 2, 'max_units': 30}
+            {'id': 'WebPool', 'revenue_per_unit': '100', 'req_cpu_cores': '4', 'req_ram_gb': '8',
+             'req_storage_tb': '0.1', 'max_units': '50'},
+            {'id': 'DBFarm', 'revenue_per_unit': '200', 'req_cpu_cores': '8', 'req_ram_gb': '16',
+             'req_storage_tb': '0.5', 'max_units': '20'},
+            {'id': 'BatchProc', 'revenue_per_unit': '150', 'req_cpu_cores': '16', 'req_ram_gb': '32',
+             'req_storage_tb': '0.2', 'max_units': '30'}
         ]
         for i in range(submitted_num_services):
             preset = default_services_preset[i % len(default_services_preset)]
@@ -360,7 +341,7 @@ def data_center_capacity_demo_view(request):
         logger.info("Data Center Capacity Demo POST processing.")
         try:
             # --- 1. 입력 데이터 파싱---
-            parsed_global_constraints, parsed_server_types_data, parsed_service_demands_data = data_utils.parse_data_center_data(
+            parsed_global_constraints, parsed_server_types_data, parsed_service_demands_data = data_utils.parse_allocation_data_center_data(
                 form_data, submitted_num_server_types, submitted_num_services
             )
 
@@ -377,41 +358,34 @@ def data_center_capacity_demo_view(request):
             saved_filename, save_error = data_utils.save_allocation_data_center_json_data(
                 parsed_global_constraints,
                 parsed_server_types_data,
-                parsed_service_demands_data,
-                'ALLOCATION_DATA_CENTER_DATA_DIR'
-            )
+                parsed_service_demands_data)
             if save_error:
                 context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
             elif saved_filename:
-                context['info_message'] = (
-                            context.get('info_message', '') + f" 입력 데이터가 '{saved_filename}'으로 서버에 저장되었습니다.").strip()
+                context['success_save_message'] = (
+                            context.get('info_message', '') + f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.").strip()
 
-                # --- 4. 최적화 실행 ---
-                results_data, error_msg_opt, processing_time_ms = run_opt.run_data_center_capacity_optimizer(
-                    parsed_global_constraints, parsed_server_types_data, parsed_service_demands_data
-                )
-                context[
-                    'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+            # --- 4. 최적화 실행 ---
+            results_data, error_msg_opt, processing_time_ms = run_data_center_capacity_optimizer(
+                parsed_global_constraints, parsed_server_types_data, parsed_service_demands_data
+            )
+            context[
+                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
 
-                if error_msg_opt:
-                    context['error_message'] = (context.get('error_message', '') + " " + error_msg_opt).strip()
-                elif results_data:
-                    context['results'] = results_data
-                    current_success = context.get('info_message', "")  # 파일 저장 성공 메시지가 있다면 이어붙임
-                    context['success_message'] = (current_success + " 데이터 센터 용량 계획 최적화 완료!").strip()
-                    logger.info(
-                        f"Data center capacity optimization successful. Total Profit: {results_data.get('total_profit')}")
-                else:
-                    context['error_message'] = (context.get('error_message', '') + " 최적화 결과를 가져오지 못했습니다 (결과 없음).").strip()
+            if error_msg_opt:
+                context['error_message'] = (context.get('error_message', '') + " " + error_msg_opt).strip()
+            elif results_data:
+                context['results'] = results_data
+                context['success_message'] = f'데이터 센터 용량 계획 최적화 완료!'.strip()
+                logger.info(
+                    f"Data center capacity optimization successful. Total Profit: {results_data.get('total_profit')}")
+            else:
+                context['error_message'] = (context.get('error_message', '') + " 최적화 결과를 가져오지 못했습니다 (결과 없음).").strip()
         except ValueError as ve: # 파싱 및 유효성 검사 오류
             context['error_message'] = f"입력값 오류: {str(ve)}"
             logger.error(f"ValueError in data_center_capacity_demo_view (POST): {ve}", exc_info=True)
         except Exception as e:  # 그 외 모든 예외
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"
             logger.error(f"Unexpected error in data_center_capacity_demo_view (POST): {e}", exc_info=True)
-
-        logger.debug(request.method)
-        for key, val in context.get('form_data').items():
-            logger.debug(f"key:{key}, val:{val}")
 
     return render(request, 'resource_allocation_app/data_center_capacity_demo.html', context)

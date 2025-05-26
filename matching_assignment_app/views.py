@@ -1,13 +1,9 @@
 from django.shortcuts import render
 
-# Create your views here.
-from django.conf import settings
 from django.shortcuts import render
 
-import json
-import random
-import os
-from ortools.linear_solver import pywraplp  # OR-Tools MIP solver
+from .solve import *
+from .utils.data_utils import *
 
 import logging
 
@@ -51,217 +47,6 @@ def validate_panel_data_structure(panel_list_items, panel_type_name):
             if not all(cell_val in (0, 1) for cell_val in row_data):
                 return f"오류: {panel_type_name} 패널 {panel_id}의 defect_map에 유효하지 않은 값(0 또는 1이 아님)이 포함되어 있습니다 (행 {r_idx})."
     return None  # 유효성 검사 통과
-
-# --- run_matching_algorithm 함수 정의 ---
-def run_matching_algorithm(cf_panels, tft_panels):
-    num_cf = len(cf_panels)
-    num_tft = len(tft_panels)
-
-    logger.info(f"Starting matching algorithm for {num_cf} CF panel(s) and {num_tft} TFT panel(s).")
-
-    if num_cf == 0 or num_tft == 0:
-        msg = "Matching algorithm called with zero CF or TFT panels."
-        logger.warning(msg)
-        return [], 0, msg
-
-    # --- 1. 수율 매트릭스 (C_ij) 계산 ---
-    yield_matrix = [[-1] * num_tft for _ in range(num_cf)]
-
-    logger.debug("Calculating yield matrix...")
-    for i in range(num_cf):
-        cf_panel = cf_panels[i]
-        cf_map = cf_panel.get('defect_map')
-        cf_rows = cf_panel.get('rows')
-        cf_cols = cf_panel.get('cols')
-
-        # 필수 키 누락 또는 유효하지 않은 값(None 또는 0) 확인
-        if not all([isinstance(cf_map, list), isinstance(cf_rows, int), cf_rows > 0, isinstance(cf_cols, int),
-                    cf_cols > 0]):
-            logger.warning(f"CF Panel {cf_panel.get('id', i)} has invalid structure or dimensions. Skipping.")
-            continue  # 이 CF 패널은 모든 TFT와 매칭 불가 (-1 유지)
-
-        for j in range(num_tft):
-            tft_panel = tft_panels[j]
-            tft_map = tft_panel.get('defect_map')
-            tft_rows = tft_panel.get('rows')
-            tft_cols = tft_panel.get('cols')
-
-            if not all([isinstance(tft_map, list), isinstance(tft_rows, int), tft_rows > 0, isinstance(tft_cols, int),
-                        tft_cols > 0]):
-                logger.warning(
-                    f"TFT Panel {tft_panel.get('id', j)} has invalid structure or dimensions. Marking as unmatchable with CF {cf_panel.get('id', i)}.")
-                # yield_matrix[i][j]는 이미 -1
-                continue
-
-            if cf_rows != tft_rows or cf_cols != tft_cols:
-                logger.debug(
-                    f"Dimension mismatch between CF {cf_panel.get('id', i)} ({cf_rows}x{cf_cols}) and TFT {tft_panel.get('id', j)} ({tft_rows}x{tft_cols}).")
-                # yield_matrix[i][j]는 이미 -1
-                continue
-
-            current_yield = 0
-            valid_cell_structure = True
-            if len(cf_map) != cf_rows or len(tft_map) != tft_rows:  # defect_map의 행 개수 확인
-                logger.warning(
-                    f"Defect map row count mismatch for CF {cf_panel.get('id', i)} or TFT {tft_panel.get('id', j)}.")
-                valid_cell_structure = False
-
-            if valid_cell_structure:
-                for r in range(cf_rows):
-                    if not valid_cell_structure: break
-                    # 각 행의 열 개수 및 셀 값 유효성 확인
-                    if len(cf_map[r]) != cf_cols or len(tft_map[r]) != tft_cols:
-                        logger.warning(
-                            f"Defect map col count mismatch at row {r} for CF {cf_panel.get('id', i)} or TFT {tft_panel.get('id', j)}.")
-                        valid_cell_structure = False
-                        break
-
-                    for c in range(cf_cols):
-                        cf_cell = cf_map[r][c]
-                        tft_cell = tft_map[r][c]
-                        if not (cf_cell in (0, 1) and tft_cell in (0, 1)):
-                            logger.warning(
-                                f"Invalid cell value at ({r},{c}) for CF {cf_panel.get('id', i)} or TFT {tft_panel.get('id', j)}.")
-                            valid_cell_structure = False
-                            break
-
-                        if cf_cell == 0 and tft_cell == 0:  # 양품 조건
-                            current_yield += 1
-                    if not valid_cell_structure: break
-
-            if valid_cell_structure:
-                yield_matrix[i][j] = current_yield
-                if num_cf + num_tft < 20:
-                    logger.debug(f"Yield for CF {cf_panel.get('id', i)} - TFT {tft_panel.get('id', j)}: {current_yield}")
-            # else: yield_matrix[i][j]는 이미 -1로 설정됨
-
-    # --- 2. OR-Tools MIP 모델 구성 ---
-    solver_name = 'CBC'  # 기본 솔버
-    try:
-        # SCIP이 더 성능이 좋을 수 있으나, 설치가 필요할 수 있음
-        # solver = pywraplp.Solver.CreateSolver('SCIP')
-        # if not solver:
-        # logger.info("SCIP solver not found, attempting to use CBC.")
-        solver = pywraplp.Solver.CreateSolver(solver_name)
-        if not solver:
-            logger.error(f"{solver_name} 솔버를 생성할 수 없습니다. OR-Tools 설치를 확인하세요.")
-            return [], 0, f"오류: MIP 솔버({solver_name})를 생성할 수 없습니다."
-    except Exception as e:
-        logger.error(f"솔버 생성 중 예외 발생: {e}", exc_info=True)
-        return [], 0, f"오류: 솔버 생성 중 예외 발생 - {str(e)}"
-
-    logger.info(f"Using {solver.SolverVersion()} for matching.")
-
-    # --- 3. 변수 생성 (X_ij) ---
-    x = {}
-    for i in range(num_cf):
-        for j in range(num_tft):
-            if yield_matrix[i][j] >= 0:  # 유효한 매칭 쌍에 대해서만 변수 생성
-                x[i, j] = solver.BoolVar(f'x_{i}_{j}')
-
-    if not x:  # 매칭 가능한 유효한 쌍이 하나도 없는 경우
-        logger.warning("No valid pairs found to create decision variables.")
-        return [], 0, "매칭 가능한 유효한 패널 쌍이 없습니다."
-
-    # --- 4. 제약 조건 설정 ---
-    for i in range(num_cf):
-        solver.Add(sum(x[i, j] for j in range(num_tft) if (i, j) in x) <= 1)
-
-    for j in range(num_tft):
-        solver.Add(sum(x[i, j] for i in range(num_cf) if (i, j) in x) <= 1)
-
-    # --- 5. 목표 함수 설정 ---
-    objective = solver.Objective()
-    for i in range(num_cf):
-        for j in range(num_tft):
-            if (i, j) in x:
-                objective.SetCoefficient(x[i, j], float(yield_matrix[i][j]))  # Ensure profit is float
-    objective.SetMaximization()
-
-    # --- 6. 문제 해결 ---
-    logger.info("Solving the MIP model...")
-    status = solver.Solve()
-    logger.info(f"Solver status: {status}")
-
-    # --- 7. 결과 추출 ---
-    matched_pairs_info = []
-    total_yield_val = 0
-    error_msg = None
-
-    if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
-        if status == pywraplp.Solver.FEASIBLE:
-            msg = "Feasible solution found, but it might not be optimal."
-            logger.warning(msg)
-            error_msg = msg
-
-        raw_objective_value = solver.Objective().Value()
-        total_yield_val = raw_objective_value if raw_objective_value is not None else 0.0
-        logger.info(f"Objective value (Total Yield): {total_yield_val}")
-
-        for i in range(num_cf):
-            for j in range(num_tft):
-                if (i, j) in x and x[i, j].solution_value() > 0.5:
-                    matched_pairs_info.append({
-                        'cf': cf_panels[i],
-                        'tft': tft_panels[j],
-                        'cf_id': cf_panels[i].get('id', f'CF{i + 1}'),
-                        'tft_id': tft_panels[j].get('id', f'TFT{j + 1}'),
-                        'yield_value': yield_matrix[i][j]
-                    })
-    else:
-        solver_status_map = {
-            pywraplp.Solver.OPTIMAL: "Optimal solution found.",  # 이미 위에서 처리됨
-            pywraplp.Solver.FEASIBLE: "Feasible solution found.",  # 이미 위에서 처리됨
-            pywraplp.Solver.INFEASIBLE: "문제가 실행 불가능(Infeasible)합니다. 데이터 또는 제약 조건을 확인하세요.",
-            pywraplp.Solver.UNBOUNDED: "문제가 무한(Unbounded)합니다. 목표 함수나 제약 조건에 오류가 있을 수 있습니다.",
-            pywraplp.Solver.ABNORMAL: "솔버가 비정상적으로 종료되었습니다. 입력 데이터나 모델에 문제가 있을 수 있습니다.",
-            pywraplp.Solver.MODEL_INVALID: "모델이 유효하지 않습니다. 변수나 제약 조건 설정을 확인하세요.",
-            pywraplp.Solver.NOT_SOLVED: "솔버가 문제를 풀지 못했습니다. 시간 제한 또는 다른 내부 문제일 수 있습니다."
-        }
-        error_msg = solver_status_map.get(status, f"매칭 해를 찾지 못했습니다. (솔버 상태 코드: {status})")
-        logger.error(f"Solver failed. Status: {status}. Message: {error_msg}")
-    solver_time_ms = solver.wall_time()/1000  # 밀리초
-    return matched_pairs_info, total_yield_val, error_msg, solver_time_ms
-
-
-def create_panel_data(panel_id_prefix, num_panels, rows, cols, rate):
-    panels = []
-    for i_panel in range(1, num_panels + 1):
-        defect_map = []
-        for r_idx in range(rows):
-            row_map = []
-            for c_idx in range(cols):
-                if random.randint(1, 100) <= rate:
-                    row_map.append(1)
-                else:
-                    row_map.append(0)
-            defect_map.append(row_map)
-        panels.append({
-            "id": f"{panel_id_prefix}{i_panel}",
-            "rows": rows,
-            "cols": cols,
-            "defect_map": defect_map
-        })
-    return panels
-
-
-def create_matching_cf_tft_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defect_rate):
-    generated_cf_panels = create_panel_data("CF", num_cf_panels, panel_rows, panel_cols, defect_rate)
-    generated_tft_panels = create_panel_data("TFT", num_tft_panels, panel_rows, panel_cols, defect_rate)
-
-    generated_data = {
-        "panel_dimensions": {"rows": panel_rows, "cols": panel_cols},
-        "cf_panels": generated_cf_panels,
-        "tft_panels": generated_tft_panels,
-        "settings": {
-            "num_cf_panels": num_cf_panels,
-            "num_tft_panels": num_tft_panels,
-            "defect_rate_percent": defect_rate,
-            "panel_rows": panel_rows,
-            "panel_cols": panel_cols,
-        }
-    }
-    return generated_data
 
 
 def lcd_cf_tft_introduction_view(request):
@@ -338,7 +123,7 @@ def lcd_cf_tft_small_scale_demo_view(request):
                 context['input_tft_panels'] = tft_panels
                 logger.info("Input panel data validated successfully.")
 
-                matched_pairs, total_yield, error_msg, solver_time = run_matching_algorithm(cf_panels, tft_panels)
+                matched_pairs, total_yield, error_msg, solver_time = run_matching_cf_tft_algorithm(cf_panels, tft_panels)
 
                 if error_msg:
                     context['error_message'] = error_msg
@@ -381,16 +166,17 @@ def lcd_cf_tft_large_scale_demo_view(request):
         'available_json_files': []
     }
 
-    large_data_dir = getattr(settings, 'MATCH_CF_TFT_DATA_DIR', None)
-    if large_data_dir and os.path.isdir(large_data_dir):
+    data_dir_path_str = settings.DEMO_DIR_MAP['matching_cf_tft_input']
+    if data_dir_path_str and os.path.isdir(data_dir_path_str):
         try:
-            files = [f for f in os.listdir(large_data_dir) if f.endswith('.json') and f.startswith('test_cf')]
+            files = [f for f in os.listdir(data_dir_path_str) if f.endswith('.json') and f.startswith('cf')]
+            logger.info(f"DIR:{data_dir_path_str}, available_json_files:{len(files)}")
             context['available_json_files'] = [{'value': f, 'name': f} for f in sorted(files, reverse=True)]
         except OSError as e:
-            logger.error(f"Error listing files in {large_data_dir}: {e}")
+            logger.error(f"Error listing files in {data_dir_path_str}: {e}")
             context['error_message'] = f"서버의 데이터 디렉토리에서 파일 목록을 읽어오는 데 실패했습니다."
-    elif not large_data_dir:
-        logger.warning("MATCH_CF_TFT_DATA_DIR is not defined in settings. File selection will not work.")
+    elif not data_dir_path_str:
+        logger.warning(f"{data_dir_path_str} is not defined in settings. File selection will not work.")
         # context['error_message'] = "서버 데이터 디렉토리가 설정되지 않았습니다." # 사용자에게 보여줄 필요는 없을 수도 있음
 
     if request.method == 'POST':
@@ -417,14 +203,14 @@ def lcd_cf_tft_large_scale_demo_view(request):
                 defect_rate_percent  = int(defect_rate_str)
 
                 generated_data = create_matching_cf_tft_json_data(num_cf, num_tft, panel_r, panel_c, defect_rate_percent )
-                if large_data_dir:
+                if data_dir_path_str:
                     # 중복 방지를 위해 시퀀스 번호 또는 타임스탬프 사용
                     seq = 0
                     cf_panels = generated_data.get('cf_panels')
                     tft_panels = generated_data.get('tft_panels')
 
                     while True:
-                        filename_pattern = f"test_cf{num_cf}_tft{num_tft}_row{panel_r}_col{panel_c}_rate{str(defect_rate_percent ).replace('.', 'p')}"
+                        filename_pattern = f"cf{num_cf}_tft{num_tft}_row{panel_r}_col{panel_c}_rate{str(defect_rate_percent ).replace('.', 'p')}"
                         if seq == 0:
                             potential_filename = f"{filename_pattern}.json"
                         else:
@@ -432,7 +218,7 @@ def lcd_cf_tft_large_scale_demo_view(request):
 
                         loaded_filename = potential_filename
 
-                        filepath = os.path.join(large_data_dir, potential_filename)
+                        filepath = os.path.join(data_dir_path_str, potential_filename)
                         if not os.path.exists(filepath):
                             loaded_filename = potential_filename  # 저장될 (또는 사용될) 파일명
                             with open(filepath, 'w', encoding='utf-8') as f:
@@ -440,7 +226,7 @@ def lcd_cf_tft_large_scale_demo_view(request):
                             logger.info(f"Generated data saved to: {filepath}")
                             context['success_message'] = f"데이터가 생성되어 '{loaded_filename}'으로 서버에 저장되었습니다. 이제 매칭을 실행합니다."
                             # 파일 목록을 즉시 업데이트하기 위해 다시 로드 (선택 사항)
-                            files = [f for f in os.listdir(large_data_dir) if
+                            files = [f for f in os.listdir(data_dir_path_str) if
                                      f.endswith('.json') and f.startswith('test_cf')]
                             context['available_json_files'] = [{'value': f, 'name': f} for f in
                                                                sorted(files, reverse=True)]
@@ -460,10 +246,10 @@ def lcd_cf_tft_large_scale_demo_view(request):
                 selected_file = request.POST.get('selected_json_file')
                 if not selected_file:
                     context['error_message'] = "서버에서 JSON 파일이 선택되지 않았습니다."
-                elif not large_data_dir:
+                elif not data_dir_path_str:
                     context['error_message'] = "서버 데이터 디렉토리가 설정되지 않아 파일을 로드할 수 없습니다."
                 else:
-                    filepath = os.path.join(large_data_dir, selected_file)
+                    filepath = os.path.join(data_dir_path_str, selected_file)
                     if os.path.exists(filepath):
                         with open(filepath, 'r', encoding='utf-8') as f:
                             data = json.load(f)
@@ -524,7 +310,7 @@ def lcd_cf_tft_large_scale_demo_view(request):
                 logger.info(
                     f"Data for large scale matching validated. CF: {len(cf_panels)}, TFT: {len(tft_panels)}. Source: {loaded_filename}")
 
-                matched_pairs, total_yield, error_msg, solver_time = run_matching_algorithm(cf_panels, tft_panels)
+                matched_pairs, total_yield, error_msg, solver_time = run_matching_cf_tft_algorithm(cf_panels, tft_panels)
 
                 if error_msg:
                     context['error_message'] = (context.get('error_message', '') + " " + error_msg).strip()
