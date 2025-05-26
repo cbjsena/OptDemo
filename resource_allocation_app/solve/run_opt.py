@@ -496,11 +496,11 @@ def run_data_center_capacity_optimizer(global_constraints, server_types_data, se
             # 모든 계수가 0이 아닌 경우에만 제약을 추가 (자원 요구사항이 없는 경우 불필요)
             if any(c != 0 for c in coeffs):
                 constraint_expr = solver.Sum(terms[j] * coeffs[j] for j in range(len(terms)))
-                constraint_name = f'res_{resource}_server_type_{server_type.get("id", i_idx)}'
+                constraint_name = f'req_{resource}_{server_type.get("id", i_idx)}'
                 # sum(X_si[s,i] * req_res[s]) <= Ns[i] * server_res[i] 형태로 표현 가능
                 # 즉, sum(X_si[s,i] * req_res[s]) - Ns[i] * server_res[i] <= 0
                 constraint = solver.Add(constraint_expr <= 0, constraint_name)
-                logger.solve(f"  - 자원 제약 ('{constraint.name()}'): {constraint_expr} <= 0")
+                logger.solve(f"{constraint.name()}: {constraint_expr} <= 0")
 
     # 5. 각 서비스의 최대 수요(유닛) 제약 (선택 사항, X_si 변수 상한으로 이미 반영됨)
     # sum over i (X_si[s,i]) <= service_demands_data[s]['max_units'] (또는 == nếu 정확히 수요 충족)
@@ -513,7 +513,7 @@ def run_data_center_capacity_optimizer(global_constraints, server_types_data, se
             for i_idx in range(num_server_types):
                 if (s_idx, i_idx) in X_si:
                     constraint_demand_s.SetCoefficient(X_si[s_idx, i_idx], 1)
-            logger.solve(f"  - 서비스 최대 수요 제약 ('demand_service_{service.get('id', s_idx)}'): sum(X_si[{service.get('id', s_idx)},i]) <= {max_units_s}")
+            logger.solve(f"service_{service.get('id', s_idx)}: sum(X_si[{service.get('id', s_idx)},i]) <= {max_units_s}")
 
     # --- 목표 함수 ---
     # 총 이익 = (각 서비스 유닛 수익 합계) - (총 서버 구매 비용)
