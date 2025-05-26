@@ -111,6 +111,41 @@ def save_allocation_data_center_json_data(global_constraints, server_types_data,
     filename = f"svr{num_server}_svc{num_service}_{timestamp_str}.json"
     return save_json_data(generated_data, 'allocation_datacenter_input', filename)
 
+def set_chart_data(results_data, parsed_global_constraints ):
+    chart_data = {}
+    # 1. 구매 서버 수량 차트 데이터
+    if results_data.get('purchased_servers'):
+        chart_data['purchased_servers'] = {
+            'labels': [s['type_id'] for s in results_data['purchased_servers']],
+            'data': [s['count'] for s in results_data['purchased_servers']],
+        }
+
+    # 2. 자원 활용률 차트 데이터
+    # 예산 활용률
+    total_budget_input = parsed_global_constraints.get('total_budget', 0)
+    used_budget = results_data.get('total_server_cost', 0)
+    chart_data['budget_utilization'] = {
+        'used': used_budget,
+        'available': total_budget_input,
+        'percent': round((used_budget / total_budget_input) * 100, 1) if total_budget_input > 0 else 0
+    }
+    # 전력 활용률
+    total_power_input = parsed_global_constraints.get('total_power_kva', 0)
+    used_power = results_data.get('total_power_used', 0)
+    chart_data['power_utilization'] = {
+        'used': used_power,
+        'available': total_power_input,
+        'percent': round((used_power / total_power_input) * 100, 1) if total_power_input > 0 else 0
+    }
+    # 공간 활용률
+    total_space_input = parsed_global_constraints.get('total_space_sqm', 0)
+    used_space = results_data.get('total_space_used', 0)
+    chart_data['space_utilization'] = {
+        'used': used_space,
+        'available': total_space_input,
+        'percent': round((used_space / total_space_input) * 100, 1) if total_space_input > 0 else 0
+    }
+    return chart_data
 
 def save_json_data(generated_data, model_data_type, file_name):
     """

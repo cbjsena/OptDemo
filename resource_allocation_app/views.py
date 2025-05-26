@@ -1,7 +1,7 @@
 from django.shortcuts import render
 import numpy as np
 import logging
-
+import json
 
 from .utils import data_utils
 from .validate import validate_data
@@ -335,8 +335,11 @@ def data_center_capacity_demo_view(request):
         'num_services_options': range(1, 4),
         'submitted_num_server_types': submitted_num_server_types,
         'submitted_num_services': submitted_num_services,
+        # 템플릿의 if 조건문에서는 Python 딕셔너리 객체를 기준으로 조건을 확인
+        # JavaScript에서 사용할 때는 JSON 문자열을 파싱해서 객체
+        'chart_data_py': {},
+        'chart_data_json':None
     }
-
     if request.method == 'POST':
         logger.info("Data Center Capacity Demo POST processing.")
         try:
@@ -379,6 +382,11 @@ def data_center_capacity_demo_view(request):
                 context['success_message'] = f'데이터 센터 용량 계획 최적화 완료!'.strip()
                 logger.info(
                     f"Data center capacity optimization successful. Total Profit: {results_data.get('total_profit')}")
+
+                # --- 차트 데이터 준비 ---
+                chart_data_py_dict  = data_utils.set_chart_data(results_data, parsed_global_constraints)
+                context['chart_data_py'] = chart_data_py_dict
+                context['chart_data_json'] = json.dumps(chart_data_py_dict )  # JSON 문자열로 템플릿에 전달
             else:
                 context['error_message'] = (context.get('error_message', '') + " 최적화 결과를 가져오지 못했습니다 (결과 없음).").strip()
         except ValueError as ve: # 파싱 및 유효성 검사 오류

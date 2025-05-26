@@ -36,6 +36,22 @@
     }
     .error-message { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
     .success-message { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+    .chart-container {
+        width: 100%;
+        max-width: 450px;
+        margin: 15px auto;
+        padding: 10px;
+        border: 1px solid #eee;
+        border-radius: 5px;
+        background-color: #fff;
+    }
+    .charts-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: space-around;
+        margin-top: 20px;
+    }
 </style>
 {% endblock %}
 
@@ -220,6 +236,40 @@
         </div>
     </div>
 
+    {# --- 차트 표시 영역 --- #}
+    <div class="charts-row mt-4">
+        {% if chart_data_json %}
+            {% if chart_data_py and chart_data_py.purchased_servers %}
+            <div class="chart-container">
+                <h6>구매 서버 수량</h6>
+                <canvas id="purchasedServersChart"></canvas>
+            </div>
+            {% endif %}
+            {% if chart_data_py and chart_data_py.budget_utilization %}
+            <div class="chart-container">
+                <h6>예산 활용률 (%)</h6>
+                <canvas id="budgetUtilizationChart"></canvas>
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+    <div class="charts-row">
+        {% if chart_data_json %}
+            {% if chart_data_py and chart_data_py.power_utilization %}
+            <div class="chart-container">
+                <h6>전력 활용률 (%)</h6>
+                <canvas id="powerUtilizationChart"></canvas> {# <--- 이 ID 확인 #}
+            </div>
+            {% endif %}
+            {% if chart_data_py and chart_data_py.space_utilization %}
+            <div class="chart-container">
+                <h6>공간 활용률 (%)</h6>
+                <canvas id="spaceUtilizationChart"></canvas> {# <--- 이 ID 확인 #}
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
     {% if results.purchased_servers %}
     <div class="card mt-3">
         <div class="card-header"><strong>구매된 서버 수량</strong></div>
@@ -250,7 +300,7 @@
                         <td>{{ service.revenue_from_service|floatformat:2 }}</td>
                         <td>
                             {% for alloc in service.allocations %}
-                                {{ alloc.server_type_id }}: {{ alloc.units_allocated }}{% if not forloop.last %}, {% endif %}
+                                {{ alloc.server_type_id }}: {{ alloc.units_allocated }}{% if not forloop.last %}; {% endif %}
                             {% empty %}
                                 -
                             {% endfor %}
@@ -263,7 +313,7 @@
     </div>
     {% endif %}
 
-    {% elif request.method == 'POST' and not error_message and not success_message %}
+    {% elif request.method == 'POST' and not error_message and not success_message and not info_message %}
         <p class="text-muted mt-3"><em>최적화 결과가 없습니다. 입력값을 확인하거나, 솔버가 해를 찾지 못했을 수 있습니다.</em></p>
     {% endif %}
 
@@ -272,7 +322,124 @@
 
 {% block scripts %}
 <script>
-    console.log("Data Center Capacity Planning Demo page script loaded.");
-    // 항목 수 변경 시 GET 요청으로 페이지를 다시 로드하므로, 특별한 JS는 현재 필요 없음.
+    // 각 차트 인스턴스를 저장할 전역 변수 또는 객체
+    var chartInstances = {};
+
+    function destroyChartIfExists(chartId) {
+        if (chartInstances[chartId]) {
+            chartInstances[chartId].destroy();
+            console.log(`Chart ${chartId} destroyed.`);
+            delete chartInstances[chartId];
+        }
+    }
+    // Chart.js 스크립트는 base.html에 이미 포함되어 있다고 가정합니다.
+    // 이 스크립트는 DOM이 완전히 로드된 후에 실행되어야 합니다.
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Data Center Capacity Planning Demo page script loaded.");
+
+        // 뷰에서 전달된 chart_data_json 사용 (Python dict는 chart_data_py로 가정)
+        const chartDataJsonString = '{{ chart_data_json|safe|default_if_none:"{}" }}';
+
+        try {
+            const chartData = JSON.parse(chartDataJsonString);
+            console.log("Parsed chart_data for script:", chartData);
+
+            // 1. 구매 서버 수량 막대 차트
+            if (chartData && chartData.purchased_servers && chartData.purchased_servers.labels && chartData.purchased_servers.data) {
+                const psCanvasId = 'purchasedServersChart';
+                const psCanvas = document.getElementById(psCanvasId);
+                if (psCanvas) {
+                    destroyChartIfExists(psCanvasId);
+                    chartInstances[psCanvasId] = new Chart(psCanvas, {
+                        type: 'bar',
+                        data: {
+                            labels: chartData.purchased_servers.labels,
+                            datasets: [{
+                                label: '구매 서버 수량',
+                                data: chartData.purchased_servers.data,
+                                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: false },
+                                title: { display: false }
+                            },
+                            scales: {
+                                x: { title: { display: true, text: '서버 유형' } },
+                                y: { beginAtZero: true, title: { display: true, text: '수량' }, precision: 0 }
+                            }
+                        }
+                    });
+                } else { console.error(`Canvas element with ID '${psCanvasId}' not found.`); }
+            } else { console.log("No data for purchased_servers chart or data format incorrect."); }
+
+            // 2. 자원 활용률 도넛 차트 (헬퍼 함수 사용)
+            function createUtilizationDoughnutChart(canvasId, utilizationData, labelSingular, unit) {
+                if (canvasId && utilizationData && typeof utilizationData.used === 'number' && typeof utilizationData.available === 'number') {
+                    destroyChartIfExists(canvasId);
+
+                    const used = utilizationData.used;
+                    const available = utilizationData.available;
+                    const percent = utilizationData.percent || 0;
+                    const unused = Math.max(available - used, 0);
+
+                    chartInstances[canvasId] = new Chart(document.getElementById(canvasId), {
+                        type: 'doughnut',
+                        data: {
+                            labels: [`사용됨 (${used}${unit ? ' ' + unit : ''})`, `남음 (${unused}${unit ? ' ' + unit : ''})`],
+                            datasets: [{
+                                data: [used, unused],
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.7)',
+                                    'rgba(201, 203, 207, 0.4)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(201, 203, 207, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: true, position: 'bottom' },
+                                title: {
+                                    display: true,
+                                    text: `${labelSingular} 활용률: ${percent}%`
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.parsed;
+                                            return `${label}: ${value}${unit ? ' ' + unit : ''}`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else { console.error(`Canvas element with ID '${canvasId}' not found or utilizationData invalid.`, utilizationData); }
+            }
+
+            if (chartData && chartData.budget_utilization) {
+                createUtilizationDoughnutChart('budgetUtilizationChart', chartData.budget_utilization, '예산', '');
+            }
+            if (chartData && chartData.power_utilization) {
+                createUtilizationDoughnutChart('powerUtilizationChart', chartData.power_utilization, '전력', 'kVA');
+            }
+            if (chartData && chartData.space_utilization) {
+                createUtilizationDoughnutChart('spaceUtilizationChart', chartData.space_utilization, '공간', 'sqm');
+            }
+
+        } catch (e) {
+            console.error("Error parsing chart data or initializing charts:", e);
+        }
+    });
 </script>
 {% endblock %}
