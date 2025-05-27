@@ -24,9 +24,12 @@ if not os.path.exists(MEDIA_ROOT):
     os.makedirs(MEDIA_ROOT)
 
 DEMO_DIR = MEDIA_ROOT/ 'demo'
-DEMO_DIR_MAP ={'allocation_datacenter_input':DEMO_DIR/'allocation_datacenter_data',
-               'allocation_budjet_input':DEMO_DIR/'allocation_budjet_data',
-               'matching_cf_tft_input':DEMO_DIR/'match_cf_tft_data'}
+DEMO_DIR_MAP ={'matching_cf_tft_data':DEMO_DIR/'match_cf_tft_data',
+               'allocation_datacenter_data':DEMO_DIR/'allocation_datacenter_data',
+               'allocation_budjet_data':DEMO_DIR/'allocation_budjet_data',
+               'routing_vrp_data':DEMO_DIR/'routing_vrp_data',
+               'routing_cvrp_data':DEMO_DIR/'routing_cvrp_data',
+               'routing_pdp_data':DEMO_DIR/'routing_pdp_data'}
 
 # DEMO_DIR_MAP에 정의된 모든 디렉토리 생성 (없으면)
 for demo_key, dir_path in DEMO_DIR_MAP.items():
@@ -259,7 +262,7 @@ LOGGING = {
         },
         'routing_logistics_app': { # 우리 앱 로거
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'DEBUG', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,
         },
         'production_scheduling_app': { # 우리 앱 로거

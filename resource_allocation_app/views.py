@@ -4,9 +4,12 @@ import logging
 import json
 
 from .utils import data_utils
-from .validate import validate_data
 from .solve import *
-from .utils.default_data import *
+from common_utils.default_data import (
+    budjet_items_preset,
+    datacenter_servers_preset,
+    datacenter_services_preset
+)
 logger = logging.getLogger(__name__)  # settings.py에 정의된 'resource_allocation_app' 로거 사용
 
 
@@ -338,7 +341,7 @@ def data_center_capacity_demo_view(request):
             )
 
             # --- 2. 유효성 검사 ---
-            validation_error = validate_data.validate_data_center_data(
+            validation_error = data_utils.validate_data_center_data(
                 parsed_global_constraints,  # 원본 수정을 피하기 위해 복사본 전달
                 parsed_server_types_data,
                 parsed_service_demands_data
@@ -347,10 +350,12 @@ def data_center_capacity_demo_view(request):
                 raise ValueError(validation_error)  # 유효성 검사 실패 시 ValueError 발생
 
             # --- 3. 입력 데이터 JSON 파일로 저장 ---
-            saved_filename, save_error = data_utils.save_allocation_data_center_json_data(
+            input_data = data_utils.create_allocation_data_center_json_data(
                 parsed_global_constraints,
                 parsed_server_types_data,
-                parsed_service_demands_data)
+                parsed_service_demands_data
+            )
+            saved_filename, save_error = data_utils.save_allocation_data_center_json_data(input_data)
             if save_error:
                 context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
             elif saved_filename:

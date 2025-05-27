@@ -1,0 +1,417 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load routing_filters %}
+
+{% block title %}VRP Demo - Graphical Input{% endblock %}
+
+{% block styles %}
+<style>
+    /* ... (이전 error/success 메시지, results-table, form-section 스타일 유지) ... */
+    #vrpCanvasInput {
+        border: 1px solid #007bff;
+        cursor: crosshair;
+        margin-bottom: 10px;
+        background-color: #f8f9fa; /* 캔버스 배경색 */
+    }
+    #canvasInstructions {
+        font-weight: bold;
+        color: #0056b3;
+        margin-bottom: 10px;
+    }
+    .location-list {
+        font-size: 0.9em;
+        max-height: 150px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        padding: 5px;
+        background-color: #fff;
+    }
+    .error-message, .success-message {
+        padding: .75rem 1.25rem; margin-bottom: 1rem;
+        border: 1px solid transparent; border-radius: .25rem;
+    }
+    .error-message { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+    .success-message { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+    .chart-container { width: 100%; max-width: 700px; margin: 20px auto; height: 450px; border: 1px solid #ddd; padding:10px; } /* 차트 높이 조정 */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Vehicle Routing Problem (VRP) Demo - Graphical Input</h1>
+    </div>
+    <p>아래 영역을 클릭하여 차고지(Depot)와 고객 위치를 지정한 후, 차량 수를 설정하고 최적 경로를 계산합니다.</p>
+
+    <form method="GET" class="mb-3 form-inline">
+        <div class="form-group mr-2">
+            <label for="num_customers_to_show" class="mr-2">고객 수 (1-10):</label>
+            <select name="num_customers_to_show" id="num_customers_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in num_customers_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_customers %}selected{% endif %}>{{ i }}명</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group mr-2">
+            <label for="num_vehicles_to_show" class="mr-2">차량 수 (1-5):</label>
+            <select name="num_vehicles_to_show" id="num_vehicles_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in num_vehicles_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_vehicles %}selected{% endif %}>{{ i }}대</option>
+                {% endfor %}
+            </select>
+        </div>
+        <noscript><button type="submit" class="btn btn-sm btn-secondary">설정 적용</button></noscript>
+    </form>
+
+    <form method="POST" id="vrpForm">
+        {% csrf_token %}
+        <input type="hidden" name="num_customers" value="{{ submitted_num_customers }}" id="form_num_customers">
+        <input type="hidden" name="num_vehicles" value="{{ submitted_num_vehicles }}" id="form_num_vehicles">
+
+        <div class="form-section">
+            <h4>1. 위치 지정 (차고지 1개, 고객 {{ submitted_num_customers }}명, 차량 {{submitted_num_vehicles}}대)</h4>
+            <p>최초 좌측 상단 파란색으로 초기화 됩니다. 차고지 위치를 변경하려면 아래 위치 초기화 버튼을 클릭하세요.</p>
+            <p id="canvasInstructions">먼저 차고지(Depot) 위치를 클릭하세요.</p>
+            <canvas id="vrpCanvasInput" width="600" height="400"></canvas>
+            <button type="button" class="btn btn-sm btn-warning mb-2" id="resetLocationsBtn">위치 초기화</button>
+
+            <h5>지정된 위치:</h5>
+            <div id="locationsDisplay" class="location-list">
+                <p>아직 지정된 위치가 없습니다.</p>
+            </div>
+
+            <input type="hidden" name="depot_x" id="hidden_depot_x" value="{{ form_data.depot_x|default_if_none:'0' }}">
+            <input type="hidden" name="depot_y" id="hidden_depot_y" value="{{ form_data.depot_y|default_if_none:'0' }}">
+
+            {% for i in submitted_num_customers|get_range %}
+                <input type="hidden" name="cust_{{ i }}_id" id="hidden_cust_{{ i }}_id" value="C{{i|add:1}}">
+                <input type="hidden" name="cust_{{ i }}_x" id="hidden_cust_{{ i }}_x">
+                <input type="hidden" name="cust_{{ i }}_y" id="hidden_cust_{{ i }}_y">
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 경로 계산 실행</button>
+    </form>
+    {% if success_save_message%}
+        <div class="success-message" role="alert">{{ success_save_message }}</div>
+    {% endif %}
+
+    {# ... (결과 표시 부분은 이전 답변과 동일하게 유지) ... #}
+    {% if vrp_results is not None or error_message or success_message or info_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Results</h3>
+    {% endif %}
+
+    {% if error_message %}
+        <div class="error-message" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if info_message and not error_message %}
+        <div class="info-message" role="alert">{{ info_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="success-message" role="alert">{{ success_message }}</div>
+    {% endif %}
+
+    {% if vrp_results %}
+    <div class="card mt-4">
+        <div class="card-header"><strong>결과 요약</strong></div>
+        <div class="card-body">
+            <p><strong>총 운행 거리:</strong> {{ vrp_results.total_distance|floatformat:2 }}</p>
+            <p><strong>사용된 차량 수:</strong> {{ vrp_results.routes|length }} / {{ submitted_num_vehicles }}</p>
+            {% if vrp_results.dropped_nodes %}
+                <p class="text-danger"><strong>방문 실패 고객 수:</strong> {{ vrp_results.dropped_nodes|length }}</p>
+            {% endif %}
+            <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
+        </div>
+    </div>
+
+    {% if vrp_results.routes %}
+    <div class="card mt-3">
+        <div class="card-header"><strong>차량별 최적 경로</strong></div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover results-table mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th>차량 ID</th>
+                        <th>경로 (노드 인덱스)</th>
+                        <th>경로 (고객 ID 순서)</th>
+                        <th>차량별 이동 거리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for route in vrp_results.routes %}
+                    <tr>
+                        <td>차량 {{ route.vehicle_id|add:1 }}</td>
+                        <td class="route-path">
+                            {% for node_index in route.route_nodes %}
+                                {{ node_index }}{% if not forloop.last %} &rarr; {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td class="route-path">
+                            {% for loc_coord_tuple in route.route_locations %} {# 뷰에서 튜플로 전달됨 #}
+                                {% with x_coord=loc_coord_tuple.0 y_coord=loc_coord_tuple.1 %}
+                                    {% if forloop.first or forloop.last %}Depot{% else %}
+                                        {% for cust_idx in submitted_num_customers|get_range %}
+                                            {% with hidden_x_id="hidden_cust_"|add:cust_idx|stringformat:"s"|add:"_x" hidden_y_id="hidden_cust_"|add:cust_idx|stringformat:"s"|add:"_y" hidden_id_id="hidden_cust_"|add:cust_idx|stringformat:"s"|add:"_id" %}
+                                                {% if form_data|get_item_simple:hidden_x_id|stringformat:"s" == x_coord|stringformat:"s" and form_data|get_item_simple:hidden_y_id|stringformat:"s" == y_coord|stringformat:"s" %}
+                                                    {{ form_data|get_item_simple:hidden_id_id }}
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endfor %}
+                                    {% endif %}
+                                    ({{ x_coord|floatformat:1 }},{{ y_coord|floatformat:1 }}){% if not forloop.last %} &rarr; {% endif %}
+                                {% endwith %}
+                            {% endfor %}
+                        </td>
+                        <td>{{ route.distance|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if plot_data %}
+    <div class="card mt-3">
+        <div class="card-header"><strong>경로 시각화</strong></div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas id="vrpRouteChart"></canvas>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+    {% elif request.method == 'POST' and not error_message and not success_message and not info_message %}
+        <p class="text-muted mt-3"><em>최적화 결과가 없습니다. 입력값을 확인하거나, 솔버가 해를 찾지 못했을 수 있습니다.</em></p>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 차트 인스턴스 관리는 이전과 동일
+    var chartInstances = window.chartInstances || {}; // 전역 또는 페이지 스코프에 이미 있다면 재사용
+    function destroyChartIfExists(chartId) {
+        if (chartInstances[chartId]) {
+            chartInstances[chartId].destroy();
+            delete chartInstances[chartId];
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("VRP Demo page with graphical input loaded.");
+
+        const canvas = document.getElementById('vrpCanvasInput');
+        const ctx = canvas.getContext('2d');
+        const instructions = document.getElementById('canvasInstructions');
+        const locationsDisplay = document.getElementById('locationsDisplay');
+        const resetBtn = document.getElementById('resetLocationsBtn');
+
+        const depotHiddenX = document.getElementById('hidden_depot_x');
+        const depotHiddenY = document.getElementById('hidden_depot_y');
+
+        const numCustomers = parseInt(document.getElementById('form_num_customers').value);
+        let customerHiddenX = [];
+        let customerHiddenY = [];
+        let customerHiddenId = [];
+
+        for (let i = 0; i < numCustomers; i++) {
+            customerHiddenX.push(document.getElementById(`hidden_cust_${i}_x`));
+            customerHiddenY.push(document.getElementById(`hidden_cust_${i}_y`));
+            customerHiddenId.push(document.getElementById(`hidden_cust_${i}_id`)); // ID 필드도 가져옴
+        }
+
+        let depot = null; // {x, y}
+        let customers = []; // Array of {id, x, y}
+        let currentCustomerIndex = 0;
+        let placingDepot = true;
+
+        // 초기값으로 숨겨진 필드 채우기 (GET 요청 시 뷰에서 설정한 값)
+        function loadInitialValues() {
+            if (depotHiddenX.value && depotHiddenY.value) {
+                depot = { x: parseFloat(depotHiddenX.value), y: parseFloat(depotHiddenY.value) };
+            }
+            for (let i = 0; i < numCustomers; i++) {
+                if (customerHiddenX[i] && customerHiddenY[i] && customerHiddenX[i].value && customerHiddenY[i].value) {
+                    customers[i] = {
+                        id: customerHiddenId[i].value || `C${i+1}`, // ID가 없으면 기본값
+                        x: parseFloat(customerHiddenX[i].value),
+                        y: parseFloat(customerHiddenY[i].value)
+                    };
+                } else {
+                    customers[i] = null; // 아직 지정되지 않음
+                }
+            }
+            // 모든 고객이 지정되었는지 확인하여 다음 단계 결정
+            if (depot) placingDepot = false;
+            currentCustomerIndex = customers.findIndex(c => c === null);
+            if (currentCustomerIndex === -1 && depot) { // 모든 고객 + 차고지 지정됨
+                 currentCustomerIndex = numCustomers; // 다음 클릭은 무시하도록
+            } else if (currentCustomerIndex === -1 && !depot) { // 고객은 다 지정되었는데 차고지가 없으면 다시 차고지부터
+                placingDepot = true;
+                currentCustomerIndex = 0;
+            }
+            updateInstructionsAndDisplay();
+            redrawCanvas();
+        }
+
+
+        function redrawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // 차고지 그리기
+            if (depot) {
+                ctx.fillStyle = 'blue';
+                ctx.beginPath();
+                ctx.arc(depot.x, depot.y, 7, 0, 2 * Math.PI); // 더 큰 원
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.fillText('D', depot.x - 4, depot.y + 4);
+            }
+            // 고객 위치 그리기
+            customers.forEach((cust, index) => {
+                if (cust) {
+                    ctx.fillStyle = 'red';
+                    ctx.beginPath();
+                    ctx.arc(cust.x, cust.y, 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = 'black';
+                    ctx.fillText(cust.id || `C${index+1}`, cust.x + 8, cust.y + 4);
+                }
+            });
+        }
+
+        function updateInstructionsAndDisplay() {
+            let html = '';
+            if (depot) {
+                html += `<p><strong>Depot:</strong> (${depot.x.toFixed(1)}, ${depot.y.toFixed(1)})</p>`;
+            } else {
+                 html += `<p>Depot: Not set</p>`;
+            }
+
+            html += "<h6>Customers:</h6>";
+            let allSet = depot !== null;
+            for (let i = 0; i < numCustomers; i++) {
+                if (customers[i]) {
+                    html += `<p><strong>${customers[i].id}:</strong> (${customers[i].x.toFixed(1)}, ${customers[i].y.toFixed(1)})</p>`;
+                } else {
+                    html += `<p>Customer ${i+1}: Not set</p>`;
+                    allSet = false; // 아직 설정 안 된 고객 있음
+                }
+            }
+            locationsDisplay.innerHTML = html;
+
+            if (placingDepot) {
+                instructions.textContent = '차고지(Depot) 위치를 클릭하세요.';
+            } else if (currentCustomerIndex < numCustomers) {
+                instructions.textContent = `고객 ${currentCustomerIndex + 1} 위치를 클릭하세요. (${numCustomers - currentCustomerIndex}명 남음)`;
+            } else {
+                instructions.textContent = '모든 위치가 지정되었습니다. "최적 경로 계산 실행" 버튼을 누르세요.';
+            }
+        }
+
+        canvas.addEventListener('click', function(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            if (placingDepot) {
+                depot = { x: x, y: y };
+                depotHiddenX.value = x.toFixed(2); // 소수점 2자리로 저장
+                depotHiddenY.value = y.toFixed(2);
+                placingDepot = false;
+                currentCustomerIndex = customers.findIndex(c => c === null); // 다음 고객 찾기
+                 if (currentCustomerIndex === -1) currentCustomerIndex = 0; // 모든 고객이 null이면 처음부터
+            } else if (currentCustomerIndex < numCustomers) {
+                const custId = customerHiddenId[currentCustomerIndex] ? customerHiddenId[currentCustomerIndex].value : `C${currentCustomerIndex+1}`;
+                customers[currentCustomerIndex] = { id: custId, x: x, y: y };
+                if (customerHiddenX[currentCustomerIndex]) customerHiddenX[currentCustomerIndex].value = x.toFixed(2);
+                if (customerHiddenY[currentCustomerIndex]) customerHiddenY[currentCustomerIndex].value = y.toFixed(2);
+
+                currentCustomerIndex = customers.findIndex(c => c === null);
+                if (currentCustomerIndex === -1) { // 모든 고객이 지정됨
+                    currentCustomerIndex = numCustomers; // 더 이상 고객을 받지 않음
+                }
+            } else {
+                // 모든 위치 지정 완료
+                console.log("All locations set.");
+            }
+            updateInstructionsAndDisplay();
+            redrawCanvas();
+        });
+
+        resetBtn.addEventListener('click', function() {
+            depot = null;
+            customers = new Array(numCustomers).fill(null); // 고객 배열 초기화
+            depotHiddenX.value = '';
+            depotHiddenY.value = '';
+            for (let i = 0; i < numCustomers; i++) {
+                if(customerHiddenX[i]) customerHiddenX[i].value = '';
+                if(customerHiddenY[i]) customerHiddenY[i].value = '';
+                // ID는 유지하거나, 여기서 다시 설정할 수 있음
+                // if(customerHiddenId[i]) customerHiddenId[i].value = `C${i+1}`;
+            }
+            placingDepot = true;
+            currentCustomerIndex = 0;
+            updateInstructionsAndDisplay();
+            redrawCanvas();
+            console.log("Locations reset.");
+        });
+
+        // 페이지 로드 시 초기값으로 캔버스 및 상태 업데이트
+        loadInitialValues();
+
+
+        // --- 결과 차트 그리기 로직 (이전 답변과 유사하게 유지) ---
+        const plotDataJson = '{{ plot_data|safe|default_if_none:"{}" }}';
+        try {
+            const plotData = JSON.parse(plotDataJson);
+            if (plotData && plotData.locations && plotData.routes) {
+                const vrpCtxElement = document.getElementById('vrpRouteChart');
+                if (vrpCtxElement) {
+                    destroyChartIfExists('vrpRouteChart'); // 기존 차트 파괴
+
+                    const datasets = [];
+                    const customerPoints = plotData.locations.slice(1).map(loc => ({x: loc.x, y: loc.y}));
+                    datasets.push({
+                        type: 'scatter', label: '고객 위치', data: customerPoints,
+                        backgroundColor: 'rgba(255, 99, 132, 0.8)', pointRadius: 6
+                    });
+
+                    if (plotData.locations.length > 0) {
+                        datasets.push({
+                            type: 'scatter', label: '차고지 (Depot)',
+                            data: [{x: plotData.locations[0].x, y: plotData.locations[0].y}],
+                            backgroundColor: 'rgba(54, 162, 235, 0.8)', pointRadius: 8, pointStyle: 'rectRot'
+                        });
+                    }
+
+                    const routeColors = ['rgba(75, 192, 192, 0.8)', 'rgba(255, 159, 64, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 205, 86, 0.8)', 'rgba(50, 205, 50, 0.8)'];
+                    plotData.routes.forEach((route, index) => {
+                        datasets.push({
+                            type: 'line', label: `차량 ${route.vehicle_id + 1} 경로`,
+                            data: route.path_coords.map(coord => ({x: coord[0], y: coord[1]})),
+                            borderColor: routeColors[index % routeColors.length], borderWidth: 2.5, fill: false, tension: 0
+                        });
+                    });
+
+                    chartInstances['vrpRouteChart'] = new Chart(vrpCtxElement, { // 인스턴스 저장
+                        data: { datasets: datasets },
+                        options: {
+                            responsive: true, maintainAspectRatio: true,
+                            scales: { x: { type: 'linear', position: 'bottom', title: { display: true, text: 'X 좌표' }},
+                                      y: { type: 'linear', title: { display: true, text: 'Y 좌표' }}},
+                            plugins: { title: { display: true, text: 'VRP 경로 시각화' }, legend: { position: 'top' }}
+                        }
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Error parsing VRP plot data or initializing chart:", e);
+        }
+    });
+</script>
+{% endblock %}

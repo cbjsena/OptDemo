@@ -73,7 +73,27 @@
                             </li>
 
                         {% elif active_model == 'Routing & Logistics' %}
-                            {# ... VRP, CVRP, VRPTW, PDP 등 하위 메뉴 ... #}
+                            <li class="nav-item"><strong class="sidebar-subtitle">Vehicle Routing Problem - VRP</strong></li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'vrp_introduction' %}active{% endif %}" href="{% url 'routing_logistics_app:vrp_introduction' %}">Introduction</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'vrp_demo' %}active{% endif %}" href="{% url 'routing_logistics_app:vrp_demo' %}">Demo</a>
+                            </li>
+                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">Capacitated VRP - CVRP</strong></li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'cvrp_introduction' %}active{% endif %}" href="{% url 'routing_logistics_app:cvrp_introduction' %}">Introduction(준비중)</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'cvrp_demo' %}active{% endif %}" href="{% url 'routing_logistics_app:cvrp_demo' %}">Demo(준비중)</a>
+                            </li>
+                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">Pickup and Delivery Problem- PDP</strong></li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'pdp_introduction' %}active{% endif %}" href="{% url 'routing_logistics_app:pdp_introduction' %}">Introduction(준비중)</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'pdp_demo' %}active{% endif %}" href="{% url 'routing_logistics_app:pdp_demo' %}">Demo(준비중)</a>
+                            </li>
 
                         {% elif active_model == 'Production & Scheduling' %}
                             {# ... Lot Sizing, Job Shop, RCPSP 등 하위 메뉴 ... #}
@@ -107,7 +127,7 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if active_model == 'Routing & Logistics' %}active{% endif %}"
-                                   href="#">Routing & Logistics (준비중)</a>
+                                   href="{% url 'routing_logistics_app:vrp_introduction' %}">Routing & Logistics</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if active_model == 'Production & Scheduling' %}active{% endif %}"

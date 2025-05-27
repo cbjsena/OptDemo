@@ -21,3 +21,12 @@ datacenter_services_preset = [
             {'id': 'BatchProc', 'revenue_per_unit': '150', 'req_cpu_cores': '16', 'req_ram_gb': '32',
              'req_storage_tb': '0.2', 'max_units': '30'}
 ]
+
+depot_location = {"id": "D1","x": 79.0,"y": 73.6}
+customer_locations = [
+        {"id": "C1","x": 100.0,"y": 254.6},
+        {"id": "C2","x": 363.0,"y": 260.6},
+        {"id": "C3","x": 426.0,"y": 93.6}
+    ]
+num_vehicles= 1
+num_depots=1

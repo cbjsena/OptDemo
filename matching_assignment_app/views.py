@@ -166,7 +166,7 @@ def lcd_cf_tft_large_scale_demo_view(request):
         'available_json_files': []
     }
 
-    data_dir_path_str = settings.DEMO_DIR_MAP['matching_cf_tft_input']
+    data_dir_path_str = settings.DEMO_DIR_MAP['matching_cf_tft_data']
     if data_dir_path_str and os.path.isdir(data_dir_path_str):
         try:
             files = [f for f in os.listdir(data_dir_path_str) if f.endswith('.json') and f.startswith('cf')]
