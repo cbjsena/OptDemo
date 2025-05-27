@@ -1,8 +1,6 @@
 from django.shortcuts import render
 
-from django.shortcuts import render
-
-from .solve import *
+from common_utils.run_matching_opt import *
 from .utils.data_utils import *
 
 import logging

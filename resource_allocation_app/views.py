@@ -4,7 +4,7 @@ import logging
 import json
 
 from .utils import data_utils
-from .solve import *
+from common_utils.run_alloctaion_opt import *
 from common_utils.default_data import (
     budjet_items_preset,
     datacenter_servers_preset,

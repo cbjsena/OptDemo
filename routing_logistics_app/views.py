@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .solve.run_routing_opt import *
+from common_utils.run_routing_opt import *
 from .utils.data_utils import *
 import random
 import json
@@ -18,6 +18,16 @@ def vrp_introduction_view(request):
     }
     logger.debug("Rendering VRP introduction page.")
     return render(request, 'routing_logistics_app/vrp_introduction.html', context)
+
+
+def vrp_advanced(request):
+    context = {
+        'active_model': 'Routing & Logistics',  # 대메뉴 활성화용
+        'active_submenu_category': 'vehicle_routing_problems',  # 사이드바 내 VRP 관련 그룹 활성화용
+        'active_submenu': 'vrp_advanced'  # 현재 페이지 활성화용
+    }
+    logger.debug("Rendering VRP introduction page.")
+    return render(request, 'routing_logistics_app/vrp_advanced.html', context)
 
 def vrp_demo_view(request):
     """
@@ -156,4 +166,5 @@ def pdp_demo_view(request):
     }
     logger.debug("Rendering PDP demo page.")
     return render(request, 'routing_logistics_app/pdp_demo.html', context)
+
 
