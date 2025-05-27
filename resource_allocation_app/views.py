@@ -6,6 +6,7 @@ import json
 from .utils import data_utils
 from .validate import validate_data
 from .solve import *
+from .utils.default_data import *
 logger = logging.getLogger(__name__)  # settings.py에 정의된 'resource_allocation_app' 로거 사용
 
 
@@ -23,6 +24,11 @@ def budget_allocation_demo_view(request):
     # This ensures the template's default_if_none has something to fall back on
     # or that the key exists.
     initial_form_data = {'total_budget': '1000'}  # Default value for initial page load
+    form_data = {}
+    for i in range(len(budjet_items_preset)):
+        preset = budjet_items_preset[i % len(budjet_items_preset)]
+        for key, default_val in preset.items():
+            initial_form_data[key] = default_val
 
     context = {
         'active_model': 'Resource Allocation',
@@ -290,32 +296,15 @@ def data_center_capacity_demo_view(request):
         form_data['total_budget'] = request.GET.get('total_budget', 100000)
         form_data['total_power_kva'] = request.GET.get('total_power_kva', 50)
         form_data['total_space_sqm'] = request.GET.get('total_space_sqm', 10)
-
         # 기본 서버 유형 데이터 (ID 포함)
-        default_servers_preset = [
-            {'id': 'SrvA', 'cost': '500', 'cpu_cores': '48', 'ram_gb': '256', 'storage_tb': '10', 'power_kva': '0.5',
-             'space_sqm': '0.2'},
-            {'id': 'SrvB', 'cost': '300', 'cpu_cores': '32', 'ram_gb': '128', 'storage_tb': '5', 'power_kva': '0.3',
-             'space_sqm': '0.1'},
-            {'id': 'SrvC', 'cost': '800', 'cpu_cores': '128', 'ram_gb': '512', 'storage_tb': '20', 'power_kva': '0.8',
-             'space_sqm': '0.3'}
-        ]
         for i in range(submitted_num_server_types):
-            preset = default_servers_preset[i % len(default_servers_preset)]
+            preset = datacenter_servers_preset[i % len(datacenter_servers_preset)]
             for key, default_val in preset.items():
                 form_data[f'server_{i}_{key}'] = request.GET.get(f'server_{i}_{key}', default_val)
 
-            # 기본 서비스 수요 데이터 (ID 포함)
-        default_services_preset = [
-            {'id': 'WebPool', 'revenue_per_unit': '100', 'req_cpu_cores': '4', 'req_ram_gb': '8',
-             'req_storage_tb': '0.1', 'max_units': '50'},
-            {'id': 'DBFarm', 'revenue_per_unit': '200', 'req_cpu_cores': '8', 'req_ram_gb': '16',
-             'req_storage_tb': '0.5', 'max_units': '20'},
-            {'id': 'BatchProc', 'revenue_per_unit': '150', 'req_cpu_cores': '16', 'req_ram_gb': '32',
-             'req_storage_tb': '0.2', 'max_units': '30'}
-        ]
+        # 기본 서비스 수요 데이터 (ID 포함)
         for i in range(submitted_num_services):
-            preset = default_services_preset[i % len(default_services_preset)]
+            preset = datacenter_services_preset[i % len(datacenter_services_preset)]
             for key, default_val in preset.items():
                 form_data[f'service_{i}_{key}'] = request.GET.get(f'service_{i}_{key}', default_val)
     elif request.method == 'POST':
