@@ -1,0 +1,301 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}VRP 심층 소개 - 차량 경로 문제{% endblock %}
+
+{% block styles %}
+<style>
+    /* ... (이전 스타일 유지) ... */
+    .introduction-content {
+        line-height: 1.7;
+        font-size: 1.03rem;
+    }
+    .introduction-content h3 {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        color: #004085;
+        padding-bottom: 0.3rem;
+        border-bottom: 2px solid #0056b3;
+    }
+    .introduction-content h4 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #17a2b8;
+    }
+    .introduction-content ul {
+        padding-left: 20px;
+        list-style-type: disc;
+    }
+    .introduction-content li {
+        margin-bottom: 0.6rem;
+    }
+    .math-model-section {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    .math-model-section ul li { /* 수학 모델 섹션 내 리스트 아이템 간격 조정 */
+        margin-bottom: 0.8rem;
+    }
+    .math-formula {
+        font-family: 'Courier New', Courier, monospace;
+        background-color: #e9ecef;
+        padding: 10px;
+        border-radius: 3px;
+        display: block;
+        white-space: pre-wrap;
+        margin: 10px 0;
+        font-size: 0.95em;
+    }
+    .intro-image {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 5px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .image-caption {
+        font-size: 0.85rem;
+        color: #555;
+        text-align: center;
+        margin-top: -10px;
+        margin-bottom: 20px;
+    }
+    .icon-inline {
+        vertical-align: middle;
+        margin-left: 5px;
+        font-size: 1.2em;
+    }
+    .highlight-box {
+        background-color: #e9f7fd;
+        border-left: 5px solid #007bff;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+    }
+    .highlight-box h4 {
+        margin-top: 0;
+        color: #0056b3;
+        border-bottom: none;
+    }
+    .introduction-content { line-height: 1.7; font-size: 1.03rem; }
+    .introduction-content h3 { margin-top: 2rem; margin-bottom: 1rem; color: #004085; padding-bottom: 0.3rem; border-bottom: 2px solid #0056b3;}
+    .introduction-content h4 { margin-top: 1.5rem; margin-bottom: 0.75rem; color: #17a2b8; }
+    .introduction-content ul { padding-left: 20px; list-style-type: disc; }
+    .introduction-content li { margin-bottom: 0.6rem; }
+    .math-model-section { background-color: #f0f8ff; border-left: 5px solid #007bff; padding: 20px; margin: 25px 0; border-radius: 5px; }
+    .math-model-section p, .math-model-section li { margin-bottom: 0.75rem; }
+    .math-model-section strong { color: #003366; }
+    .katex-display { /* 블록 수식 스타일 */
+        display: block;
+        margin: 1em 0;
+        padding: 0.5em;
+        overflow-x: auto;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+    }
+    .katex { /* 인라인 수식 폰트 크기 조정 */
+        font-size: 1.05em; /* 본문보다 약간 크게 */
+    }
+    .intro-image, .image-caption { /* 이전 스타일 유지 */
+        max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; padding: 5px; margin: 10px auto 20px auto; display: block;
+    }
+    .image-caption { font-size: 0.85rem; color: #555; text-align: center; margin-top: -10px; }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css" integrity="sha384-Xi8rHCmBmhbuyyhbI88391ZKP2dmMAxhJoft3CasYGJh30SyrrZcVw7A0_H_H2QT" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js" integrity="sha384-X/XCf82sK5Hqf8S_sUfLL3K2uR3T1gWJq_nEaM6A_I1S8/3oU8G10J/F_wLpG+e" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHfLlzOASDNiYoffsetKjffqc_F_Wr_dpL_YF_MScfF_L" crossorigin="anonymous"
+    onload="renderMathInElement(document.body,{delimiters: [{left: '$$', right: '$$', display: true},{left: '$', right: '$', display: false},{left: '\\(', right: '\\)', display: false},{left: '\\[', right: '\\]', display: true}]});"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">차량 경로 문제 (VRP) 심층 소개</h1>
+    </div>
+
+    <p><strong>범주: Ⅲ. 경로 최적화 및 물류 (Routing & Logistics)</strong></p>
+    <p>
+        차량 경로 문제(Vehicle Routing Problem, VRP)는 물류, 운송, 서비스 산업 전반에 걸쳐 핵심적인 역할을 하는 최적화 문제입니다. 효율적인 경로 계획은 비용 절감, 시간 단축, 고객 만족도 향상 등 기업 경쟁력에 직접적인 영향을 미칩니다.
+    </p>
+
+    <h3>Ⅰ. VRP의 주요 구성 요소</h3>
+    <p>VRP를 이해하기 위해서는 다음과 같은 주요 구성 요소들을 알아야 합니다:</p>
+    <ul>
+        <li>
+            <strong>물류센터 (Depot)</strong> <span class="icon-inline">🏭</span>:
+            모든 차량이 운행을 시작하고 종료하는 지점입니다. 일반적으로 상품의 보관 및 분배 중심지 역할을 합니다.
+        </li>
+        <li>
+            <strong>고객 (Customers)</strong> <span class="icon-inline">📍</span>:
+            차량이 방문하여 서비스를 제공해야 하는 지점들입니다 (예: 상품 배송, 수거). 각 고객은 특정 위치와 요구량(배송받을 물품의 양 등)을 가질 수 있습니다.
+        </li>
+        <li>
+            <strong>차량 (Vehicles)</strong> <span class="icon-inline">🚛</span>:
+            고객에게 서비스를 제공하기 위해 사용되는 운송 수단입니다. 차량은 한 대일 수도 있고 여러 대일 수도 있으며, 각 차량은 용량 제한(최대 적재량), 운행 시간 제한 등의 제약 조건을 가질 수 있습니다.
+        </li>
+        <li>
+            <strong>경로 (Routes)</strong> <span class="icon-inline">🗺️</span>:
+            각 차량이 물류센터에서 출발하여 할당된 고객들을 순서대로 방문하고 다시 물류센터로 돌아오는 여정입니다. VRP의 목표는 이러한 경로들의 집합을 최적화하는 것입니다.
+        </li>
+    </ul>
+    <figure>
+        <img src="{% static 'routing_logistics_app/images/vrp_general_concept.png' %}" alt="VRP 일반 개념도" class="intro-image" style="max-width: 450px;">
+        <figcaption class="image-caption">그림 1: VRP의 주요 구성 요소 (출처: OptDemo 자체 제작)</figcaption>
+    </figure>
+
+    <h3>Ⅱ. VRP의 다양한 목표와 수학적 모델</h3>
+    <p>VRP를 해결함으로써 달성하고자 하는 주요 목표와 이를 반영하는 일반적인 목적 함수는 다음과 같습니다:</p>
+    <ul>
+        <li>
+            <strong>총 운행 거리 최소화 (Minimize Total Distance):</strong>
+            차량들이 이동하는 전체 거리를 줄여 유류비 및 차량 마모를 감소시킵니다.
+            <span class="math-formula">Objective: Minimize  $\sum_{k \in K} \sum_{(i,j) \in E} d_{ij} x_{ijk}$</span>
+            (여기서 $d_{ij}$는 노드 $i$에서 $j$까지의 거리, $x_{ijk}$는 차량 $k$가 간선 $(i,j)$를 사용하는지 여부)
+        </li>
+        <li>
+            <strong>총 운행 시간 최소화 (Minimize Total Travel Time):</strong>
+            전체 배송 또는 서비스 시간을 단축하여 효율성을 높입니다. (거리가 아닌 이동 시간 $t_{ij}$를 비용으로 사용)
+            <span class="math-formula">Objective: Minimize  $\sum_{k \in K} \sum_{(i,j) \in E} t_{ij} x_{ijk}$</span>
+        </li>
+        <li>
+            <strong>사용 차량 수 최소화 (Minimize Number of Vehicles Used):</strong>
+            가능한 적은 수의 차량을 사용하여 고정 비용(차량 유지보수, 보험료, 기사 인건비 등)을 줄입니다. 이는 종종 다른 주요 목표(예: 거리 최소화)와 함께 다중 목표 최적화 문제로 다루어지거나, 제약 조건으로 설정될 수 있습니다.
+            <span class="math-formula">Objective: Minimize  $\sum_{k \in K} y_k$</span>
+            (여기서 $y_k$는 차량 $k$가 사용되면 1, 아니면 0인 이진 변수. 이 목표는 다른 비용 목표와 결합되거나, 특정 차량 수 이하 사용을 제약으로 둘 수 있습니다.)
+        </li>
+        <li>
+            <strong>운송 비용 최소화 (Minimize Total Transportation Cost):</strong>
+            거리, 시간, 차량 사용 고정 비용, 유류비, 통행료 등 다양한 비용 요소를 종합적으로 고려한 총비용을 절감합니다.
+            <span class="math-formula">Objective: Minimize  $\sum_{k \in K} (\text{FixedCost}_k \cdot y_k + \sum_{(i,j) \in E} \text{VariableCost}_{ijk} \cdot x_{ijk})$</span>
+        </li>
+        <li>
+            <strong>고객 만족도 향상 (Maximize Customer Satisfaction):</strong>
+            이는 직접적인 수학적 함수로 표현하기 어려울 수 있으나, 대리 지표(proxy measure)를 통해 최적화에 반영될 수 있습니다. 예를 들어, 고객 방문 시간 창(Time Windows) 제약을 엄격히 준수하거나, 우선순위가 높은 고객을 먼저 방문하는 등의 형태로 구현됩니다. 시간 창 위반에 대한 페널티를 최소화하는 것도 하나의 방법입니다.
+            <span class="math-formula">Objective: Minimize  $\sum_{i \in C} \text{Penalty}_i(\text{arrival_time}_i - \text{due_time}_i)$</span>
+        </li>
+    </ul>
+    <figure>
+        <img src="{% static 'routing_logistics_app/images/vrp_example_solution.png' %}" alt="VRP 해결 예시 경로" class="intro-image" style="max-width: 550px;">
+        <figcaption class="image-caption">그림 2: VRP 문제의 최적화된 경로 예시 (출처: OptDemo 자체 제작)</figcaption>
+    </figure>
+
+    <h3>Ⅲ. 기본적인 수학적 모델 (개념)</h3>
+    <div class="math-model-section">
+        <p>VRP는 다양한 변형이 존재하지만, 기본적인 형태는 다음과 같이 정형화될 수 있습니다 (그래프 이론 기반):</p>
+        <ul>
+            <li><strong>주어진 것 (Inputs / Parameters):</strong>
+                <ul>
+                    <li>$G=(V, E)$: 노드(정점) 집합 $V$와 간선(엣지) 집합 $E$로 구성된 그래프.</li>
+                    <li>$V = \{0\} \cup C$: 노드 0은 차고지(depot), $C=\{1, 2, ..., n\}$은 고객 집합.</li>
+                    <li>$d_{ij}$ 또는 $c_{ij}$: 노드 $i$에서 노드 $j$로 이동하는 데 드는 비용 (일반적으로 거리 또는 시간).</li>
+                    <li>$K$: 사용 가능한 차량의 수 (또는 차량 집합).</li>
+                    <li>(선택적) $q_i$: 고객 $i$의 수요량 (용량 제약 VRP - CVRP의 경우).</li>
+                    <li>(선택적) $Q_k$: 차량 $k$의 용량 (CVRP의 경우).</li>
+                    <li>(선택적) $[e_i, l_i]$: 고객 $i$의 서비스 가능 시간 창 (VRPTW의 경우).</li>
+                </ul>
+            </li>
+            <li><strong>결정 변수 (Decision Variables):</strong>
+                <ul>
+                    <li>$x_{ijk}$: 차량 $k$가 간선 $(i, j)$를 통과하면 1, 아니면 0 (이진 변수).</li>
+                    <li>(선택적) $y_{ik}$: 고객 $i$를 차량 $k$가 방문하면 1, 아니면 0. (일부 모델에서 사용)</li>
+                    <li>(선택적) $u_{ik}$: 차량 $k$가 고객 $i$를 방문하는 순서 또는 누적 수요량 (부분 경로 제거 또는 용량 제약용).</li>
+                </ul>
+            </li>
+            <li><strong>목표 함수 (Objective Function):</strong> 위 "Ⅱ. 최적화 목표 및 목적 함수" 섹션에서 설명된 함수 중 하나 또는 조합을 사용합니다.
+                가장 일반적인 예는 다음과 같습니다:
+                <span class="math-formula">Minimize  $\sum_{k \in K} \sum_{i \in V} \sum_{j \in V, j \ne i} d_{ij} x_{ijk}$</span>
+            </li>
+            <li><strong>주요 제약 조건 (Constraints - 예시):</strong>
+                <ul>
+                    <li>각 고객은 정확히 한 번, 하나의 차량에 의해 방문되어야 합니다.
+                        <span class="math-formula">$\sum_{k \in K} \sum_{j \in V, j \ne i} x_{jik} = 1, \quad \forall i \in C$ (고객 i로 들어오는 간선)</span>
+                        <span class="math-formula">$\sum_{k \in K} \sum_{j \in V, j \ne i} x_{ijk} = 1, \quad \forall i \in C$ (고객 i에서 나가는 간선)</span>
+                    </li>
+                    <li>각 차량은 차고지(노드 0)에서 출발해야 합니다.
+                        <span class="math-formula">$\sum_{j \in C} x_{0jk} \le 1, \quad \forall k \in K$ (또는 $=1$ nếu 차량 사용 시)</span>
+                    </li>
+                    <li>각 차량은 차고지로 돌아와야 합니다 (만약 사용되었다면).
+                        <span class="math-formula">$\sum_{i \in C} x_{i0k} \le 1, \quad \forall k \in K$ (또는 $=1$ nếu 차량 사용 시)</span>
+                    </li>
+                    <li>경로 연속성: 차량이 어떤 고객 노드에 도착했다면, 반드시 그 노드에서 다른 노드로 출발해야 합니다.
+                        <span class="math-formula">$\sum_{j \in V, j \ne h} x_{jhk} - \sum_{j \in V, j \ne h} x_{hjk} = 0, \quad \forall h \in C, \forall k \in K$</span>
+                    </li>
+                    <li>부분 경로 제거 제약 (Subtour Elimination Constraints - SECs): MTZ, GG, DFJ 등 다양한 형태가 존재합니다. (예: Miller-Tucker-Zemlin 제약)</li>
+                    <li>(CVRP의 경우) 각 차량 경로의 총 수요량은 차량 용량을 초과할 수 없습니다.</li>
+                    <li>(VRPTW의 경우) 각 고객 방문은 지정된 시간 창 내에 이루어져야 하며, 이동 시간 및 서비스 시간을 고려해야 합니다.</li>
+                </ul>
+            </li>
+        </ul>
+        <p>이러한 수학적 모델은 문제의 복잡성으로 인해 실제 대규모 문제에서는 직접 풀기 어려울 수 있으며, OR-Tools의 Routing Library와 같은 전문 솔버는 내부적으로 더 정교한 모델과 강력한 탐색 알고리즘을 사용합니다.</p>
+    </div>
+
+    {# ... (기존 "제한이 없는 VRP 문제와 차량 수" 및 "OptDemo에서의 체험" 섹션은 그대로 유지 또는 이 내용에 맞게 수정) ... #}
+    <div class="highlight-box">
+        <h4>특별 케이스: "제한이 없는" VRP 문제와 차량 수 🚚</h4>
+        <p>
+            만약 VRP에서 주요 목표가 **오직 총 운행 거리 최소화**이고, 차량 용량, 운행 시간, 고객 방문 시간 창 등에 대한 **제한이 전혀 없다면**, 이론적으로는 **단 한 대의 차량**으로 모든 고객을 방문하는 것이 가장 짧은 총 운행 거리를 달성합니다.
+        </p>
+        <p>
+            여기서 "제한이 없다"는 것은 다음을 의미합니다:
+            <ul>
+                <li>차량 용량 무제한: 한 차량에 모든 고객의 물품을 실을 수 있습니다.</li>
+                <li>운행 거리/시간 무제한: 차량이 무한정 운행할 수 있습니다.</li>
+                <li>시간 창 제약 없음: 언제든 고객을 방문할 수 있습니다.</li>
+            </ul>
+        </p>
+
+        <h4>왜 한 대의 차량이 최적일까요? (기본 원리: 왕복 이동의 비효율성)</h4>
+        <p>
+            각 차량은 물류센터(Depot)에서 출발하여 고객들을 방문 후 다시 물류센터로 돌아와야 합니다. 여러 대의 차량을 사용하면, 각 차량마다 물류센터를 오가는 경로가 필연적으로 추가됩니다.
+        </p>
+        <p><strong>단일 차량의 경우 (외판원 문제, TSP와 유사):</strong></p>
+        <p>
+            차량 한 대는 물류센터에서 출발해 모든 고객을 최적의 순서로 방문하고 다시 물류센터로 돌아오는, 하나의 가장 짧은 순회 경로를 찾게 됩니다.
+            <span class="math-formula">경로: D &rarr; C1 &rarr; C2 &rarr; C3 &rarr; D<br>총 이동 거리 = d(D,C1) + d(C1,C2) + d(C2,C3) + d(C3,D)</span>
+        </p>
+        <p><strong>두 대의 차량을 사용하는 경우 (예시):</strong></p>
+        <p>
+            고객 C1은 차량1이, 고객 C2와 C3는 차량2가 담당한다고 가정해 봅시다.
+            <span class="math-formula">
+차량1 경로: D &rarr; C1 &rarr; D (이동 거리1 = d(D,C1) + d(C1,D))<br>
+차량2 경로: D &rarr; C2 &rarr; C3 &rarr; D (이동 거리2 = d(D,C2) + d(C2,C3) + d(C3,D))<br>
+두 차량의 총 이동 거리 = 이동 거리1 + 이동 거리2
+            </span>
+        </p>
+        <h4>비교</h4>
+        <p>
+            일반적으로 (특히, 직행 거리가 경유 거리보다 짧거나 같은 삼각 부등식이 성립하는 경우), 고객 C1에서 C2로 직접 이동하는 거리 `d(C1,C2)`는 C1에서 물류센터로 돌아갔다가(`d(C1,D)`) 다시 물류센터에서 C2로 가는 거리(`d(D,C2)`)의 합보다 짧거나 같습니다. 즉, `d(C1,C2) &le; d(C1,D) + d(D,C2)` 입니다.
+        </p>
+        <p>
+            따라서 여러 차량을 사용하면 각 차량이 물류센터로 복귀하는 데 필요한 "추가적인 왕복 이동" 때문에 총 이동 거리가 단일 차량을 사용할 때보다 길어지는 경향이 있습니다.
+        </p>
+        <h4>결론</h4>
+        <p>
+            만약 VRP의 유일한 목표가 **총 운행 거리 최소화**이고 다른 제약(용량, 시간 등)이 없다면, 한 대의 차량으로 모든 고객을 방문하는 것이 이론적으로 가장 효율적입니다.
+        </p>
+        <p>
+            하지만 실제 상황에서는 다음과 같은 다른 고려 사항 때문에 여러 차량이 필요하거나 더 효율적일 수 있습니다:
+            <ul>
+                <li><strong>작업 완료 시간 (Makespan) 최소화:</strong> 모든 배송을 가능한 한 빨리 끝내려면 여러 차량을 동시에 운영하는 것이 유리합니다. 총 이동 거리는 늘어날 수 있지만, 전체 작업 시간은 단축됩니다.</li>
+                <li><strong>차량 용량 및 운행 시간 제약:</strong> 실제 차량은 실을 수 있는 물품의 양이나 하루 동안 운행할 수 있는 시간/거리에 한계가 있습니다. 이 경우 여러 차량이 필수적입니다.</li>
+                <li><strong>고객 방문 시간 창:</strong> 고객이 특정 시간대에만 서비스를 받을 수 있다면, 이를 맞추기 위해 여러 차량이 각기 다른 경로를 운행해야 할 수 있습니다.</li>
+            </ul>
+        </p>
+    </div>
+
+    <h3>Ⅳ. OptDemo에서의 체험</h3>
+    <p>
+        OptDemo의 "차량 경로 문제" 데모 섹션에서는 이러한 VRP의 기본 원리를 이해하고, 다양한 조건(고객 수, 차량 수 등)에 따른 최적 경로 결과를 시각적으로 확인할 수 있도록 구성될 예정입니다. 사용자는 직접 차고지와 고객 위치를 지정하고, 최적화된 경로를 통해 VRP가 어떻게 실제 문제 해결에 기여하는지 체험할 수 있습니다.
+    </p>
+
+</div>
+{% endblock %}

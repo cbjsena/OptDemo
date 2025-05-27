@@ -6,7 +6,8 @@ app_name = 'routing_logistics_app'
 urlpatterns = [
     # Vehicle Routing Problem (VRP)
     path('vrp/introduction/', views.vrp_introduction_view, name='vrp_introduction'),
-    path('vrp/demo/', views.vrp_demo_view, name='vrp_demo'), # 추후 데모 페이지
+    path('vrp/advanced/', views.vrp_advanced, name='vrp_advanced'),
+    path('vrp/demo/', views.vrp_demo_view, name='vrp_demo'),
 
     # Capacitated VRP (CVRP) - 예시
     path('cvrp/introduction/', views.cvrp_introduction_view, name='cvrp_introduction'),
