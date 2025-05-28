@@ -168,3 +168,10 @@ def pdp_demo_view(request):
     return render(request, 'routing_logistics_app/pdp_demo.html', context)
 
 
+def vrp_test(request):
+    context = {
+        'active_model': 'Routing & Logistics',  # 대메뉴 활성화용
+        'active_submenu_category': 'pickup_delivery_problem',  # 사이드바 내 VRP 관련 그룹 활성화용
+        'active_submenu': 'pdp_introduction'  # 현재 페이지 활성화용
+    }
+    return render(request, 'routing_logistics_app/vrp_test.html', context)

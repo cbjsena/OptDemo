@@ -1,60 +1,114 @@
 {% extends "core/base.html" %}
 {% load static %}
 
-{% block title %}VRP Model Definition{% endblock %}
+{% block title %}VRP 심층 소개 - 차량 경로 문제{% endblock %}
 
 {% block styles %}
 <style>
-    .model-definition-content { /* 이 페이지 전용 컨텐츠 래퍼 */
+    /* ... (이전 스타일 유지) ... */
+    .introduction-content {
         line-height: 1.7;
         font-size: 1.03rem;
-        color: #333;
     }
-    .model-definition-content h1 {
-        text-align: center;
-        color: #2c3e50; /* OptDemo 테마와 유사하게 */
-        margin-bottom: 1.5rem;
-        border-bottom: 2px solid #007bff; /* OptDemo 테마와 유사하게 */
-        padding-bottom: 0.5rem;
-    }
-    .model-definition-content h2 {
-        color: #0056b3; /* 소제목 색상 */
+    .introduction-content h3 {
         margin-top: 2rem;
         margin-bottom: 1rem;
+        color: #004085;
         padding-bottom: 0.3rem;
-        border-bottom: 1px solid #0056b3;
+        border-bottom: 2px solid #0056b3;
     }
-    .model-definition-content h3 {
-        color: #17a2b8; /* 더 작은 소제목 색상 */
+    .introduction-content h4 {
         margin-top: 1.5rem;
         margin-bottom: 0.75rem;
+        color: #17a2b8;
     }
-    .model-definition-content h4 {
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-        color: #0056b3;
-        padding-bottom: 0.25rem;
-        border-bottom: 2px solid #007bff;
-    }
-    .model-definition-content p,
-    .model-definition-content li {
-        margin-bottom: 10px;
-    }
-    .model-definition-content ul {
-        list-style-type: none; /* 기본 목록 스타일 제거 (필요시 disc 등으로 변경) */
-        padding-left: 0;
-    }
-    .model-definition-content ul ul { /* 중첩 목록은 들여쓰기 */
+    .introduction-content ul {
         padding-left: 20px;
-        list-style-type: circle;
+        list-style-type: disc;
     }
-    .model-definition-content code.inline-code { /* 인라인 코드 스타일 */
+    .introduction-content li {
+        margin-bottom: 0.6rem;
+    }
+    .math-model-section {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    .math-model-section ul li { /* 수학 모델 섹션 내 리스트 아이템 간격 조정 */
+        margin-bottom: 0.8rem;
+    }
+    .math-formula {
+        font-family: 'Courier New', Courier, monospace;
         background-color: #e9ecef;
-        padding: 2px 5px;
-        border-radius: 4px;
-        font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: 0.9em;
+        padding: 10px;
+        border-radius: 3px;
+        display: block;
+        white-space: pre-wrap;
+        margin: 10px 0;
+        font-size: 0.95em;
     }
+    .intro-image {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 5px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .image-caption {
+        font-size: 0.85rem;
+        color: #555;
+        text-align: center;
+        margin-top: -10px;
+        margin-bottom: 20px;
+    }
+    .icon-inline {
+        vertical-align: middle;
+        margin-left: 5px;
+        font-size: 1.2em;
+    }
+    .highlight-box {
+        background-color: #e9f7fd;
+        border-left: 5px solid #007bff;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+    }
+    .highlight-box h4 {
+        margin-top: 0;
+        color: #0056b3;
+        border-bottom: none;
+    }
+    .introduction-content { line-height: 1.7; font-size: 1.03rem; }
+    .introduction-content h3 { margin-top: 2rem; margin-bottom: 1rem; color: #004085; padding-bottom: 0.3rem; border-bottom: 2px solid #0056b3;}
+    .introduction-content h4 { margin-top: 1.5rem; margin-bottom: 0.75rem; color: #17a2b8; }
+    .introduction-content ul { padding-left: 20px; list-style-type: disc; }
+    .introduction-content li { margin-bottom: 0.6rem; }
+    .math-model-section { background-color: #f0f8ff; border-left: 5px solid #007bff; padding: 20px; margin: 25px 0; border-radius: 5px; }
+    .math-model-section p, .math-model-section li { margin-bottom: 0.75rem; }
+    .math-model-section strong { color: #003366; }
+    .katex-display { /* 블록 수식 스타일 */
+        display: block;
+        margin: 1em 0;
+        padding: 0.5em;
+        overflow-x: auto;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+    }
+    .katex { /* 인라인 수식 폰트 크기 조정 */
+        font-size: 1.05em; /* 본문보다 약간 크게 */
+    }
+    .intro-image, .image-caption { /* 이전 스타일 유지 */
+        max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; padding: 5px; margin: 10px auto 20px auto; display: block;
+    }
+    .image-caption { font-size: 0.85rem; color: #555; text-align: center; margin-top: -10px; }
     .math-block { /* MathJax로 렌더링될 블록 수식 */
         display: block; /* 혹은 text-align: center; */
         margin-top: 10px;
@@ -66,61 +120,88 @@
         border-radius: 4px;
         overflow-x: auto; /* 수식이 길 경우 가로 스크롤 */
     }
-    .objective-section { /* 각 목표 섹션 스타일 */
-        margin-bottom: 30px;
-        padding: 20px;
-        border: 1px solid #d1d9e0;
-        border-radius: 8px;
-        background-color: #f9f9f9;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-    .objective-section h3 {
-        margin-top: 0; /* 섹션 내 첫 h3의 상단 마진 제거 */
-        border-bottom: 1px dashed #17a2b8;
-        padding-bottom: 8px;
-    }
-    .summary-table { /* 종합 정리 테이블 스타일 */
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-        font-size: 0.95em;
-    }
-    .summary-table th, .summary-table td {
-        border: 1px solid #c5d0da;
-        padding: 10px 12px;
-        text-align: left;
-        vertical-align: top; /* 수식이 길 경우 상단 정렬 */
-    }
-    .summary-table th {
-        background-color: #007bff; /* OptDemo 테마와 유사하게 */
-        color: white;
-        font-weight: bold;
-    }
-    .summary-table tr:nth-child(even) {
-        background-color: #f2f9ff;
-    }
-    .summary-table .math-block { /* 테이블 내 수식 블록 스타일 약간 조정 */
-        margin-top: 5px;
-        margin-bottom: 5px;
-        padding: 5px;
-        font-size: 1em;
-    }
-    .highlight-box {
-        background-color: #e9f7fd;
-        border-left: 5px solid #007bff;
-        padding: 15px;
-        margin: 20px 0;
-        border-radius: 4px;
-    }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css" integrity="sha384-Xi8rHCmBmhbuyyhbI88391ZKP2dmMAxhJoft3CasYGJh30SyrrZcVw7A0_H_H2QT" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js" integrity="sha384-X/XCf82sK5Hqf8S_sUfLL3K2uR3T1gWJq_nEaM6A_I1S8/3oU8G10J/F_wLpG+e" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHfLlzOASDNiYoffsetKjffqc_F_Wr_dpL_YF_MScfF_L" crossorigin="anonymous"
+    onload="renderMathInElement(document.body,{delimiters: [{left: '$$', right: '$$', display: true},{left: '$', right: '$', display: false},{left: '\\(', right: '\\)', display: false},{left: '\\[', right: '\\]', display: true}]});"></script>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid model-definition-content">
+<div class="container-fluid introduction-content">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">차량 경로 최적화 모델 정의 🚚⏱️📍</h1>
+        <h1 class="h2">차량 경로 문제 (VRP) 심층 소개</h1>
     </div>
-    <p>VRP는 다양한 변형이 존재하지만, 기본적인 형태는 다음과 같이 정형화될 수 있습니다 (그래프 이론 기반):</p>
+
+    <p><strong>범주: Ⅲ. 경로 최적화 및 물류 (Routing & Logistics)</strong></p>
+    <p>
+        차량 경로 문제(Vehicle Routing Problem, VRP)는 물류, 운송, 서비스 산업 전반에 걸쳐 핵심적인 역할을 하는 최적화 문제입니다. 효율적인 경로 계획은 비용 절감, 시간 단축, 고객 만족도 향상 등 기업 경쟁력에 직접적인 영향을 미칩니다.
+    </p>
+
+    <h3>Ⅰ. VRP의 주요 구성 요소</h3>
+    <p>VRP를 이해하기 위해서는 다음과 같은 주요 구성 요소들을 알아야 합니다:</p>
+    <ul>
+        <li>
+            <strong>물류센터 (Depot)</strong> <span class="icon-inline">🏭</span>:
+            모든 차량이 운행을 시작하고 종료하는 지점입니다. 일반적으로 상품의 보관 및 분배 중심지 역할을 합니다.
+        </li>
+        <li>
+            <strong>고객 (Customers)</strong> <span class="icon-inline">📍</span>:
+            차량이 방문하여 서비스를 제공해야 하는 지점들입니다 (예: 상품 배송, 수거). 각 고객은 특정 위치와 요구량(배송받을 물품의 양 등)을 가질 수 있습니다.
+        </li>
+        <li>
+            <strong>차량 (Vehicles)</strong> <span class="icon-inline">🚛</span>:
+            고객에게 서비스를 제공하기 위해 사용되는 운송 수단입니다. 차량은 한 대일 수도 있고 여러 대일 수도 있으며, 각 차량은 용량 제한(최대 적재량), 운행 시간 제한 등의 제약 조건을 가질 수 있습니다.
+        </li>
+        <li>
+            <strong>경로 (Routes)</strong> <span class="icon-inline">🗺️</span>:
+            각 차량이 물류센터에서 출발하여 할당된 고객들을 순서대로 방문하고 다시 물류센터로 돌아오는 여정입니다. VRP의 목표는 이러한 경로들의 집합을 최적화하는 것입니다.
+        </li>
+    </ul>
+    <figure>
+        <img src="{% static 'routing_logistics_app/images/vrp_general_concept.png' %}" alt="VRP 일반 개념도" class="intro-image" style="max-width: 450px;">
+        <figcaption class="image-caption">그림 1: VRP의 주요 구성 요소 (출처: OptDemo 자체 제작)</figcaption>
+    </figure>
+
+    <h3>Ⅱ. VRP의 다양한 목표와 수학적 모델</h3>
+    <p>VRP를 해결함으로써 달성하고자 하는 주요 목표와 이를 반영하는 일반적인 목적 함수는 다음과 같습니다:</p>
+    <ul>
+        <li>
+            <strong>총 운행 거리 최소화 (Minimize Total Distance):</strong>
+            차량들이 이동하는 전체 거리를 줄여 유류비 및 차량 마모를 감소시킵니다.
+            <span class="math-formula">Objective: Minimize  $\sum_{k \in K} \sum_{(i,j) \in E} d_{ij} x_{ijk}$</span>
+            (여기서 $d_{ij}$는 노드 $i$에서 $j$까지의 거리, $x_{ijk}$는 차량 $k$가 간선 $(i,j)$를 사용하는지 여부)
+        </li>
+        <li>
+            <strong>총 운행 시간 최소화 (Minimize Total Travel Time):</strong>
+            전체 배송 또는 서비스 시간을 단축하여 효율성을 높입니다. (거리가 아닌 이동 시간 $t_{ij}$를 비용으로 사용)
+            <span class="math-formula">Objective: Minimize  $\sum_{k \in K} \sum_{(i,j) \in E} t_{ij} x_{ijk}$</span>
+        </li>
+        <li>
+            <strong>사용 차량 수 최소화 (Minimize Number of Vehicles Used):</strong>
+            가능한 적은 수의 차량을 사용하여 고정 비용(차량 유지보수, 보험료, 기사 인건비 등)을 줄입니다. 이는 종종 다른 주요 목표(예: 거리 최소화)와 함께 다중 목표 최적화 문제로 다루어지거나, 제약 조건으로 설정될 수 있습니다.
+            <span class="math-formula">Objective: Minimize  $\sum_{k \in K} y_k$</span>
+            (여기서 $y_k$는 차량 $k$가 사용되면 1, 아니면 0인 이진 변수. 이 목표는 다른 비용 목표와 결합되거나, 특정 차량 수 이하 사용을 제약으로 둘 수 있습니다.)
+        </li>
+        <li>
+            <strong>운송 비용 최소화 (Minimize Total Transportation Cost):</strong>
+            거리, 시간, 차량 사용 고정 비용, 유류비, 통행료 등 다양한 비용 요소를 종합적으로 고려한 총비용을 절감합니다.
+            <span class="math-formula">Objective: Minimize  $\sum_{k \in K} (\text{FixedCost}_k \cdot y_k + \sum_{(i,j) \in E} \text{VariableCost}_{ijk} \cdot x_{ijk})$</span>
+        </li>
+        <li>
+            <strong>고객 만족도 향상 (Maximize Customer Satisfaction):</strong>
+            이는 직접적인 수학적 함수로 표현하기 어려울 수 있으나, 대리 지표(proxy measure)를 통해 최적화에 반영될 수 있습니다. 예를 들어, 고객 방문 시간 창(Time Windows) 제약을 엄격히 준수하거나, 우선순위가 높은 고객을 먼저 방문하는 등의 형태로 구현됩니다. 시간 창 위반에 대한 페널티를 최소화하는 것도 하나의 방법입니다.
+            <span class="math-formula">Objective: Minimize  $\sum_{i \in C} \text{Penalty}_i(\text{arrival_time}_i - \text{due_time}_i)$</span>
+        </li>
+    </ul>
+    <figure>
+        <img src="{% static 'routing_logistics_app/images/vrp_example_solution.png' %}" alt="VRP 해결 예시 경로" class="intro-image" style="max-width: 550px;">
+        <figcaption class="image-caption">그림 2: VRP 문제의 최적화된 경로 예시 (출처: OptDemo 자체 제작)</figcaption>
+    </figure>
+
+    <h3>Ⅲ. 기본적인 수학적 모델 (개념)</h3>
+    <div class="math-model-section">
+        <p>VRP는 다양한 변형이 존재하지만, 기본적인 형태는 다음과 같이 정형화될 수 있습니다 (그래프 이론 기반):</p>
     <h4>📌 입력 데이터</h4>
     <ul>
         <li><strong>\( G=(V, E) \)</strong>: 노드(정점) 집합 \( V \)와 간선(엣지) 집합 \( E \)로 구성된 그래프</li>
@@ -188,128 +269,10 @@
         </li>
     </ul>
     <p>이러한 모델은 OR-Tools의 Routing Library와 같은 전문 솔버를 통해 해를 구할 수 있습니다.</p>
-
-
-    <h4>🎯 목표 및 관련 제약식/목적함수</h4>
-
-    <div class="objective-section">
-        <h3>1. 총 운행 거리 최소화</h3>
-        <p><strong>목적함수:</strong></p>
-        <div class="math-block">
-            $$\min \sum_{k \in K} \sum_{(i,j) \in E} d_{ij} \cdot x_{ijk}$$
-        </div>
-        <p>&rarr; 차량이 이동한 총 거리를 최소화합니다.</p>
     </div>
 
-    <div class="objective-section">
-        <h3>2. 총 운행 시간 최소화</h3>
-        <p><strong>목적함수 (이동 시간 기준):</strong></p>
-        <div class="math-block">
-            $$\min \sum_{k \in K} \sum_{(i,j) \in E} t_{ij} \cdot x_{ijk}$$
-        </div>
-        <p>또는, 각 차량의 마지막 고객 서비스 완료 시간 (또는 차고지 복귀 시간) 중 가장 늦은 시간을 최소화 (Makespan 최소화):</p>
-        <p><strong>추가 변수:</strong> $T^{end}_k$ (차량 $k$의 운행 종료 시간)</p>
-        <p><strong>목적함수 (Makespan 기준):</strong></p>
-        <div class="math-block">
-            $$\min (\max_{k \in K} T^{end}_k)$$
-        </div>
-        <p>(위 Makespan 목표는 선형으로 변환 가능: $Z \ge T^{end}_k \quad \forall k \in K$ 이고, $\min Z$)</p>
-    </div>
-
-    <div class="objective-section">
-        <h3>3. 사용 차량 수 최소화</h3>
-        <p><strong>추가 변수:</strong></p>
-        <div class="math-block">
-        $$y_k = \begin{cases} 1 & \text{if vehicle } k \text{ is used} \\ 0 & \text{otherwise} \end{cases}$$
-        </div>
-        <p><strong>목적함수:</strong></p>
-        <div class="math-block">
-            $$\min \sum_{k \in K} y_k$$
-        </div>
-        <p><strong>관련 제약식 (차량 사용 여부 연결):</strong></p>
-        <div class="math-block">
-            $$\sum_{i \in V} \sum_{j \in V, j \ne i} x_{ijk} \leq M \cdot y_k \quad \forall k \in K$$
-        </div>
-        <p>&rarr; 차량 $k$가 어떤 경로라도 운행하면 ($x_{ijk}$ 중 하나라도 1이면) $y_k$는 1이 되어야 합니다. (여기서 $M$은 충분히 큰 상수, 예를 들어 한 차량이 방문할 수 있는 최대 노드 수)</p>
-    </div>
-
-    <div class="objective-section">
-        <h3>4. 운송 비용 최소화 (거리, 시간, 차량 고정비 등 가중합)</h3>
-        <p><strong>목적함수 예시 (종합 비용):</strong></p>
-        <div class="math-block">
-            $$\min \left( \sum_{k \in K} \sum_{i \in V} \sum_{j \in V, j \ne i} ( c_d \cdot d_{ij} + c_t \cdot t_{ij} ) \cdot x_{ijk} + \sum_{k \in K} c_f \cdot y_k \right)$$
-        </div>
-        <p>여기서,</p>
-        <ul>
-            <li>$c_d$: 단위 거리당 비용</li>
-            <li>$c_t$: 단위 시간당 비용</li>
-            <li>$c_f$: 차량 1대당 고정 운영 비용 (차량 사용 시 발생)</li>
-        </ul>
-    </div>
-
-    <div class="objective-section">
-        <h3>5. 고객 만족도 향상 (시간 창 제약 고려)</h3>
-        <p><strong>시간 창 제약식 (Time Window Constraints):</strong></p>
-        <p>$s_i$: 고객 $i$에서의 서비스 제공 시간 (예: 하역 시간)</p>
-        <p>차량 $k$가 고객 $i$를 방문 후 $j$로 이동하는 경우 ($x_{ijk}=1$):</p>
-        <div class="math-block">
-            $$T_j \ge T_i + s_i + t_{ij} \quad (\text{if } x_{ijk}=1)$$
-        </div>
-        <p>(선형으로 표현: $T_j \ge T_i + s_i + t_{ij} - M \cdot (1 - x_{ijk}) \quad \forall i, j \in C, k \in K$)</p>
-        <p>각 고객의 서비스 시작 시간은 시간 창 내에 있어야 합니다:</p>
-        <div class="math-block">
-            $$e_i \leq T_i \leq l_i \quad \forall i \in C$$
-        </div>
-        <p><strong>목표함수 (예: 총 지연 시간 최소화):</strong></p>
-        <p>지연(Lateness) 변수 $L_i$ 정의: $L_i \ge T_i - l_i$ 이고 $L_i \ge 0$.</p>
-        <div class="math-block">
-            $$\min \sum_{i \in C} L_i$$
-        </div>
-        <p>또는, 일찍 도착하는 것에 대한 페널티(Earliness) $E_i$ ($E_i \ge e_i - T_i, E_i \ge 0$)도 고려할 수 있습니다.</p>
-    </div>
-
-    <hr>
-
-    <h2>✅ 종합 정리</h2>
-    <div class="table-responsive">
-        <table class="summary-table">
-            <thead>
-                <tr>
-                    <th>목표</th>
-                    <th>수식 (목적함수 또는 주요 제약식)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>총 운행 거리 최소화</td>
-                    <td><div class="math-block">$$\min \sum_{k,i,j} d_{ij} x_{ijk}$$</div></td>
-                </tr>
-                <tr>
-                    <td>총 운행 시간 최소화</td>
-                    <td><div class="math-block">$$\min \sum_{k,i,j} t_{ij} x_{ijk}$$</div></td>
-                </tr>
-                <tr>
-                    <td>사용 차량 수 최소화</td>
-                    <td><div class="math-block">$$\min \sum_{k} y_k$$</div> <div class="math-block">$$\sum_{i,j} x_{ijk} \leq M y_k$$</div></td>
-                </tr>
-                <tr>
-                    <td>운송 비용 최소화</td>
-                    <td><div class="math-block">$$\min \left( \sum_{k,i,j} (c_d d_{ij} + c_t t_{ij}) x_{ijk} + \sum_{k} c_f y_k \right)$$</div></td>
-                </tr>
-                <tr>
-                    <td>고객 만족도 향상 (시간 창)</td>
-                    <td>
-                        <div class="math-block">$$T_j \ge T_i + s_i + t_{ij} - M(1-x_{ijk})$$</div>
-                        <div class="math-block">$$e_i \leq T_i \leq l_i$$</div>
-                        <p class="mt-2">목표 예: <span class="math-block">$$\min \sum_{i} L_i \quad (L_i \ge T_i - l_i, L_i \ge 0)$$</span></p>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="highlight-box">
+    {# ... (기존 "제한이 없는 VRP 문제와 차량 수" 및 "OptDemo에서의 체험" 섹션은 그대로 유지 또는 이 내용에 맞게 수정) ... #}
+    <div class="highlight-box">
         <h4>특별 케이스: "제한이 없는" VRP 문제와 차량 수 🚚</h4>
         <p>
             만약 VRP에서 주요 목표가 **오직 총 운행 거리 최소화**이고, 차량 용량, 운행 시간, 고객 방문 시간 창 등에 대한 **제한이 전혀 없다면**, 이론적으로는 **단 한 대의 차량**으로 모든 고객을 방문하는 것이 가장 짧은 총 운행 거리를 달성합니다.
@@ -361,8 +324,14 @@
             </ul>
         </p>
     </div>
-{% endblock %}
 
+    <h3>Ⅳ. OptDemo에서의 체험</h3>
+    <p>
+        OptDemo의 "차량 경로 문제" 데모 섹션에서는 이러한 VRP의 기본 원리를 이해하고, 다양한 조건(고객 수, 차량 수 등)에 따른 최적 경로 결과를 시각적으로 확인할 수 있도록 구성될 예정입니다. 사용자는 직접 차고지와 고객 위치를 지정하고, 최적화된 경로를 통해 VRP가 어떻게 실제 문제 해결에 기여하는지 체험할 수 있습니다.
+    </p>
+
+</div>
+{% endblock %}
 {% block scripts %}
 {# MathJax 로드 (base.html에 이미 Chart.js 등이 있다면 그 이후에 로드하는 것이 좋음) #}
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
