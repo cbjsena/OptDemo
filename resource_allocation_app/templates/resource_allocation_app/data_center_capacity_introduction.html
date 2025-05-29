@@ -22,18 +22,49 @@
     .introduction-content li {
         margin-bottom: 0.5rem;
     }
-    .math-model-section {
-        background-color: #f8f9fa;
-        border: 1px solid #e9ecef;
-        border-radius: 5px;
-        padding: 15px;
-        margin-top: 15px;
-    }
-    .math-model-section p, .math-model-section li {
-        margin-bottom: 0.5rem;
-    }
-    .math-model-section strong {
+    .model-definition-content {
+        line-height: 1.7;
+        font-size: 1.03rem;
         color: #333;
+    }
+    .objective-section { /* 각 목표 섹션 스타일 */
+        margin-bottom: 30px;
+        padding: 20px;
+        border: 1px solid #d1d9e0;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .objective-section h3 {
+        margin-top: 0; /* 섹션 내 첫 h3의 상단 마진 제거 */
+        border-bottom: 1px dashed #17a2b8;
+        padding-bottom: 8px;
+    }
+    .summary-table { /* 종합 정리 테이블 스타일 */
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        font-size: 0.95em;
+    }
+    .summary-table th, .summary-table td {
+        border: 1px solid #c5d0da;
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top; /* 수식이 길 경우 상단 정렬 */
+    }
+    .summary-table th {
+        background-color: #007bff; /* OptDemo 테마와 유사하게 */
+        color: white;
+        font-weight: bold;
+    }
+    .summary-table tr:nth-child(even) {
+        background-color: #f2f9ff;
+    }
+    .summary-table .math-block { /* 테이블 내 수식 블록 스타일 약간 조정 */
+        margin-top: 5px;
+        margin-bottom: 5px;
+        padding: 5px;
+        font-size: 1em;
     }
 </style>
 {% endblock %}
@@ -74,33 +105,58 @@
     </ul>
 
     <h4>3. 수학적 모델 (개념)</h4>
-    <div class="math-model-section">
+    <div class="model-definition-content">
         <p>데이터 센터 용량 계획 문제는 다양한 변형이 가능하지만, 일반적으로 다음과 같은 요소를 포함하는 혼합 정수 계획법(Mixed-Integer Programming, MIP) 또는 선형 계획법(LP) 문제로 모델링될 수 있습니다.</p>
         <ul>
-            <li>
-                <strong>결정 변수 (Decision Variables):</strong>
-                <ul>
-                    <li>$I_{jt}$: 기간 $t$에 설비 유형 $j$(예: 서버 모델, 스토리지 종류)에 대한 투자 여부 (이진 변수)</li>
-                    <li>$C_{jt}$: 기간 $t$에 신규로 확보하는 설비 유형 $j$의 용량 (연속 또는 정수 변수)</li>
-                    <li>$A_{jst}$: 기간 $t$에 서비스 $s$에 할당되는 설비 유형 $j$의 용량 (연속 변수)</li>
-                </ul>
+            <strong>입력 데이터:</strong>
+            <ul>
+                <li><strong>\( T \)</strong>: 서비스를 제공해야 되는 기간의 집합</li>
+                <li><strong>\( J \)</strong>: 사용 가능한 설비 유형의 집합</li>
+                <li><strong>\( S \)</strong>: 제공해야 되는 서비스의 집합</li>
+                <li><strong>\( TotalInv_{t} \)</strong>: 기간별 투자 예산 집합</li>
+                <li><strong>\( Inv_{jt} \)</strong>: 기간 \( t \), 설비 \( j \)의 투자 비용</li>
+                <li><strong>\( OprCost_{jt} \)</strong>: 기간 \( t \), 설비 \( j \)의 운영 비용</li>
+                <li><strong>\( Capa_{jt} \)</strong>: 기간 \( t \), 설비 \( j \)의 기존 용량</li>
+                <li><strong>\( Dem_{ts} \)</strong>: 기간 \( t \)별 서비스 \( s \)의 수요</li>
+                <li><strong>\( NPV_{jt} \)</strong>: 기간 \( t \), 설비 \( j \)의 이익</li>
+            </ul>
+            <hr>
+            <strong>결정 변수:</strong>
+            <ul>
+                <li> <strong>\( C_{jt} \)</strong>: 기간 \( t \)에 신규로 확보하는 설비 유형\( j \)의 용량 (연속 또는 정수 변수)</li>
+                <li> <strong>(선택적) \( I_{jt} \)</strong>: 기간 \( t \)에 설비 유형\( j \)(예: 서버 모델, 스토리지 종류)에 대한 투자 여부 (이진 변수)</li>
+                <li> <strong>(선택적) \( A_{jst} \)</strong>: 기간 \( t \)에 서비스\( s \)에 할당되는 설비 유형\( j \)의 용량 (연속 변수)</li>
+            </ul>
+            <hr>
+            <strong>목표 함수 (총 비용 최소화):</strong>
+            <li>총 비용 최소화</li>
+            <div class="math-block">
+                $$ Min \sum_{t \in T} \sum_{j \in J} OprCost_{jt} \cdot Capa_{jt} + Inv_{jt} \cdot I_{jt}$$
+            </div>
+            <li>또는 순현재가치(NPV) 극대화 등</li>
+            <div class="math-block">
+                $$ Max \sum_{t \in T} \sum_{j \in J} NPV_{jt} \cdot Capa_{jt} - Inv_{jt} \cdot I_{jt}$$
+            </div>
+            <hr>
+            <strong>제약 조건:</strong>
+            <li>수요 충족 제약: 각 서비스 s의 기간 t별 수요 충족 조건
+                <div class="math-block">
+                    $$ \sum_{j \in J} A_{jst} \ge Dem_{ts}$$
+                </div>
             </li>
-            <li>
-                <strong>목표 함수 (Objective Function):</strong>
-                <ul>
-                    <li>총 비용 최소화: Minimize $\sum_{t} \sum_{j} (\text{투자비용}_{jt} \cdot C_{jt} + \text{운영비용}_{jt} \cdot (\text{기존용량}_{jt} + C_{jt}))$</li>
-                    <li>또는 순현재가치(NPV) 극대화 등</li>
-                </ul>
+            <li>용량 한도 제약: 설비의 총 할당 용량 제한
+                <div class="math-block">
+                   $$\sum_{s} A_{jst} \le Capa_{jt} + C_{jt}$$
+                </div>
             </li>
-            <li>
-                <strong>제약 조건 (Constraints):</strong>
-                <ul>
-                    <li>수요 충족 제약: 각 서비스 $s$의 기간 $t$별 수요 $D_{st}$는 할당된 용량으로 충족되어야 함 ($\sum_{j} A_{jst} \ge D_{st}$)</li>
-                    <li>용량 한도 제약: 각 설비 유형 $j$에 할당된 총 용량은 가용 용량을 초과할 수 없음 ($\sum_{s} A_{jst} \le \text{기존용량}_{jt} + C_{jt}$)</li>
-                    <li>예산 제약: 기간별 총 투자 비용은 예산 한도를 초과할 수 없음 ($\sum_{j} \text{투자비용}_{jt} \cdot C_{jt} \le \text{총투자예산}_t$)</li>
-                    <li>물리적 제약: 공간, 전력, 냉각 용량 한도 등</li>
-                    <li>설비 간 의존성 제약 (예: 서버 10대당 특정 냉각 용량 필요)</li>
-                </ul>
+            <li>예산 제약: 기간별 투자 예산 초과 금지
+                <div class="math-block">
+                   $$\sum_{j} Inv_{jt} \cdot C_{jt} \le TotalInv_{t}$$
+                </div>
+            </li>
+            <li>물리적 제약: 공간, 전력, 냉각 용량 한도 등
+            </li>
+            <li>설비 간 의존성 제약 (예: 서버 10대당 특정 냉각 용량 필요)
             </li>
         </ul>
         <p>이러한 모델은 OR-Tools와 같은 최적화 솔버를 통해 다양한 시나리오에 대한 최적의 투자 및 할당 계획을 도출하는 데 사용될 수 있습니다.</p>
@@ -111,4 +167,19 @@
         본 데모의 "데이터 센터 용량 계획" 섹션에서는 사용자가 간략화된 시나리오(예: 여러 유형의 서버와 서비스 수요)를 설정하고, 제한된 예산 및 공간 하에서 어떤 서버를 얼마나 도입하고 각 서비스에 어떻게 할당해야 총 비용을 최소화하거나 서비스 만족도를 높일 수 있는지 확인하는 과정을 체험할 수 있도록 구성될 예정입니다.
     </p>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{# MathJax 로드 (base.html에 이미 Chart.js 등이 있다면 그 이후에 로드하는 것이 좋음) #}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("VRP Model Definition page script loaded.");
+        if (typeof MathJax !== 'undefined' && MathJax.typeset) {
+            // 페이지 로드 후 MathJax가 수식을 렌더링하도록 명시적 호출 (필요한 경우)
+            // MathJax.typesetPromise(); // 또는 MathJax.typeset();
+        }
+    });
+</script>
 {% endblock %}
