@@ -6,9 +6,9 @@ import json
 from .utils import data_utils
 from common_utils.run_alloctaion_opt import *
 from common_utils.default_data import (
-    budjet_items_preset,
-    datacenter_servers_preset,
-    datacenter_services_preset
+    preset_budjet_items,
+    preset_datacenter_servers,
+    preset_datacenter_services
 )
 logger = logging.getLogger(__name__)  # settings.py에 정의된 'resource_allocation_app' 로거 사용
 
@@ -28,8 +28,8 @@ def budget_allocation_demo_view(request):
     # or that the key exists.
     initial_form_data = {'total_budget': '1000'}  # Default value for initial page load
     form_data = {}
-    for i in range(len(budjet_items_preset)):
-        preset = budjet_items_preset[i % len(budjet_items_preset)]
+    for i in range(len(preset_budjet_items)):
+        preset = preset_budjet_items[i % len(preset_budjet_items)]
         for key, default_val in preset.items():
             initial_form_data[key] = default_val
 
@@ -301,13 +301,13 @@ def data_center_capacity_demo_view(request):
         form_data['total_space_sqm'] = request.GET.get('total_space_sqm', 10)
         # 기본 서버 유형 데이터 (ID 포함)
         for i in range(submitted_num_server_types):
-            preset = datacenter_servers_preset[i % len(datacenter_servers_preset)]
+            preset = preset_datacenter_servers[i % len(preset_datacenter_servers)]
             for key, default_val in preset.items():
                 form_data[f'server_{i}_{key}'] = request.GET.get(f'server_{i}_{key}', default_val)
 
         # 기본 서비스 수요 데이터 (ID 포함)
         for i in range(submitted_num_services):
-            preset = datacenter_services_preset[i % len(datacenter_services_preset)]
+            preset = preset_datacenter_services[i % len(preset_datacenter_services)]
             for key, default_val in preset.items():
                 form_data[f'service_{i}_{key}'] = request.GET.get(f'service_{i}_{key}', default_val)
     elif request.method == 'POST':

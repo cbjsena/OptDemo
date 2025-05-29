@@ -91,9 +91,15 @@
             <input type="hidden" name="depot_y" id="hidden_depot_y" value="{{ form_data.depot_y|default_if_none:'0' }}">
 
             {% for i in submitted_num_customers|get_range %}
-                <input type="hidden" name="cust_{{ i }}_id" id="hidden_cust_{{ i }}_id" value="C{{i|add:1}}">
-                <input type="hidden" name="cust_{{ i }}_x" id="hidden_cust_{{ i }}_x">
-                <input type="hidden" name="cust_{{ i }}_y" id="hidden_cust_{{ i }}_y">
+                {% make_key 'cust' i 'id' as key_name %}
+                <input type="hidden" name="cust_{{ i }}_id" id="hidden_cust_{{ i }}_id"
+                       value="{{ form_data|get_item_simple:key_name }}">
+                {% make_key 'cust' i 'x' as key_name %}
+                <input type="hidden" name="cust_{{ i }}_x" id="hidden_cust_{{ i }}_x"
+                       value="{{ form_data|get_item_simple:key_name }}">
+                {% make_key 'cust' i 'y' as key_name %}
+                <input type="hidden" name="cust_{{ i }}_y" id="hidden_cust_{{ i }}_y"
+                       value="{{ form_data|get_item_simple:key_name }}">
             {% endfor %}
         </div>
 

@@ -1,4 +1,10 @@
 from django.shortcuts import render
+
+from common_utils.default_data import (
+    preset_depot_location,
+    preset_customer_locations,
+    preset_num_vehicles
+)
 from common_utils.run_routing_opt import *
 from .utils.data_utils import *
 import random
@@ -44,12 +50,13 @@ def vrp_demo_view(request):
         submitted_num_customers = max(1, min(10, submitted_num_customers))
         submitted_num_vehicles = max(1, min(5, submitted_num_vehicles))
 
-        form_data['depot_x'] = request.GET.get('depot_x', '0')
-        form_data['depot_y'] = request.GET.get('depot_y', '0')
-        for i in range(submitted_num_customers):
-            form_data[f'cust_{i}_id'] = request.GET.get(f'cust_{i}_id', f'C{i + 1}')
-            form_data[f'cust_{i}_x'] = request.GET.get(f'cust_{i}_x', str(random.randint(-10, 10)))
-            form_data[f'cust_{i}_y'] = request.GET.get(f'cust_{i}_y', str(random.randint(-10, 10)))
+        form_data['depot_x'] = preset_depot_location.get('x')
+        form_data['depot_y'] = preset_depot_location.get('y')
+        for i in range(len(preset_customer_locations)):
+            preset = preset_customer_locations[i % len(preset_customer_locations)]
+            for key, default_val in preset.items():
+                form_data[f'cust_{i}_{key}'] = request.GET.get(f'cust_{i}_{key}', default_val)
+
     elif request.method == 'POST':
         form_data = request.POST.copy()
         submitted_num_customers = int(form_data.get('num_customers', default_num_customers))
