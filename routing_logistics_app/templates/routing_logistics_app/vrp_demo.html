@@ -6,12 +6,11 @@
 
 {% block styles %}
 <style>
-    /* ... (이전 error/success 메시지, results-table, form-section 스타일 유지) ... */
     #vrpCanvasInput {
         border: 1px solid #007bff;
         cursor: crosshair;
         margin-bottom: 10px;
-        background-color: #f8f9fa; /* 캔버스 배경색 */
+        background-color: #f8f9fa;
     }
     #canvasInstructions {
         font-weight: bold;
@@ -74,6 +73,7 @@
         {% csrf_token %}
         <input type="hidden" name="num_customers" value="{{ submitted_num_customers }}" id="form_num_customers">
         <input type="hidden" name="num_vehicles" value="{{ submitted_num_vehicles }}" id="form_num_vehicles">
+        <input type="hidden" name="problem_type" value="VRP" id="problem_type">
 
         <div class="form-section">
             <h4>1. 위치 지정 (차고지 1개, 고객 {{ submitted_num_customers }}명, 차량 {{submitted_num_vehicles}}대)</h4>
@@ -100,6 +100,9 @@
                 {% make_key 'cust' i 'y' as key_name %}
                 <input type="hidden" name="cust_{{ i }}_y" id="hidden_cust_{{ i }}_y"
                        value="{{ form_data|get_item_simple:key_name }}">
+                {% make_key 'cust' i 'demand' as key_name %}
+                <input type="hidden" name="cust_{{ i }}_demand" id="hidden_cust_{{ i }}_demnad"
+                       value="{{ form_data|get_item_simple:key_name }}">
             {% endfor %}
         </div>
 
@@ -110,7 +113,7 @@
     {% endif %}
 
     {# ... (결과 표시 부분은 이전 답변과 동일하게 유지) ... #}
-    {% if vrp_results is not None or error_message or success_message or info_message %}
+    {% if opt_results is not None or error_message or success_message or info_message %}
     <hr class="my-4">
     <h3 class="mt-4">Optimization Results</h3>
     {% endif %}
@@ -125,20 +128,20 @@
         <div class="success-message" role="alert">{{ success_message }}</div>
     {% endif %}
 
-    {% if vrp_results %}
+    {% if opt_results %}
     <div class="card mt-4">
         <div class="card-header"><strong>결과 요약</strong></div>
         <div class="card-body">
-            <p><strong>총 운행 거리:</strong> {{ vrp_results.total_distance|floatformat:2 }}</p>
-            <p><strong>사용된 차량 수:</strong> {{ vrp_results.routes|length }} / {{ submitted_num_vehicles }}</p>
-            {% if vrp_results.dropped_nodes %}
-                <p class="text-danger"><strong>방문 실패 고객 수:</strong> {{ vrp_results.dropped_nodes|length }}</p>
+            <p><strong>총 운행 거리:</strong> {{ opt_results.total_distance|floatformat:2 }}</p>
+            <p><strong>사용된 차량 수:</strong> {{ opt_results.routes|length }} / {{ submitted_num_vehicles }}</p>
+            {% if opt_results.dropped_nodes %}
+                <p class="text-danger"><strong>방문 실패 고객 수:</strong> {{ opt_results.dropped_nodes|length }}</p>
             {% endif %}
             <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
         </div>
     </div>
 
-    {% if vrp_results.routes %}
+    {% if opt_results.routes %}
     <div class="card mt-3">
         <div class="card-header"><strong>차량별 최적 경로</strong></div>
         <div class="table-responsive">
@@ -152,7 +155,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for route in vrp_results.routes %}
+                    {% for route in opt_results.routes %}
                     <tr>
                         <td>차량 {{ route.vehicle_id|add:1 }}</td>
                         <td class="route-path">
@@ -196,7 +199,7 @@
     </div>
     {% endif %}
 
-    {% if vrp_results %}
+    {% if opt_results %}
     <div class="highlight-box">
         <h4>특별 케이스: "제한이 없는" VRP 문제와 차량 수 🚚</h4>
         <p>
