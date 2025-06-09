@@ -34,3 +34,12 @@ preset_num_customers=5
 preset_num_vehicles=3
 preset_num_depots=1
 preset_vehicle_capacity=100
+
+preset_num_pairs=3
+preset_pair_locations = [
+        {"id": "Pair1","px": 103.0,"py": 120.0, "dx": 510.0,"dy": 150.0, "demand": 30},
+        {"id": "Pair2","px": 171.0,"py": 317.0, "dx": 486.0,"dy": 283.0, "demand": 40},
+        {"id": "Pair3","px": 384.0,"py": 45.0, "dx": 302.0,"dy": 145.0, "demand": 30},
+        {"id": "Pair4","px": 129.0,"py": 221.0, "dx": 398.0,"dy": 231.0, "demand": 30},
+        {"id": "Pair5","px": 341.0,"py": 329.0, "dx": 537.0,"dy": 365.0, "demand": 20},
+    ]

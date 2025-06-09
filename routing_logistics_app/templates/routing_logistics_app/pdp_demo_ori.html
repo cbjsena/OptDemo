@@ -1,0 +1,213 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load routing_filters %}
+
+{% block title %}PDP Demo - Pickup and Delivery Problem{% endblock %}
+
+{% block styles %}
+    {# ... (CVRP 데모와 유사한 스타일) ... #}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Pickup & Delivery Problem (PDP) Demo</h1>
+    </div>
+    <p>수거-배송 작업 쌍, 차량 수 및 용량을 입력하여 총 이동 거리를 최소화하는 최적 경로를 계산합니다.</p>
+
+    <form method="GET" class="mb-3 form-inline">
+        <div class="form-group mr-2">
+            <label for="num_pairs_to_show" class="mr-2">작업 쌍 수 (1-5):</label>
+            <select name="num_pairs_to_show" id="num_pairs_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in num_pairs_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_pairs %}selected{% endif %}>{{ i }}개</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group mr-2">
+            <label for="num_vehicles_to_show" class="mr-2">차량 수 (1-5):</label>
+            <select name="num_vehicles_to_show" id="num_vehicles_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in num_vehicles_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_vehicles %}selected{% endif %}>{{ i }}대</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group mr-2">
+            <label for="num_vehicle_capa_to_show" class="mr-2">차량 용량 (50-200), (모든 차량 동일)</label>
+            <select name="num_vehicle_capa_to_show" id="num_vehicle_capa_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in vehicle_capa_options %}
+                    <option value="{{ i }}" {% if i == submitted_vehicle_capa %}selected{% endif %}>{{ i }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <noscript><button type="submit" class="btn btn-sm btn-secondary">설정 적용</button></noscript>
+    </form>
+
+    <form method="POST" id="pdpForm">
+        {% csrf_token %}
+        <input type="hidden" name="num_pairs" value="{{ submitted_num_pairs }}">
+        <input type="hidden" name="num_vehicles" value="{{ submitted_num_vehicles }}">
+        <input type="hidden" name="problem_type" value="PDP" id="problem_type">
+        <input type="hidden" name="vehicle_capacity" value="{{ submitted_vehicle_capa }}">
+
+        <div class="form-section">
+            <h4>1. 차고지 및 차량 정보</h4>
+            <div class="form-row align-items-center">
+                <div class="col-md-4">
+                    <label for="depot_x" class="sr-only">Depot X</label>
+                    <div class="input-group input-group-sm mb-2">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" style="min-width: 110px;">Depot X 좌표</span>
+                        </div>
+                        <input type="number" step="any" class="form-control" id="depot_x" name="depot_x"
+                               value="{% with k='depot_x' %}{{ form_data|get_item_simple:k|default_if_none:'0' }}{% endwith %}" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="depot_y" class="sr-only">Depot Y</label>
+                    <div class="input-group input-group-sm mb-2">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" style="min-width: 110px;">Depot Y 좌표</span>
+                        </div>
+                        <input type="number" step="any" class="form-control" id="depot_y" name="depot_y"
+                               value="{% with k='depot_y' %}{{ form_data|get_item_simple:k|default_if_none:'0' }}{% endwith %}" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>2. 수거-배송 작업 쌍 정보 (총 {{ submitted_num_pairs }}개)</h4>
+            {% for i in submitted_num_pairs|get_range %}
+            <fieldset class="mb-3 p-3 border rounded">
+                {% make_key 'pair' i 'id' as key_name %}
+                <legend class="h6">{{ form_data|get_item_simple:key_name }}</legend>
+                <div class="form-row">
+                    {% make_key 'pair' i 'id' as key_name %}
+                    <div class="form-group col-md-4">
+                        <label for={{key_name}}>작업 ID:</label>
+                        <input type="text" class="form-control form-control-sm" name={{key_name}}
+                               value="{{ form_data|get_item_simple:key_name }}">
+                    </div>
+                    {% make_key 'pair' i 'demand' as key_name %}
+                    <div class="form-group col-md-4">
+                        <label for={{key_name}}>수요량:</label>
+                        <input type="number" min="1" class="form-control form-control-sm" name={{key_name}}
+                               value="{{ form_data|get_item_simple:key_name }}">
+                    </div>
+                    {% make_key 'pair' i 'px' as key_name %}
+                    <div class="form-group col-md-3">
+                        <label for={{key_name}}>Pickup X:</label>
+                        <input type="number" step="any" class="form-control form-control-sm" name={{key_name}}
+                               value="{{ form_data|get_item_simple:key_name }}">
+                    </div>
+                    {% make_key 'pair' i 'py' as key_name %}
+                    <div class="form-group col-md-3">
+                        <label for={{key_name}}>Pickup Y:</label>
+                        <input type="number" step="any" class="form-control form-control-sm" name={{key_name}}
+                               value="{{ form_data|get_item_simple:key_name }}">
+                    </div>
+                    {% make_key 'pair' i 'dx' as key_name %}
+                    <div class="form-group col-md-3">
+                        <label for={{key_name}}>Delivery X:</label>
+                        <input type="number" step="any" class="form-control form-control-sm" name={{key_name}}
+                               value="{{ form_data|get_item_simple:key_name }}">
+                    </div>
+                    {% make_key 'pair' i 'dy' as key_name %}
+                     <div class="form-group col-md-3">
+                        <label for={{key_name}}>Delivery Y:</label>
+                        <input type="number" step="any" class="form-control form-control-sm" name={{key_name}}
+                               value="{{ form_data|get_item_simple:key_name }}">
+                    </div>
+                </div>
+            </fieldset>
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">PDP 최적 경로 계산 실행</button>
+    </form>
+
+    {# --- 결과 표시 영역 (CVRP와 유사하게 구성, 경로별 적재량 변화 표시 추가) --- #}
+    {% if pdp_results or error_message %}
+        <hr class="my-4">
+        <h3 class="mt-4">Optimization Results (PDP)</h3>
+        {# ... 메시지 표시 ... #}
+        {% if pdp_results.routes %}
+            {# ... 경로 테이블 (각 경로별 적재량 변화(route_loads)도 표시 가능) ... #}
+        {% endif %}
+        {% if plot_data %}
+            <div class="card mt-3">
+                <div class="card-header"><strong>경로 시각화 (PDP)</strong></div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="pdpRouteChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("PDP Demo page script loaded.");
+        const plotDataJson = '{{ plot_data|safe|default_if_none:"{}" }}';
+        try {
+            const plotData = JSON.parse(plotDataJson);
+            if (plotData && plotData.locations && plotData.routes) {
+                const pdpCtxElement = document.getElementById('pdpRouteChart');
+                if (pdpCtxElement) {
+                    // ... (VRP 차트와 유사한 로직, P-D 쌍을 점선으로 연결하는 기능 추가) ...
+                    const datasets = [];
+                    // P-D 쌍 점선으로 연결
+                    plotData.pairs.forEach((pair, i) => {
+                        const p_loc = plotData.locations[pair.p_idx];
+                        const d_loc = plotData.locations[pair.d_idx];
+                        datasets.push({
+                            type: 'line',
+                            label: `작업 ${i+1} 쌍`,
+                            data: [{x: p_loc.x, y: p_loc.y}, {x: d_loc.x, y: d_loc.y}],
+                            borderColor: 'rgba(108, 117, 125, 0.5)',
+                            borderDash: [5, 5],
+                            borderWidth: 1.5,
+                            pointRadius: 0,
+                            fill: false
+                        });
+                    });
+
+                    // Depot, Pickup, Delivery 위치를 다른 모양/색으로 표시
+                    const depotPoint = [plotData.locations[0]].map(loc => ({x: loc.x, y: loc.y}));
+                    const pickupPoints = plotData.pairs.map(p => plotData.locations[p.p_idx]).map(loc=>({x:loc.x, y:loc.y}));
+                    const deliveryPoints = plotData.pairs.map(p => plotData.locations[p.d_idx]).map(loc=>({x:loc.x, y:loc.y}));
+
+                    datasets.push({type:'scatter', label:'Depot', data:depotPoint, backgroundColor:'blue', pointStyle:'rectRot', pointRadius:8});
+                    datasets.push({type:'scatter', label:'Pickup', data:pickupPoints, backgroundColor:'green', pointStyle:'triangle', pointRadius:7});
+                    datasets.push({type:'scatter', label:'Delivery', data:deliveryPoints, backgroundColor:'red', pointStyle:'rect', pointRadius:7});
+
+                    // 경로 그리기
+                    const routeColors = ['rgba(75, 192, 192, 0.8)', 'rgba(255, 159, 64, 0.8)', /* ... */];
+                    plotData.routes.forEach((route, index) => {
+                         datasets.push({
+                            type: 'line',
+                            label: `차량 ${route.vehicle_id + 1} 경로`,
+                            data: route.path_coords.map(coord => ({x: coord[0], y: coord[1]})),
+                            borderColor: routeColors[index % routeColors.length],
+                            borderWidth: 2.5,
+                            fill: false
+                        });
+                    });
+
+                    new Chart(pdpCtxElement, {
+                        data: { datasets: datasets },
+                        options: { /* ... */ }
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Error parsing PDP plot data or initializing chart:", e);
+        }
+    });
+</script>
+{% endblock %}

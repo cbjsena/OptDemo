@@ -101,7 +101,7 @@
     </ul>
 
     <figure>
-        <img src="{% static 'routing_logistics_app/images/cvrp_concept.png' %}" alt="CVRP 개념도" class="intro-image" style="max-width: 600px;">
+        <img src="{% static 'routing_logistics_app/images/cvrp_concept.png' %}" alt="CVRP 개념도" class="intro-image" style="max-width: 500px;">
         <figcaption class="image-caption">그림 1: CVRP 개념 - 각 고객은 수요(숫자)를 가지며, 각 차량은 용량(C) 한계를 가집니다.</figcaption>
     </figure>
 
@@ -145,7 +145,6 @@
                 <p><small>(여기서 $y_{ik}$는 고객 $i$를 차량 $k$가 방문하면 1, 아니면 0인 이진 변수입니다. 또는 다른 형태의 수식으로 표현될 수 있습니다.)</small></p>
             </li>
         </ul>
-        <p>OR-Tools의 라우팅 라이브러리에서는 `AddDimensionWithVehicleCapacity`와 같은 기능을 사용하여 이러한 용량 제약을 모델에 쉽게 추가할 수 있습니다.</p>
     </div>
 
     <h4>4. OptDemo에서의 체험</h4>

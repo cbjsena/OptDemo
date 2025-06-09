@@ -5,7 +5,9 @@ from common_utils.default_data import (
     preset_customer_locations,
     preset_num_customers,
     preset_num_vehicles,
-    preset_vehicle_capacity
+    preset_vehicle_capacity,
+    preset_num_pairs,
+    preset_pair_locations
 )
 from common_utils.run_routing_opt import *
 from .utils.data_utils import *
@@ -267,12 +269,114 @@ def pdp_introduction_view(request):
 
 
 def pdp_demo_view(request):
+    """
+    Pickup and Delivery Problem 데모 뷰.
+    """
+    form_data = {}
+    model_name = 'PDP'
+    if request.method == 'GET':
+        logger.info(f'{model_name} Demo GET request processing.')
+        submitted_num_pairs = int(request.GET.get('num_pairs_to_show', preset_num_pairs))
+        submitted_num_vehicles = int(request.GET.get('num_vehicles_to_show', preset_num_vehicles))
+        submitted_vehicle_capa = int(request.GET.get('num_vehicle_capa_to_show', preset_vehicle_capacity))
+        submitted_num_pairs = max(1, min(5, submitted_num_pairs))
+        submitted_num_vehicles = max(1, min(5, submitted_num_vehicles))
+        submitted_vehicle_capa = max(50, min(100, submitted_vehicle_capa))
+
+        form_data['depot_x'] = preset_depot_location.get('x')
+        form_data['depot_y'] = preset_depot_location.get('y')
+        form_data['vehicle_capacity'] = preset_vehicle_capacity
+
+        for i in range(len(preset_pair_locations)):
+            preset = preset_pair_locations[i % len(preset_pair_locations)]
+            for key, default_val in preset.items():
+                form_data[f'pair_{i}_{key}'] = request.GET.get(f'pair_{i}_{key}', default_val)
+
+        logger.info(form_data)
+
+    elif request.method == 'POST':
+        form_data = request.POST.copy()
+        submitted_num_pairs = int(form_data.get('num_pairs', preset_num_pairs))
+        submitted_num_vehicles = int(form_data.get('num_vehicles', preset_num_vehicles))
+        submitted_vehicle_capa = int(form_data.get('vehicle_capa', preset_vehicle_capacity))
+
     context = {
-        'active_model': 'Routing & Logistics',  # 대메뉴 활성화용
-        'active_submenu_category': 'pickup_delivery_problem',
-        'active_submenu': 'pdp_demo'  # 현재 페이지 활성화용
+        'active_model': 'Routing & Logistics',
+        'active_submenu_category': 'pickup_delivery_problems',
+        'active_submenu': 'pdp_demo',
+        'form_data': form_data,
+        'pdp_results': None,
+        'error_message': None, 'success_message': None, 'info_message': None,
+        'processing_time_seconds': "N/A",
+        'num_pairs_options': range(1, 6),  # 1~5개 작업 쌍
+        'num_vehicles_options': range(1, 6),
+        'vehicle_capa_options': range(50, 210, 10),
+        'submitted_num_pairs': submitted_num_pairs,
+        'submitted_num_vehicles': submitted_num_vehicles,
+        'submitted_vehicle_capa': submitted_vehicle_capa,
+        'plot_data': None
     }
-    logger.debug("Rendering PDP demo page.")
+
+    if request.method == 'POST':
+        logger.info("PDP Demo POST request processing.")
+        try:
+            input_data = {}
+            input_data['depot_location'] = {'x': float(form_data.get('depot_x')), 'y': float(form_data.get('depot_y'))}
+            input_data['num_vehicles'] = int(form_data.get('num_vehicles'))
+
+            capacity = int(form_data.get('vehicle_capacity'))
+            input_data['vehicle_capacities'] = [capacity] * input_data['num_vehicles']
+
+            input_data['pickup_delivery_pairs'] = []
+            for i in range(submitted_num_pairs):
+                input_data['pickup_delivery_pairs'].append({
+                    'id': form_data.get(f'pair_{i}_id'),
+                    'pickup': {'x': float(form_data.get(f'pair_{i}_px')), 'y': float(form_data.get(f'pair_{i}_py'))},
+                    'delivery': {'x': float(form_data.get(f'pair_{i}_dx')), 'y': float(form_data.get(f'pair_{i}_dy'))},
+                    'demand': int(form_data.get(f'pair_{i}_demand'))
+                })
+
+            # ... (유효성 검사 로직 추가 필요) ...
+
+            # 최적화 실행
+            pdp_results_data, error_msg_opt, processing_time_ms = run_pdp_optimizer(input_data)
+            context[
+                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+
+            if error_msg_opt:
+                context['error_message'] = error_msg_opt
+            elif pdp_results_data:
+                context['pdp_results'] = pdp_results_data
+                context['success_message'] = f"PDP 최적 경로 계산 완료! 총 거리: {pdp_results_data.get('total_distance', 0):.2f}"
+
+                # 차트용 데이터 준비
+                plot_data = {'locations': [], 'routes': [], 'depot_index': 0, 'pairs': []}
+                plot_data['locations'].append(
+                    {'id': 'Depot', 'x': input_data['depot_location']['x'], 'y': input_data['depot_location']['y']})
+
+                node_idx_counter = 1
+                for i, pair in enumerate(input_data['pickup_delivery_pairs']):
+                    plot_data['locations'].append(
+                        {'id': f"{pair['id']}-P", 'x': pair['pickup']['x'], 'y': pair['pickup']['y']})
+                    plot_data['locations'].append(
+                        {'id': f"{pair['id']}-D", 'x': pair['delivery']['x'], 'y': pair['delivery']['y']})
+                    plot_data['pairs'].append({'p_idx': node_idx_counter, 'd_idx': node_idx_counter + 1})
+                    node_idx_counter += 2
+
+                for route_info in pdp_results_data.get('routes', []):
+                    plot_data['routes'].append({
+                        'vehicle_id': route_info['vehicle_id'],
+                        'path_coords': route_info['route_locations']
+                    })
+                context['plot_data'] = json.dumps(plot_data)
+
+        except (ValueError, TypeError) as ve:
+            context['error_message'] = f"입력값 오류: {str(ve)}"
+            logger.error(f"ValueError in pdp_demo_view (POST): {ve}", exc_info=True)
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+            logger.error(f"Unexpected error in pdp_demo_view (POST): {e}", exc_info=True)
+
     return render(request, 'routing_logistics_app/pdp_demo.html', context)
 
 

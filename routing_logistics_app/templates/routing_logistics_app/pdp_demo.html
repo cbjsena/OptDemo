@@ -1,11 +1,436 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-    <h1>Optimization Demo Platform</h1>
-    <p>준비 중 입니다. </p>
-</body>
-</html>
+{% extends "core/base.html" %}
+{% load static %}
+{% load routing_filters %}
+
+{% block title %}PDP Demo - Graphical Input{% endblock %}
+
+{% block styles %}
+<style>
+    /* ... (이전 VRP/CVRP 데모와 유사한 스타일) ... */
+    #pdpCanvasInput {
+        border: 1px solid #007bff;
+        cursor: crosshair;
+        margin-bottom: 10px;
+        background-color: #f8f9fa;
+    }
+    #canvasInstructions {
+        font-weight: bold;
+        color: #0056b3;
+        margin-bottom: 10px;
+        min-height: 24px; /* 높이 고정으로 깜박임 방지 */
+    }
+    .location-list {
+        font-size: 0.9em;
+        max-height: 150px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        padding: 5px;
+        background-color: #fff;
+    }
+    .chart-container { width: 100%; max-width: 700px; margin: 20px auto; height: 450px; border: 1px solid #ddd; padding:10px; }
+    .error-message, .success-message, .info-message {
+        padding: .75rem 1.25rem; margin-bottom: 1rem;
+        border: 1px solid transparent; border-radius: .25rem;
+    }
+    .error-message { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+    .success-message { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+    .info-message { color: #0c5460; background-color: #d1ecf1; border-color: #bee5eb;}
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Pickup & Delivery Problem (PDP) Demo - Graphical Input</h1>
+    </div>
+    <p>아래 캔버스를 클릭하여 차고지, 수거, 배송 위치를 지정하고 최적 경로를 계산합니다.</p>
+
+    <form method="GET" class="mb-3 form-inline">
+        <div class="form-group mr-2">
+            <label for="num_pairs_to_show" class="mr-2">작업 쌍 수 (1-5):</label>
+            <select name="num_pairs_to_show" id="num_pairs_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in num_pairs_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_pairs %}selected{% endif %}>{{ i }}개</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group mr-2">
+            <label for="num_vehicles_to_show" class="mr-2">차량 수 (1-5):</label>
+            <select name="num_vehicles_to_show" id="num_vehicles_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in num_vehicles_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_vehicles %}selected{% endif %}>{{ i }}대</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group mr-2">
+            <label for="num_vehicle_capa_to_show" class="mr-2">차량 용량 (50-200), (모든 차량 동일)</label>
+            <select name="num_vehicle_capa_to_show" id="num_vehicle_capa_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in vehicle_capa_options %}
+                    <option value="{{ i }}" {% if i == submitted_vehicle_capa %}selected{% endif %}>{{ i }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <noscript><button type="submit" class="btn btn-sm btn-secondary">설정 적용</button></noscript>
+    </form>
+
+    <form method="POST" id="pdpForm">
+        {% csrf_token %}
+        <input type="hidden" name="num_pairs" value="{{ submitted_num_pairs }}" id="form_num_pairs">
+        <input type="hidden" name="num_vehicles" value="{{ submitted_num_vehicles }}">
+        <input type="hidden" name="vehicle_capacity" value="{{ submitted_vehicle_capa }}">
+
+        <div class="form-section">
+            <h4>1. 위치 지정 (차고지 1개, 작업 쌍 {{ submitted_num_pairs }}개)</h4>
+            <div id="canvasInstructions">먼저 차고지(Depot) 위치를 클릭하세요.</div>
+            <canvas id="pdpCanvasInput" width="600" height="400"></canvas>
+            <button type="button" class="btn btn-sm btn-warning mb-2" id="resetLocationsBtn">위치 초기화</button>
+
+            <div id="locationsDisplay" class="location-list"><p>아직 지정된 위치가 없습니다.</p></div>
+
+            <input type="hidden" name="depot_x" id="hidden_depot_x" value="{{ form_data.depot_x|default_if_none:'300' }}">
+            <input type="hidden" name="depot_y" id="hidden_depot_y" value="{{ form_data.depot_y|default_if_none:'200' }}">
+
+            {% for i in submitted_num_pairs|get_range %}
+                {% make_key 'pair' i 'id' as key_name %}
+                <input type="hidden" name="pair_{{ i }}_id" id="hidden_pair_{{ i }}_id"
+                       value="{{ form_data|get_item_simple:key_name }}">
+                {% make_key 'hidden_pair' i 'px' as key_name %}
+                <input type="hidden" name="pair_{{ i }}_px" id="hidden_pair_{{ i }}_px"
+                       value="{{ form_data|get_item_simple:key_name }}">
+                {% make_key 'hidden_pair' i 'py' as key_name %}
+                <input type="hidden" name="pair_{{ i }}_py" id="hidden_pair_{{ i }}_py"
+                       value="{{ form_data|get_item_simple:key_name }}">
+                {% make_key 'hidden_pair' i 'dx' as key_name %}
+                <input type="hidden" name="pair_{{ i }}_dx" id="hidden_pair_{{ i }}_dx"
+                       value="{{ form_data|get_item_simple:key_name }}">
+                {% make_key 'hidden_pair' i 'dy' as key_name %}
+                <input type="hidden" name="pair_{{ i }}_dy" id="hidden_pair_{{ i }}_dy"
+                       value="{{ form_data|get_item_simple:key_name }}">
+            {% endfor %}
+        </div>
+
+        <div class="form-section">
+            <h4>2. 작업 쌍별 정보</h4>
+            {% for i in submitted_num_pairs|get_range %}
+            <fieldset class="mb-3 p-3 border rounded">
+                <legend class="h6">{% with k='pair_'|add:i|stringformat:'s'|add:'_id'%}{{form_data|get_item_simple:k}}{%endwith%}</legend>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        {% make_key 'pair' i 'id' as key_name %}
+                        <label for="{{key_name}}">작업 ID:</label>
+                        <input type="text" class="form-control form-control-sm" name="{{key_name}}"
+                               value="{{ form_data|get_item_simple:key_name }}">
+                    </div>
+                    <div class="form-group col-md-6">
+                        {% make_key 'pair' i 'demand' as key_name %}
+                        <label for="{{key_name}}">수요량:</label>
+                        <input type="number" min="1" class="form-control form-control-sm" name="{{key_name}}"
+                               value="{{ form_data|get_item_simple:key_name }}">
+                    </div>
+                </div>
+            </fieldset>
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">PDP 최적 경로 계산 실행</button>
+    </form>
+
+    {# ... (결과 표시 영역은 이전과 유사하게 구성) ... #}
+    {% if pdp_results or error_message or success_message or info_message %}
+        <hr class="my-4">
+        <h3 class="mt-4">Optimization Results (PDP)</h3>
+        {# ... 메시지 표시 ... #}
+        {% if pdp_results.routes %}
+            {# ... 경로 테이블 (경로별 적재량 변화(route_loads)도 표시 가능) ... #}
+        {% endif %}
+        {% if plot_data %}
+            <div class="card mt-3">
+                <div class="card-header"><strong>경로 시각화 (PDP)</strong></div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="pdpRouteChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    // Chart.js 인스턴스 관리는 이전과 동일
+    var chartInstances = window.chartInstances || {};
+    function destroyChartIfExists(chartId) {
+        if (chartInstances[chartId]) {
+            chartInstances[chartId].destroy();
+            delete chartInstances[chartId];
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("PDP Demo page with graphical input loaded.");
+
+        const canvas = document.getElementById('pdpCanvasInput');
+        const ctx = canvas.getContext('2d');
+        const instructions = document.getElementById('canvasInstructions');
+        const locationsDisplay = document.getElementById('locationsDisplay');
+        const resetBtn = document.getElementById('resetLocationsBtn');
+
+        const numPairs = parseInt(document.getElementById('form_num_pairs').value);
+
+        const depotHiddenX = document.getElementById('hidden_depot_x');
+        const depotHiddenY = document.getElementById('hidden_depot_y');
+        let pairHiddenFields = [];
+        for (let i = 0; i < numPairs; i++) {
+            pairHiddenFields.push({
+                id: document.getElementById(`hidden_pair_${i}_id`),
+                px: document.getElementById(`hidden_pair_${i}_px`),
+                py: document.getElementById(`hidden_pair_${i}_py`),
+                dx: document.getElementById(`hidden_pair_${i}_dx`),
+                dy: document.getElementById(`hidden_pair_${i}_dy`),
+            });
+        }
+
+        let depot = null;
+        let jobPairs = new Array(numPairs).fill(null).map(() => ({ p: null, d: null }));
+        let currentStepIndex = 0;
+
+        function loadInitialValues() {
+            if (depotHiddenX.value && depotHiddenY.value) {
+                depot = { x: parseFloat(depotHiddenX.value), y: parseFloat(depotHiddenY.value) };
+            }
+            for (let i = 0; i < numPairs; i++) {
+                const pairFields = pairHiddenFields[i];
+                if (pairFields.px.value && pairFields.py.value) {
+                    jobPairs[i].p = { x: parseFloat(pairFields.px.value), y: parseFloat(pairFields.py.value) };
+                }
+                if (pairFields.dx.value && pairFields.dy.value) {
+                    jobPairs[i].d = { x: parseFloat(pairFields.dx.value), y: parseFloat(pairFields.dy.value) };
+                }
+            }
+
+            if (!depot) {
+                currentStepIndex = 0;
+            } else {
+                let allSet = true;
+                for (let i = 0; i < numPairs; i++) {
+                    if (!jobPairs[i].p) { currentStepIndex = 2 * i + 1; allSet = false; break; }
+                    if (!jobPairs[i].d) { currentStepIndex = 2 * i + 2; allSet = false; break; }
+                }
+                if (allSet) { currentStepIndex = 2 * numPairs + 1; }
+            }
+
+            updateUI();
+        }
+
+        function redrawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            jobPairs.forEach((pair) => {
+                if (pair.p && pair.d) {
+                    ctx.beginPath();
+                    ctx.setLineDash([5, 5]);
+                    ctx.moveTo(pair.p.x, pair.p.y);
+                    ctx.lineTo(pair.d.x, pair.d.y);
+                    ctx.strokeStyle = '#6c757d';
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            });
+
+            if (depot) {
+                ctx.fillStyle = 'blue';
+                ctx.beginPath();
+                ctx.arc(depot.x, depot.y, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText('D', depot.x - 4, depot.y + 4);
+            }
+            jobPairs.forEach((pair, index) => {
+                const pairId = document.getElementById(`hidden_pair_${index}_id`).value || `Job${index+1}`;
+                if (pair.p) {
+                    ctx.fillStyle = 'green';
+                    ctx.beginPath();
+                    ctx.arc(pair.p.x, pair.p.y, 6, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = 'black';
+                    ctx.font = '11px sans-serif';
+                    ctx.fillText(`${pairId}-P`, pair.p.x + 10, pair.p.y + 4);
+                }
+                if (pair.d) {
+                    ctx.fillStyle = 'red';
+                    ctx.beginPath();
+                    ctx.arc(pair.d.x, pair.d.y, 6, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = 'black';
+                    ctx.font = '11px sans-serif';
+                    ctx.fillText(`${pairId}-D`, pair.d.x + 10, pair.d.y + 4);
+                }
+            });
+        }
+
+        function updateInstructionsAndDisplay() {
+            let html = '';
+            if (depot) {
+                html += `<p><strong>Depot:</strong> (${depot.x.toFixed(1)}, ${depot.y.toFixed(1)})</p>`;
+            } else {
+                 html += `<p>Depot: Not set</p>`;
+            }
+
+            html += "<h6>Job Pairs:</h6>";
+            jobPairs.forEach((pair, i) => {
+                const pairId = document.getElementById(`hidden_pair_${i}_id`).value || `Job${i+1}`;
+                const p_loc = pair.p ? `(${pair.p.x.toFixed(1)}, ${pair.p.y.toFixed(1)})` : 'Not set';
+                const d_loc = pair.d ? `(${pair.d.x.toFixed(1)}, ${pair.d.y.toFixed(1)})` : 'Not set';
+                html += `<p><strong>${pairId}:</strong> P: ${p_loc}, D: ${d_loc}</p>`;
+            });
+            locationsDisplay.innerHTML = html;
+
+            const totalSteps = 1 + numPairs * 2;
+            if (currentStepIndex === 0) {
+                instructions.textContent = '차고지(Depot) 위치를 클릭하세요.';
+            } else if (currentStepIndex < totalSteps) {
+                const pairIndex = Math.floor((currentStepIndex - 1) / 2);
+                const pairId = document.getElementById(`hidden_pair_${pairIndex}_id`).value || `Job${pairIndex+1}`;
+                const type = (currentStepIndex % 2 === 1) ? '수거(Pickup)' : '배송(Delivery)';
+                instructions.textContent = `작업 '${pairId}'의 ${type} 위치를 클릭하세요.`;
+            } else {
+                instructions.textContent = '모든 위치가 지정되었습니다. 최적화 실행 버튼을 누르세요.';
+            }
+        }
+
+        function updateUI() {
+            updateInstructionsAndDisplay();
+            redrawCanvas();
+        }
+
+        canvas.addEventListener('click', function(event) {
+            if (currentStepIndex >= 1 + numPairs * 2) {
+                console.log("All locations already set.");
+                return;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            if (currentStepIndex === 0) {
+                depot = { x: x, y: y };
+                depotHiddenX.value = x.toFixed(2);
+                depotHiddenY.value = y.toFixed(2);
+            } else {
+                const pairIndex = Math.floor((currentStepIndex - 1) / 2);
+                const isPickup = currentStepIndex % 2 === 1;
+
+                if (isPickup) {
+                    jobPairs[pairIndex].p = { x: x, y: y };
+                    pairHiddenFields[pairIndex].px.value = x.toFixed(2);
+                    pairHiddenFields[pairIndex].py.value = y.toFixed(2);
+                } else {
+                    jobPairs[pairIndex].d = { x: x, y: y };
+                    pairHiddenFields[pairIndex].dx.value = x.toFixed(2);
+                    pairHiddenFields[pairIndex].dy.value = y.toFixed(2);
+                }
+            }
+
+            currentStepIndex++;
+            updateUI();
+        });
+
+        resetBtn.addEventListener('click', function() {
+            depot = null;
+            jobPairs = new Array(numPairs).fill(null).map(() => ({ p: null, d: null }));
+            depotHiddenX.value = '';
+            depotHiddenY.value = '';
+            for (let i = 0; i < numPairs; i++) {
+                pairHiddenFields[i].px.value = '';
+                pairHiddenFields[i].py.value = '';
+                pairHiddenFields[i].dx.value = '';
+                pairHiddenFields[i].dy.value = '';
+            }
+            currentStepIndex = 0;
+            updateUI();
+            console.log("PDP Locations reset.");
+        });
+
+        loadInitialValues();
+
+        const plotDataJson = '{{ plot_data|safe|default_if_none:"{}" }}';
+        try {
+            const plotData = JSON.parse(plotDataJson);
+            if (plotData && plotData.locations && plotData.routes) {
+                const pdpCtxElement = document.getElementById('pdpRouteChart');
+                if (pdpCtxElement) {
+                    destroyChartIfExists('pdpRouteChart');
+
+                    const datasets = [];
+                    plotData.pairs.forEach((pair, i) => {
+                        const p_loc = plotData.locations[pair.p_idx];
+                        const d_loc = plotData.locations[pair.d_idx];
+                        datasets.push({
+                            type: 'line',
+                            label: `작업 ${i+1} 쌍`,
+                            data: [{x: p_loc.x, y: p_loc.y}, {x: d_loc.x, y: d_loc.y}],
+                            borderColor: 'rgba(108, 117, 125, 0.5)',
+                            borderDash: [5, 5],
+                            borderWidth: 1.5,
+                            pointRadius: 0,
+                            fill: false
+                        });
+                    });
+
+                    const depotPoint = [plotData.locations[0]].map(loc => ({x: loc.x, y: loc.y}));
+                    const pickupPoints = plotData.pairs.map(p => plotData.locations[p.p_idx]).map(loc=>({x:loc.x, y:loc.y}));
+                    const deliveryPoints = plotData.pairs.map(p => plotData.locations[p.d_idx]).map(loc=>({x:loc.x, y:loc.y}));
+
+                    datasets.push({type:'scatter', label:'Depot', data:depotPoint, backgroundColor:'blue', pointStyle:'rectRot', pointRadius:8});
+                    datasets.push({type:'scatter', label:'Pickup', data:pickupPoints, backgroundColor:'green', pointStyle:'triangle', pointRadius:7});
+                    datasets.push({type:'scatter', label:'Delivery', data:deliveryPoints, backgroundColor:'red', pointStyle:'rect', pointRadius:7});
+
+                    const routeColors = ['rgba(75, 192, 192, 0.8)', 'rgba(255, 159, 64, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 205, 86, 0.8)', 'rgba(50, 205, 50, 0.8)'];
+                    plotData.routes.forEach((route, index) => {
+                         datasets.push({
+                            type: 'line',
+                            label: `차량 ${route.vehicle_id + 1} 경로`,
+                            data: route.path_coords.map(coord => ({x: coord[0], y: coord[1]})),
+                            borderColor: routeColors[index % routeColors.length],
+                            borderWidth: 2.5,
+                            fill: false,
+                            tension: 0.1
+                        });
+                    });
+
+                    chartInstances['pdpRouteChart'] = new Chart(pdpCtxElement, {
+                        data: { datasets: datasets },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            scales: {
+                                x: { type: 'linear', position: 'bottom', title: { display: true, text: 'X 좌표' }},
+                                y: { type: 'linear', title: { display: true, text: 'Y 좌표' }}
+                            },
+                            plugins: {
+                                title: { display: true, text: 'PDP 경로 시각화' },
+                                legend: { position: 'top' },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            if (context.dataset.label.includes('경로')) return context.dataset.label;
+                                            if (context.dataset.label.includes('쌍')) return context.dataset.label;
+                                            return `${context.dataset.label}: (${context.parsed.x.toFixed(1)}, ${context.parsed.y.toFixed(1)})`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Error parsing PDP plot data or initializing chart:", e);
+        }
+    });
+</script>
+{% endblock %}
