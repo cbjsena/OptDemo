@@ -111,18 +111,20 @@
         <div class="form-section">
              <h4>3. 고객별 수요량 입력 (총 {{ submitted_num_customers }}명)</h4>
             {% for i in submitted_num_customers|get_range %}
-            <div class="form-row align-items-center mb-2">
-                <div class="col-md-4">
-                    <label for="display_cust_{{ i }}_id" class="sr-only">고객 ID {{i|add:1}} 표시</label>
-                    <input type="text" class="form-control form-control-sm" id="display_cust_{{ i }}_id"
-                           value="{% with key_name='cust_'|add:i|stringformat:'s'|add:'_id' %}{{ form_data|get_item_simple:key_name|default_if_none:'C'|add:i|add:1 }}{% endwith %}" readonly>
+                <div class="form-row align-items-center mb-2">
+                    {% make_key 'cust' i 'id' as key_name %}
+                    <div class="col-md-4">
+                        <label for="display_cust_{{ i }}_id">고객 ID </label>
+                        <input type="text" class="form-control form-control-sm" id="display_cust_{{ i }}_id"
+                               value="{{ form_data|get_item_simple:key_name }}" readonly>
+                    </div>
+                    {% make_key 'cust' i 'demand' as key_name %}
+                    <div class="col-md-4">
+                        <label for="cust_{{ i }}_demand">수요량:</label>
+                        <input type="number" min="0" class="form-control form-control-sm" id="cust_{{ i }}_demand" name="cust_{{ i }}_demand"
+                               value="{{ form_data|get_item_simple:key_name }}" required>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <label for="cust_{{ i }}_demand">수요량:</label>
-                    <input type="number" min="0" class="form-control form-control-sm" id="cust_{{ i }}_demand" name="cust_{{ i }}_demand"
-                           value="{% with key_name='cust_'|add:i|stringformat:'s'|add:'_demand' %}{{ form_data|get_item_simple:key_name|default_if_none:'10' }}{% endwith %}" required>
-                </div>
-            </div>
             {% endfor %}
         </div>
 
@@ -442,10 +444,22 @@
                         }
                     });
 
-                    if (plotData.locations.length > 0) { /* 차고지 */ } // VRP와 동일
+                    if (plotData.locations.length > 0) {
+                        datasets.push({
+                            type: 'scatter', label: '차고지 (Depot)',
+                            data: [{x: plotData.locations[0].x, y: plotData.locations[0].y}],
+                            backgroundColor: 'rgba(54, 162, 235, 0.8)', pointRadius: 8, pointStyle: 'rectRot'
+                        });
+                    }
 
-                    const routeColors = [ /* ... */ ]; // VRP와 동일
-                    plotData.routes.forEach((route, index) => { /* ... */ }); // VRP와 동일, label에 load/cap 표시 가능
+                    const routeColors = ['rgba(75, 192, 192, 0.8)', 'rgba(255, 159, 64, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 205, 86, 0.8)', 'rgba(50, 205, 50, 0.8)'];
+                    plotData.routes.forEach((route, index) => {
+                        datasets.push({
+                            type: 'line', label: `차량 ${route.vehicle_id + 1} 경로`,
+                            data: route.path_coords.map(coord => ({x: coord[0], y: coord[1]})),
+                            borderColor: routeColors[index % routeColors.length], borderWidth: 2.5, fill: false, tension: 0
+                        });
+                    });
 
                     chartInstances['cvrpRouteChart'] = new Chart(cvrpCtxElement, {
                         data: { datasets: datasets },

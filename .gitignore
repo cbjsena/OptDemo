@@ -41,7 +41,7 @@ db.sqlite3-journal
 
 # 로그 파일
 *.log
-
+logs/
 # 미디어 파일 (사용자 업로드 파일)
 media/
 

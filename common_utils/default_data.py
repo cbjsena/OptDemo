@@ -22,12 +22,12 @@ preset_datacenter_services = [
              'req_storage_tb': '0.2', 'max_units': '30'}
 ]
 
-preset_depot_location = {"id": "D1","x": 79.0,"y": 73.0}
+preset_depot_location = {"id": "D1","x": 300.0,"y": 250.0}
 preset_customer_locations = [
-        {"id": "C1","x": 103.0,"y": 120.0, "demand": 20},    {"id": "C2","x": 510.0,"y": 150.0, "demand": 20},
-        {"id": "C3","x": 171.0,"y": 317.0, "demand": 20},    {"id": "C4","x": 486.0,"y": 283.0, "demand": 20}, 
-        {"id": "C5","x": 384.0,"y": 45.0, "demand": 20},     {"id": "C6","x": 302.0,"y": 145.0, "demand": 20},
-        {"id": "C7","x": 129.0,"y": 2211.0, "demand": 20},   {"id": "C8","x": 398.0,"y": 231.0, "demand": 20},
+        {"id": "C1","x": 103.0,"y": 120.0, "demand": 30},    {"id": "C2","x": 510.0,"y": 150.0, "demand": 30},
+        {"id": "C3","x": 171.0,"y": 317.0, "demand": 40},    {"id": "C4","x": 486.0,"y": 283.0, "demand": 40},
+        {"id": "C5","x": 384.0,"y": 45.0, "demand": 30},     {"id": "C6","x": 302.0,"y": 145.0, "demand": 20},
+        {"id": "C7","x": 129.0,"y": 221.0, "demand": 30},   {"id": "C8","x": 398.0,"y": 231.0, "demand": 30},
         {"id": "C9","x": 341.0,"y": 329.0, "demand": 20},    {"id": "C10","x": 537.0,"y": 365.0, "demand": 20}
     ]
 preset_num_customers=5
