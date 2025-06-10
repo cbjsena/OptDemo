@@ -1,0 +1,133 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load matching_filters %} {# get_range 사용을 위해. 없으면 matching_filters 사용 #}
+
+{% block title %}Transportation Assignment Demo{% endblock %}
+
+{% block styles %}
+<style>
+    .cost-matrix-table {
+        margin-top: 1rem;
+        table-layout: fixed; /* 테이블 너비 고정 */
+    }
+    .cost-matrix-table th, .cost-matrix-table td {
+        text-align: center;
+        vertical-align: middle;
+    }
+    .cost-matrix-table input {
+        width: 80px;
+        text-align: center;
+    }
+    .results-table th, .results-table td {
+        text-align: center;
+        vertical-align: middle;
+    }
+    /* ... (기존 error/success 메시지 등 공통 스타일) ... */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Transportation Assignment Demo</h1>
+    </div>
+    <p>배송 기사와 배송 구역 간의 비용(예: 예상 소요 시간)을 입력하여, 총 비용을 최소화하는 최적의 1:1 할당을 계산합니다.</p>
+
+    <form method="GET" class="mb-3 form-inline">
+        <div class="form-group mr-2">
+            <label for="num_items_to_show" class="mr-2">기사/구역 수 (2-5):</label>
+            <select name="num_items_to_show" id="num_items_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in num_items_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_items %}selected{% endif %}>{{ i }} x {{ i }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <noscript><button type="submit" class="btn btn-sm btn-secondary">설정 적용</button></noscript>
+    </form>
+
+    <form method="POST" id="assignmentForm">
+        {% csrf_token %}
+        <input type="hidden" name="num_items" value="{{ submitted_num_items }}">
+
+        <div class="form-section">
+            <h4>1. 비용 행렬 (Cost Matrix) 입력</h4>
+            <p>각 기사가 특정 구역을 담당하는 데 드는 비용(시간)을 입력하세요.</p>
+            <div class="table-responsive">
+                <table class="table table-bordered cost-matrix-table">
+                    <thead class="thead-light">
+                        <tr>
+                            <th style="width: 120px;">기사 / 구역</th>
+                            {% for j in submitted_num_items|get_range %}
+                                {% make_key1 'zone_name' j as key_name %}
+                                <th>
+                                    <input type="text" class="form-control form-control-sm" name="zone_name_{{ j }}"
+                                           value="{{form_data|get_item_simple:key_name}}"></th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in submitted_num_items|get_range %}
+                            {% make_key1 'driver_name' i as key_name1 %}
+                            <tr>
+                                <th><input type="text" class="form-control form-control-sm" name="{{key_name1}}"
+                                           value="{{form_data|get_item_simple:key_name1}}"></th>
+                                {% for j in submitted_num_items|get_range %}
+                                    {% make_key2 'cost' i j as key_name2 %}
+                                    <td>
+                                        <input type="number" min="0" class="form-control form-control-sm" name="{{key_name2}}"
+                                               value="{{form_data|get_item_simple:key_name2}}" required>
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 할당 계산 실행</button>
+    </form>
+
+    {% if assignment_results or error_message or success_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Results</h3>
+    {% endif %}
+
+    {% if error_message %}<div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>{% endif %}
+    {% if success_message and not error_message %}<div class="alert alert-success" role="alert">{{ success_message }}</div>{% endif %}
+
+    {% if assignment_results %}
+    <div class="card mt-4">
+        <div class="card-header"><strong>결과 요약</strong></div>
+        <div class="card-body">
+            <p class="h4"><strong>최소 총 비용 (시간): {{ assignment_results.total_cost }}</strong></p>
+            <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
+        </div>
+    </div>
+    <div class="card mt-3">
+        <div class="card-header"><strong>최적 할당 결과</strong></div>
+        <div class="table-responsive">
+            <table class="table table-striped results-table mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th>기사 (Worker)</th>
+                        <th>할당된 구역 (Task)</th>
+                        <th>비용 (Cost)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in assignment_results.assignments %}
+                    <tr>
+                        <td>{{ item.worker_name }}</td>
+                        <td>{{ item.task_name }}</td>
+                        <td>{{ item.cost }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

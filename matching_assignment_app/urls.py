@@ -11,7 +11,9 @@ urlpatterns = [
     path('lcd-cf-tft/large-scale-demo/', views.lcd_cf_tft_large_scale_demo_view, name='lcd_cf_tft_large_scale_demo'),
 
     # 작업 배정 문제 (Assignment Problem)
-    path('assignment-problem/introduction/', views.assignment_problem_introduction_view, name='assignment_problem_introduction'),
+    path('assignment/introduction/', views.assignment_introduction_view, name='assignment_introduction'),
+    path('transport-assignment/introduction/', views.transport_assignment_introduction_view, name='transport_assignment_introduction'),
+    path('transport-assignment/demo/', views.transport_assignment_demo_view, name='transport_assignment_demo'),
     # ... 데이터 생성, 데모 URL ...
 
     # 안정적인 매칭 문제 (Stable Matching Problem)

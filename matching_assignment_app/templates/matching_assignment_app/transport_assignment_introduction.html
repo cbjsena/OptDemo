@@ -1,0 +1,134 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Transportation Assignment - Introduction{% endblock %}
+
+{% block styles %}
+<style>
+    /* 다른 소개 페이지와 유사한 스타일 */
+    .introduction-content {
+        line-height: 1.7;
+        font-size: 1.03rem;
+    }
+    .introduction-content h4 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #0056b3;
+        padding-bottom: 0.25rem;
+        border-bottom: 2px solid #007bff;
+    }
+    .math-model-section {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    .intro-image {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 5px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .image-caption {
+        font-size: 0.9rem;
+        color: #555;
+        text-align: center;
+        margin-top: -10px;
+        margin-bottom: 20px;
+    }
+    .link-to-more-info {
+        margin-top: 15px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 5px;
+        text-align: left;
+        font-size: 0.95rem;
+    }
+    .link-to-more-info a {
+        font-weight: bold;
+        text-decoration: none;
+    }
+    .link-to-more-info a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">운송 할당 문제 (Transportation Assignment)</h1>
+    </div>
+
+    <p><strong>범주: Ⅰ. 매칭 및 할당 (Matching & Assignment)</strong></p>
+    <p>
+        <strong>운송 할당 문제</strong>는 작업 배정 문제의 개념을 물류 및 운송 분야에 특화하여 적용한 문제입니다.
+        이 문제는 여러 명의 배송 기사(또는 차량)를 여러 개의 배송 구역(또는 경로)에 1:1로 할당하여,
+        전체 운송 비용, 시간, 또는 거리를 최소화하는 최적의 할당 방안을 찾는 것을 목표로 합니다.
+    <figure>
+        <img src="{% static 'matching_assignment_app/images/transport_assignment_concept.png' %}" alt="운송 할당 문제 개념도" class="intro-image" style="max-width: 600px;">
+        <figcaption class="image-caption">그림 1: 운송 할당 문제 개념 - 각 기사-구역 쌍의 예상 소요 시간을 바탕으로, 총 운송 시간이 최소화되는 1:1 할당을 찾습니다.</figcaption>
+    </figure>
+
+        <div class="link-to-more-info">
+        이 문제의 기반이 되는 일반적인 할당 문제에 대한 설명은 여기를 참고하세요:
+        <a href="{% url 'matching_assignment_app:assignment_introduction' %}">
+            작업 배정 문제 (Assignment Problem) 소개 페이지 &rarr;
+        </a>
+    </div>
+    <h4>1. 문제 설명 및 응용</h4>
+    <p>
+        이 문제는 "누가 어느 지역을 담당해야 가장 효율적인가?"라는 질문에 대한 답을 찾는 과정입니다. 각 기사는 특정 지역에 대한 숙련도, 거주지와의 거리, 해당 지역의 교통 패턴에 대한 이해도 등이 다르기 때문에, 기사별로 특정 구역을 담당하는 데 드는 비용이나 시간이 달라집니다.
+    </p>
+    <p>주요 응용 분야는 다음과 같습니다:</p>
+    <ul>
+        <li><strong>라스트마일 배송:</strong> 택배, 음식 배달 등에서 각 배송 기사에게 가장 효율적인 배송 구역을 할당합니다.</li>
+        <li><strong>서비스 지역 할당:</strong> 방문 수리, 설치 기사 등에게 서비스 지역을 나누어 할당하여 이동 시간을 최소화하고 일일 처리량을 극대화합니다.</li>
+        <li><strong>장거리 화물 운송:</strong> 여러 대의 트럭과 운전기사를 각각 다른 장거리 운행 노선에 배정하여 유류비와 운행 시간을 최적화합니다.</li>
+    </ul>
+
+    <h4>2. VRP와의 관계</h4>
+    <p>
+        운송 할당 문제는 차량 경로 문제(VRP)와 밀접한 관련이 있지만, 문제의 초점이 다릅니다.
+    </p>
+    <ul>
+        <li><strong>VRP (차량 경로 문제):</strong> **하나의** 배송 구역 내에서 여러 고객을 **어떤 순서로** 방문해야 하는지에 대한 '경로' 자체를 최적화하는 데 중점을 둡니다.</li>
+        <li><strong>운송 할당 문제:</strong> 여러 배송 구역(작업)을 여러 기사(작업자)에게 **어떻게 1:1로 나눌 것인지**에 대한 '할당'을 최적화하는 데 중점을 둡니다.</li>
+    </ul>
+    <p>
+        실제 물류 환경에서는 2단계 접근법을 사용하기도 합니다: <strong>(1단계)</strong> 먼저 운송 할당 문제 모델로 각 기사에게 최적의 구역을 할당하고, <strong>(2단계)</strong> 각 기사는 할당된 구역 내에서 VRP 모델을 사용하여 최적의 배송 경로를 찾습니다.
+    </p>
+
+    <h4>3. 수학적 모델</h4>
+    <div class="math-model-section">
+        <p>운송 할당 문제는 작업 배정 문제와 동일한 수학적 구조를 가집니다.</p>
+        <ul>
+            <li><strong>결정 변수:</strong>
+                <p>$$ x_{ij} = \begin{cases} 1 & \text{if driver } i \text{ is assigned to zone } j \\ 0 & \text{otherwise} \end{cases} $$</p>
+            </li>
+            <li><strong>목적 함수:</strong> (총 운송 시간 최소화)
+                <p>$$\min \sum_{i=1}^{n} \sum_{j=1}^{n} t_{ij} x_{ij}$$</p>
+                <p>(여기서 $t_{ij}$는 기사 $i$가 구역 $j$를 담당하는 데 걸리는 예상 시간입니다.)</p>
+            </li>
+            <li><strong>제약 조건:</strong>
+                <p>1. 각 기사는 정확히 하나의 구역에 배정됩니다:</p>
+                <p>$$\sum_{j=1}^{n} x_{ij} = 1 \quad \forall i$$</p>
+                <p>2. 각 구역은 정확히 한 명의 기사에게 배정됩니다:</p>
+                <p>$$\sum_{i=1}^{n} x_{ij} = 1 \quad \forall j$$</p>
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+{% endblock %}

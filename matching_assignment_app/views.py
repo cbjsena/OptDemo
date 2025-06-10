@@ -1,5 +1,6 @@
 from django.shortcuts import render
 
+from common_utils.default_data import *
 from common_utils.run_matching_opt import *
 from .utils.data_utils import *
 
@@ -347,9 +348,98 @@ def lcd_cf_tft_large_scale_demo_view(request):
     return render(request, 'matching_assignment_app/lcd_cf_tft_large_scale_demo.html', context)
 
 
-def assignment_problem_introduction_view():
-    return None
+def assignment_introduction_view(request):
+    context = {
+        'active_model': 'Matching & Assignment',
+        'active_submenu_category': 'assignment_problems',
+        'active_submenu': 'assignment_introduction'
+    }
+    logger.debug("Rendering Assignment Problem introduction page.")
+    return render(request, 'matching_assignment_app/assignment_introduction.html', context)
 
+
+def transport_assignment_introduction_view(request):
+    """
+    Transportation Assignment Problem Introduction Page.
+    """
+    context = {
+        'active_model': 'Matching & Assignment',
+        'active_submenu_category': 'transport_assignment_problems',
+        'active_submenu': 'transport_assignment_introduction'
+    }
+    logger.debug("Rendering Transportation Assignment introduction page.")
+    return render(request, 'matching_assignment_app/transport_assignment_introduction.html', context)
+
+
+def transport_assignment_demo_view(request):
+    """
+        Transportation Assignment Problem 데모 뷰.
+        """
+    form_data = {}
+
+    if request.method == 'GET':
+        submitted_num_items = int(request.GET.get('num_items_to_show', preset_trans_assign_items))
+        submitted_num_items = max(2, min(5, submitted_num_items))  # 2~5개로 제한
+
+        # GET 요청 시 랜덤 비용 행렬로 form_data 초기화
+        for i in range(submitted_num_items):
+            # URL 파라미터가 있으면 그 값을, 없으면 기본값을 사용
+            form_data[f'driver_name_{i}'] = request.GET.get(f'driver_name_{i}', preset_trans_assign_drivers[i])
+            form_data[f'zone_name_{i}'] = request.GET.get(f'zone_name_{i}', preset_trans_assign_zones[i])
+            for j in range(submitted_num_items):
+                cost_key = f'cost_{i}_{j}'
+                form_data[cost_key] = request.GET.get(cost_key, str(random.randint(20, 100)))
+        logger.info(form_data)
+    elif request.method == 'POST':
+        form_data = request.POST.copy()
+        submitted_num_items = int(form_data.get('num_items', preset_trans_assign_items))
+
+    context = {
+        'active_model': 'Matching & Assignment',
+        'active_submenu_category': 'transport_assignment_problems',
+        'active_submenu': 'transport_assignment_demo',
+        'form_data': form_data,
+        'assignment_results': None,
+        'error_message': None, 'success_message': None,
+        'processing_time_seconds': "N/A",
+        'num_items_options': range(2, 6),  # 2x2 ~ 5x5 행렬
+        'submitted_num_items': submitted_num_items
+    }
+
+    if request.method == 'POST':
+        logger.info("Transportation Assignment Demo POST request processing.")
+        try:
+            cost_matrix, driver_names, zone_names =create_transport_assignment_cost_matrix(form_data, submitted_num_items)
+
+            # 최적화 실행
+            assignment_results_data, error_msg_opt, processing_time_ms = run_assignment_optimizer(cost_matrix)
+            context[
+                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+
+            if error_msg_opt:
+                context['error_message'] = error_msg_opt
+            elif assignment_results_data:
+                # 결과에 실제 이름 매핑
+                for assignment in assignment_results_data['assignments']:
+                    worker_idx = int(assignment['worker_id'].split(' ')[1]) - 1
+                    task_idx = int(assignment['task_id'].split(' ')[1]) - 1
+                    assignment['worker_name'] = driver_names[worker_idx]
+                    assignment['task_name'] = zone_names[task_idx]
+
+                context['assignment_results'] = assignment_results_data
+                context['success_message'] = f"최적 할당 완료! 최소 총 비용(시간): {assignment_results_data['total_cost']}"
+                logger.info(f"Assignment successful. Total cost: {assignment_results_data['total_cost']}")
+            else:
+                context['error_message'] = "최적 할당 결과를 가져오지 못했습니다."
+
+        except ValueError as ve:
+            context['error_message'] = f"입력값 오류: {str(ve)}"
+            logger.error(f"ValueError in transport_assignment_demo_view: {ve}", exc_info=True)
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+            logger.error(f"Unexpected error in transport_assignment_demo_view: {e}", exc_info=True)
+
+    return render(request, 'matching_assignment_app/transport_assignment_demo.html', context)
 
 def stable_matching_introduction_view():
     return None

@@ -36,17 +36,17 @@
                                 <a class="nav-link {% if active_submenu == 'lcd_cf_tft_large_scale_demo' %}active{% endif %}" href="{% url 'matching_assignment_app:lcd_cf_tft_large_scale_demo' %}">Large-scale Test</a>
                             </li>
 
-                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">작업 배정 문제</strong></li>
+                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">Transport Assignment</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'assignment_problem_introduction' %}active{% endif %}" href="{% url 'core:ready' %}">소개 (준비중)</a>
+                                <a class="nav-link {% if active_submenu == 'transport_assignment_introduction' %}active{% endif %}" href="{% url 'matching_assignment_app:transport_assignment_introduction' %}">Introduction</a>
                             </li>
-                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">안정적인 매칭 문제</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'assignment_problem_introduction' %}active{% endif %}" href="{% url 'core:ready' %}">소개 (준비중)</a>
+                                <a class="nav-link {% if active_submenu == 'assignment_demo' %}active{% endif %}" href="{% url 'matching_assignment_app:transport_assignment_demo' %}">Demo</a>
                             </li>
-                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">자원-기술 매칭</strong></li>
+
+                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">자원-기술 매칭</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'assignment_problem_introduction' %}active{% endif %}" href="{% url 'core:ready' %}">소개 (준비중)</a>
+                                <a class="nav-link {% if active_submenu == 'assignment_introduction' %}active{% endif %}" href="{% url 'core:ready' %}">소개 (준비중)</a>
                             </li>
 
                         {% elif active_model == 'Resource Allocation' %}
@@ -95,7 +95,7 @@
                                 <a class="nav-link {% if active_submenu == 'pdp_introduction' %}active{% endif %}" href="{% url 'routing_logistics_app:pdp_introduction' %}">Introduction</a>
                             </li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'pdp_demo' %}active{% endif %}" href="{% url 'routing_logistics_app:pdp_demo' %}">Demo(준비중)</a>
+                                <a class="nav-link {% if active_submenu == 'pdp_demo' %}active{% endif %}" href="{% url 'routing_logistics_app:pdp_demo' %}">Demo</a>
                             </li>
 
                         {% elif active_model == 'Production & Scheduling' %}

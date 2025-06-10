@@ -1,4 +1,6 @@
 from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 LP 솔버 사용)
+from ortools.graph.python import linear_sum_assignment # 할당 문제 전용 솔버
+import datetime
 import logging
 
 logger = logging.getLogger(__name__)
@@ -174,3 +176,62 @@ def run_matching_cf_tft_algorithm(cf_panels, tft_panels):
     solver_time_ms = solver.wall_time()/1000  # 밀리초
     return matched_pairs_info, total_yield_val, error_msg, solver_time_ms
 
+
+def run_assignment_optimizer(cost_matrix):
+    """
+    OR-Tools의 LinearSumAssignment 솔버를 사용하여 작업 배정 문제를 해결합니다.
+    cost_matrix: 비용 행렬 (리스트의 리스트)
+    """
+    logger.info("Running Assignment Problem Optimizer.")
+    logger.debug(f"Cost Matrix: {cost_matrix}")
+
+    num_workers = len(cost_matrix)
+    if num_workers == 0:
+        return [], 0, "오류: 비용 행렬 데이터가 없습니다."
+    num_tasks = len(cost_matrix[0]) if num_workers > 0 else 0
+
+    # 솔버 생성
+    assignment = linear_sum_assignment.LinearSumAssignment()
+
+    # 비용(Arcs) 추가
+    for worker in range(num_workers):
+        for task in range(num_tasks):
+            if cost_matrix[worker][task] is not None:  # 유효한 비용만 추가
+                assignment.add_arc_with_cost(worker, task, int(cost_matrix[worker][task]))
+
+    # 문제 해결
+    logger.info("Solving the assignment model...")
+    solve_start_time = datetime.datetime.now()
+    status = assignment.solve()
+    solve_end_time = datetime.datetime.now()
+    processing_time_ms = (solve_end_time - solve_start_time).total_seconds() * 1000
+    logger.info(f"Solver finished. Status: {status}, Time: {processing_time_ms:.2f} ms")
+
+    # 결과 추출
+    results = {'assignments': [], 'total_cost': 0}
+    error_msg = None
+
+    if status == assignment.OPTIMAL:
+        results['total_cost'] = assignment.optimal_cost()
+        logger.info(f'Total cost = {results["total_cost"]}')
+        for i in range(num_workers):
+            assigned_task = assignment.right_mate(i)
+            cost = assignment.assignment_cost(i)
+            results['assignments'].append({
+                'worker_id': f'기사 {i + 1}',  # 또는 실제 이름
+                'task_id': f'구역 {assigned_task + 1}',
+                'cost': cost
+            })
+            logger.debug(f'Worker {i} assigned to task {assigned_task} with a cost of {cost}')
+
+    elif status == assignment.INFEASIBLE:
+        error_msg = "실행 불가능한 문제입니다. 모든 작업자/작업 쌍에 대한 비용이 정의되었는지 확인하세요."
+    elif status == assignment.POSSIBLE_OVERFLOW:
+        error_msg = "계산 중 오버플로우가 발생했습니다. 비용 값의 크기를 확인하세요."
+    else:
+        error_msg = f"최적 할당을 찾지 못했습니다. (솔버 상태: {status})"
+
+    if error_msg:
+        logger.error(f"Assignment optimization failed: {error_msg}")
+
+    return results, error_msg, processing_time_ms

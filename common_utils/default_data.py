@@ -43,3 +43,7 @@ preset_pair_locations = [
         {"id": "Pair4","px": 129.0,"py": 221.0, "dx": 398.0,"dy": 231.0, "demand": 30},
         {"id": "Pair5","px": 341.0,"py": 329.0, "dx": 537.0,"dy": 365.0, "demand": 20},
     ]
+
+preset_trans_assign_items=3
+preset_trans_assign_drivers=["김기사", "이배달", "박운송", "최신속", "정안전"]
+preset_trans_assign_zones = ["강남구", "서초구", "송파구", "마포구", "영등포구"]

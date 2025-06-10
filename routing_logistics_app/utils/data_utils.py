@@ -6,7 +6,8 @@ from common_utils.default_data import (
     preset_customer_locations,
     preset_num_customers,
     preset_num_vehicles,
-    preset_vehicle_capacity
+    preset_vehicle_capacity,
+    preset_num_pairs
 )
 logger = logging.getLogger(__name__)
 
@@ -33,10 +34,9 @@ def create_vrp_json_data(form_data):
     if num_vehicles <= 0:
         raise ValueError("차량 수는 1대 이상이어야 합니다.")
 
-    vehicle_capacity = int(form_data.get('vehicle_capacity', preset_vehicle_capacity))
-    logger.debug(f"Depot: {parsed_depot_location}, Customers: {num_customers}, Vehicles: {num_vehicles}, Capacities: {vehicle_capacity}")
+    vehicle_capacities = create_vehicle_capacities(int(form_data.get('vehicle_capacity', preset_vehicle_capacity)), num_vehicles)
+    logger.debug(f"Depot: {parsed_depot_location}, Customers: {num_customers}, Vehicles: {num_vehicles}, Capacities: {vehicle_capacities[0]}")
 
-    # --- 2. 입력 데이터 JSON 파일로 저장 ---
     input_data = {
         "timestamp": datetime.datetime.now().isoformat(),
         "problem_type": form_data.get('problem_type'),
@@ -44,7 +44,7 @@ def create_vrp_json_data(form_data):
         "customer_locations": parsed_customer_locations,
         "num_vehicles": num_vehicles,
         "num_depots":num_depots,
-        "vehicle_capacity":vehicle_capacity,
+        "vehicle_capacities":vehicle_capacities,
         # 추가적으로 저장하고 싶은 다른 form_data 항목들
         "form_parameters": {
             key: value for key, value in form_data.items() if key not in ['csrfmiddlewaretoken']
@@ -52,15 +52,80 @@ def create_vrp_json_data(form_data):
     }
     return input_data
 
+
+def create_pdp_json_data(form_data):
+    # --- 1. 입력 데이터 파싱 및 기본 유효성 검사 ---
+    num_depots = 1
+    parsed_depot_location = {
+        'x': float(form_data.get('depot_x', '0')),
+        'y': float(form_data.get('depot_y', '0'))
+    }
+
+    num_vehicles = int(form_data.get('num_vehicles', preset_num_vehicles))
+    if num_vehicles <= 0:
+        raise ValueError("차량 수는 1대 이상이어야 합니다.")
+
+    vehicle_capacities = create_vehicle_capacities(int(form_data.get('vehicle_capacity', preset_vehicle_capacity)), num_vehicles)
+
+    pickup_delivery_pairs = []
+    num_pairs = int(form_data.get('num_pairs', preset_num_pairs))
+    for i in range(num_pairs):
+        pickup_delivery_pairs.append({
+            'id': form_data.get(f'pair_{i}_id'),
+            'pickup': {'x': float(form_data.get(f'pair_{i}_px')), 'y': float(form_data.get(f'pair_{i}_py'))},
+            'delivery': {'x': float(form_data.get(f'pair_{i}_dx')), 'y': float(form_data.get(f'pair_{i}_dy'))},
+            'demand': int(form_data.get(f'pair_{i}_demand'))
+        })
+
+    logger.debug(
+        f"Depot: {parsed_depot_location}, Pairs: {num_pairs}, Vehicles: {num_vehicles}, Capacities: {vehicle_capacities[0]}")
+
+    input_data = {
+        "timestamp": datetime.datetime.now().isoformat(),
+        "problem_type": form_data.get('problem_type'),
+        "depot_location": parsed_depot_location,
+        "pickup_delivery_pairs": pickup_delivery_pairs,
+        "num_vehicles": num_vehicles,
+        "num_depots": num_depots,
+        "vehicle_capacities": vehicle_capacities,
+        # 추가적으로 저장하고 싶은 다른 form_data 항목들
+        "form_parameters": {
+            key: value for key, value in form_data.items() if key not in ['csrfmiddlewaretoken']
+        }
+    }
+    return input_data
+
+def create_vehicle_capacities(vehicle_capacity, num_vehicles):
+    vehicle_capacities=vehicle_capacity
+    if not isinstance(vehicle_capacities, list):  # 단일 값으로 용량이 주어졌을 경우
+        vehicle_capacities = [vehicle_capacities] * num_vehicles
+    elif len(vehicle_capacities) != num_vehicles:
+        logger.error("Number of vehicle capacities does not match number of vehicles. Using first capacity for all.")
+        # 또는 오류 처리. 여기서는 첫 번째 용량을 모든 차량에 적용하거나, 평균값을 사용하는 등 정책 필요.
+        # 가장 간단하게는 모든 차량 용량이 같다고 가정하고 하나의 값만 받도록 단순화할 수 있음.
+        # 여기서는 첫 번째 용량을 사용.
+        cap = vehicle_capacities[0] if vehicle_capacities else 100  # 기본값
+        vehicle_capacities = [cap] * num_vehicles
+    return vehicle_capacities
+
 def save_vrp_json_data(input_data):
     num_depots = input_data.get('num_depots')
     num_vehicles = input_data.get('num_vehicles')
-    num_customers = len(input_data.get('customer_locations'))
-    filename_pattern = f"dep{num_depots}_cus{num_customers}_veh{num_vehicles}"
+    filename_pattern=''
+    if "PDP" == input_data.get('problem_type'):
+        num_pairs = len(input_data.get('pickup_delivery_pairs'))
+        filename_pattern = f"dep{num_depots}_pair{num_pairs}_veh{num_vehicles}"
+    elif input_data.get('problem_type') in ("CVRP","VRP"):
+        num_customers = len(input_data.get('customer_locations'))
+        filename_pattern = f"dep{num_depots}_cus{num_customers}_veh{num_vehicles}"
+
     if "VRP" == input_data.get('problem_type'):
         dir ='routing_vrp_data'
     elif "CVRP" == input_data.get('problem_type'):
         dir ='routing_cvrp_data'
+    elif "PDP" == input_data.get('problem_type'):
+        dir ='routing_pdp_data'
+
     return save_json_data(input_data, dir, filename_pattern)
 
 

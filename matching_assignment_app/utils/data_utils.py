@@ -46,3 +46,19 @@ def create_matching_cf_tft_json_data(num_cf_panels, num_tft_panels, panel_rows, 
         }
     }
     return generated_data
+
+def create_transport_assignment_cost_matrix(form_data, submitted_num_items):
+    num_items = submitted_num_items
+    cost_matrix = [[0] * num_items for _ in range(num_items)]
+    driver_names = []
+    zone_names = []
+
+    for i in range(num_items):
+        driver_names.append(form_data.get(f'driver_name_{i}', f'기사 {i + 1}'))
+        zone_names.append(form_data.get(f'zone_name_{i}', f'구역 {i + 1}'))
+        for j in range(num_items):
+            cost_val = form_data.get(f'cost_{i}_{j}')
+            if cost_val is None or not cost_val.isdigit():
+                raise ValueError(f"'{driver_names[i]}' -> '{zone_names[j]}' 비용이 유효한 숫자가 아닙니다.")
+            cost_matrix[i][j] = int(cost_val)
+    return cost_matrix, driver_names, zone_names

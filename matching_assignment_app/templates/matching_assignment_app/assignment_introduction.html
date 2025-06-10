@@ -1,0 +1,113 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Assignment Problem - Introduction{% endblock %}
+
+{% block styles %}
+<style>
+    /* 다른 소개 페이지와 유사한 스타일 */
+    .introduction-content {
+        line-height: 1.7;
+        font-size: 1.03rem;
+    }
+    .introduction-content h4 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #0056b3;
+        padding-bottom: 0.25rem;
+        border-bottom: 2px solid #007bff;
+    }
+    .math-model-section {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    .intro-image {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 5px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .image-caption {
+        font-size: 0.9rem;
+        color: #555;
+        text-align: center;
+        margin-top: -10px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">작업 배정 문제 (Assignment Problem)</h1>
+    </div>
+
+    <p><strong>범주: Ⅱ. 매칭 및 할당 (Matching & Assignment)</strong></p>
+    <p>
+        <strong>작업 배정 문제</strong>는 조합 최적화(Combinatorial Optimization) 분야의 가장 대표적이고 기본적인 문제 중 하나입니다. 이 문제는 **동일한 수의 작업(Jobs)과 작업자(Workers)**가 있을 때, 각 작업자-작업 쌍에 대한 비용 또는 시간이 주어졌을 때, **전체 비용(또는 시간)을 최소화**하도록 각 작업자에게 하나의 작업만을 할당하는 방법을 찾는 것을 목표로 합니다.
+    </p>
+
+    <figure>
+        <img src="{% static 'matching_assignment_app/images/assignment_concept.png' %}" alt="작업 배정 문제 개념도" class="intro-image" style="max-width: 650px;">
+        <figcaption class="image-caption">그림 1: 작업 배정 문제 개념 - 각 작업자-작업 쌍의 비용을 바탕으로 총비용이 최소화되는 최적의 1:1 매칭을 찾습니다.</figcaption>
+    </figure>
+
+    <h4>1. 문제 설명 및 핵심 제약</h4>
+    <p>
+        작업 배정 문제는 다음과 같은 간단하지만 강력한 규칙을 따릅니다:
+    </p>
+    <ul>
+        <li>모든 작업자는 단 하나의 작업에만 배정될 수 있습니다.</li>
+        <li>모든 작업은 단 한 명의 작업자에게만 배정되어야 합니다.</li>
+        <li>목표는 모든 배정으로 인해 발생하는 비용의 총합을 최소화하는 것입니다. (또는 이익을 최대화할 수도 있습니다.)</li>
+    </ul>
+    <p>
+        이러한 1:1 매칭 제약 조건은 다양한 현실 문제에 적용될 수 있는 모델의 기초가 됩니다.
+    </p>
+
+    <h4>2. 산업 응용 분야</h4>
+    <p>작업 배정 문제는 여러 산업 분야에서 효율적인 자원 할당을 위해 사용됩니다.</p>
+    <ul>
+        <li><strong>인력 관리:</strong> 특정 기술을 가진 직원들을 가장 적합한 프로젝트나 태스크에 배정하여 전체 프로젝트 완료 시간을 단축합니다.</li>
+        <li><strong>생산 공정:</strong> 여러 개의 기계를 각각 다른 생산 공정에 할당하여 총생산 비용을 최소화합니다.</li>
+        <li><strong>교통 및 물류:</strong> 여러 대의 배송 트럭을 각각 다른 배송 지역에 할당하여 총 운행 거리를 최소화합니다. (VRP의 단순화된 형태로 볼 수 있습니다.)</li>
+        <li><strong>컨설팅 및 서비스:</strong> 전문 분야가 다른 컨설턴트들을 각각의 고객사 또는 문제에 배정하여 고객 만족도나 프로젝트 성공률을 최대화합니다.</li>
+    </ul>
+
+    <h4>3. 수학적 모델</h4>
+    <div class="math-model-section">
+        <p>작업 배정 문제는 다음과 같이 선형 계획법(Linear Programming)으로 간결하게 모델링될 수 있습니다.</p>
+        <ul>
+            <li><strong>결정 변수 (Decision Variables):</strong>
+                <p>$$ x_{ij} = \begin{cases} 1 & \text{if worker } i \text{ is assigned to job } j \\ 0 & \text{otherwise} \end{cases} $$</p>
+            </li>
+            <li><strong>목적 함수 (Objective Function):</strong> (비용 최소화)
+                <p>$$\min \sum_{i=1}^{n} \sum_{j=1}^{n} c_{ij} x_{ij}$$</p>
+                <p>(여기서 $c_{ij}$는 작업자 $i$가 작업 $j$를 수행하는 데 드는 비용입니다.)</p>
+            </li>
+            <li><strong>제약 조건 (Constraints):</strong>
+                <p>1. 각 작업자는 정확히 하나의 작업에 배정되어야 합니다:</p>
+                <p>$$\sum_{j=1}^{n} x_{ij} = 1 \quad \forall i = 1, \dots, n$$</p>
+                <p>2. 각 작업은 정확히 한 명의 작업자에게 배정되어야 합니다:</p>
+                <p>$$\sum_{i=1}^{n} x_{ij} = 1 \quad \forall j = 1, \dots, n$$</p>
+            </li>
+        </ul>
+        <p>이 문제는 헝가리안 알고리즘(Hungarian Algorithm)과 같은 매우 효율적인 전문 알고리즘으로 해결할 수 있으며, OR-Tools에서는 `LinearSumAssignment` 클래스를 통해 빠르고 쉽게 해를 찾을 수 있습니다.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+{% endblock %}
