@@ -73,9 +73,9 @@
 
     <form method="POST" id="cvrpForm">
         {% csrf_token %}
+        <input type="hidden" name="problem_type" value="CVRP" id="problem_type">
         <input type="hidden" name="num_customers" value="{{ submitted_num_customers }}" id="form_num_customers">
         <input type="hidden" name="num_vehicles" value="{{ submitted_num_vehicles }}" id="form_num_vehicles">
-        <input type="hidden" name="problem_type" value="CVRP" id="problem_type">
         <input type="hidden" name="vehicle_capacity" value="{{ submitted_vehicle_capa }}" id="form_vehicle_capa">
         <div class="form-section">
             <h4>1. 위치 지정 (차고지 1개, 고객 {{ submitted_num_customers }}명, 차량 {{submitted_num_vehicles}}대)</h4>
@@ -180,7 +180,9 @@
                         <td class="route-path">
                             {% for loc_coord_tuple in route.route_locations %}
                                 {% with x_coord=loc_coord_tuple.0 y_coord=loc_coord_tuple.1 %}
-                                    {% if forloop.first or forloop.last %}Depot{% else %}
+                                    {% if forloop.first or forloop.last %}
+                                        Depot
+                                    {% else %}
                                         {# 고객 ID를 찾기 위한 로직 - form_data 또는 plot_data.locations 사용 가능 #}
                                         {% for cust_loc in plot_data.locations %}
                                             {% if cust_loc.x == x_coord and cust_loc.y == y_coord and cust_loc.id != 'Depot' %}
@@ -188,7 +190,7 @@
                                             {% endif %}
                                         {% endfor %}
                                     {% endif %}
-                                    ({{ x_coord|floatformat:1 }},{{ y_coord|floatformat:1 }}){% if not forloop.last %} &rarr; {% endif %}
+                                    ({{ x_coord|floatformat }},{{ y_coord|floatformat }}){% if not forloop.last %} &rarr; {% endif %}
                                 {% endwith %}
                             {% endfor %}
                         </td>

@@ -71,9 +71,9 @@
 
     <form method="POST" id="vrpForm">
         {% csrf_token %}
+        <input type="hidden" name="problem_type" value="VRP" id="problem_type">
         <input type="hidden" name="num_customers" value="{{ submitted_num_customers }}" id="form_num_customers">
         <input type="hidden" name="num_vehicles" value="{{ submitted_num_vehicles }}" id="form_num_vehicles">
-        <input type="hidden" name="problem_type" value="VRP" id="problem_type">
 
         <div class="form-section">
             <h4>1. 위치 지정 (차고지 1개, 고객 {{ submitted_num_customers }}명, 차량 {{submitted_num_vehicles}}대)</h4>
@@ -166,7 +166,9 @@
                         <td class="route-path">
                             {% for loc_coord_tuple in route.route_locations %} {# 뷰에서 튜플로 전달됨 #}
                                 {% with x_coord=loc_coord_tuple.0 y_coord=loc_coord_tuple.1 %}
-                                    {% if forloop.first or forloop.last %}Depot{% else %}
+                                    {% if forloop.first or forloop.last %}
+                                        Depot
+                                    {% else %}
                                         {% for cust_idx in submitted_num_customers|get_range %}
                                             {% with hidden_x_id="hidden_cust_"|add:cust_idx|stringformat:"s"|add:"_x" hidden_y_id="hidden_cust_"|add:cust_idx|stringformat:"s"|add:"_y" hidden_id_id="hidden_cust_"|add:cust_idx|stringformat:"s"|add:"_id" %}
                                                 {% if form_data|get_item_simple:hidden_x_id|stringformat:"s" == x_coord|stringformat:"s" and form_data|get_item_simple:hidden_y_id|stringformat:"s" == y_coord|stringformat:"s" %}
@@ -175,7 +177,7 @@
                                             {% endwith %}
                                         {% endfor %}
                                     {% endif %}
-                                    ({{ x_coord|floatformat:1 }},{{ y_coord|floatformat:1 }}){% if not forloop.last %} &rarr; {% endif %}
+                                    ({{ x_coord|floatformat }},{{ y_coord|floatformat }}){% if not forloop.last %} &rarr; {% endif %}
                                 {% endwith %}
                             {% endfor %}
                         </td>
