@@ -389,7 +389,7 @@ def transport_assignment_demo_view(request):
             for j in range(submitted_num_items):
                 cost_key = f'cost_{i}_{j}'
                 form_data[cost_key] = request.GET.get(cost_key, str(random.randint(20, 100)))
-        logger.info(form_data)
+
     elif request.method == 'POST':
         form_data = request.POST.copy()
         submitted_num_items = int(form_data.get('num_items', preset_trans_assign_items))
@@ -425,11 +425,18 @@ def transport_assignment_demo_view(request):
                 context['error_message'] = error_msg_opt
             elif assignment_results_data:
                 # 결과에 실제 이름 매핑
+                driver_names = input_data['driver_names']
+                zone_names = input_data['zone_names']
                 for assignment in assignment_results_data['assignments']:
                     worker_idx = int(assignment['worker_id'].split(' ')[1]) - 1
                     task_idx = int(assignment['task_id'].split(' ')[1]) - 1
-                    assignment['worker_name'] = input_data['driver_names']
-                    assignment['task_name'] = input_data['zone_names']
+                    if 0 <= worker_idx < len(driver_names) and 0 <= task_idx < len(zone_names):
+                        assignment['worker_name'] = driver_names[worker_idx]
+                        assignment['task_name'] = zone_names[task_idx]
+                    else:
+                        logger.warning(f"Result indices out of bound. worker_idx: {worker_idx}, task_idx: {task_idx}")
+                        assignment['worker_name'] = f"Unknown Worker ({worker_idx + 1})"
+                        assignment['task_name'] = f"Unknown Zone ({task_idx + 1})"
 
                 context['assignment_results'] = assignment_results_data
                 context['success_message'] = f"최적 할당 완료! 최소 총 비용(시간): {assignment_results_data['total_cost']}"

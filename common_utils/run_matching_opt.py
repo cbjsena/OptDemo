@@ -177,21 +177,21 @@ def run_matching_cf_tft_algorithm(cf_panels, tft_panels):
     return matched_pairs_info, total_yield_val, error_msg, solver_time_ms
 
 
-def run_assignment_optimizer(cost_matrix):
+def run_assignment_optimizer(input_data):
     """
     OR-Tools의 LinearSumAssignment 솔버를 사용하여 작업 배정 문제를 해결합니다.
     cost_matrix: 비용 행렬 (리스트의 리스트)
     """
     logger.info("Running Assignment Problem Optimizer.")
-    logger.debug(f"Cost Matrix: {cost_matrix}")
+    logger.debug(f"Cost Matrix: {input_data}")
 
-    num_workers = len(cost_matrix)
+    num_workers = len(input_data['driver_names'])
     if num_workers == 0:
         return [], 0, "오류: 비용 행렬 데이터가 없습니다."
-    num_tasks = len(cost_matrix[0]) if num_workers > 0 else 0
-
+    num_tasks = len(input_data['zone_names'])
+    cost_matrix=input_data['cost_matrix']
     # 솔버 생성
-    assignment = linear_sum_assignment.LinearSumAssignment()
+    assignment = linear_sum_assignment.SimpleLinearSumAssignment()
 
     # 비용(Arcs) 추가
     for worker in range(num_workers):
