@@ -47,6 +47,7 @@
 
     <form method="POST" id="assignmentForm">
         {% csrf_token %}
+        <input type="hidden" name="problem_type" value="TRAS" id="problem_type">
         <input type="hidden" name="num_items" value="{{ submitted_num_items }}">
 
         <div class="form-section">

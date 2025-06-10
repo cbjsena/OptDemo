@@ -2,6 +2,7 @@ from django.conf import settings
 
 import os
 import json
+from common_utils.common_data_utils import save_json_data
 import logging
 import random
 import datetime  # 파일명 생성 등에 사용 가능
@@ -47,7 +48,7 @@ def create_matching_cf_tft_json_data(num_cf_panels, num_tft_panels, panel_rows, 
     }
     return generated_data
 
-def create_transport_assignment_cost_matrix(form_data, submitted_num_items):
+def create_transport_assignment__json_data(form_data, submitted_num_items):
     num_items = submitted_num_items
     cost_matrix = [[0] * num_items for _ in range(num_items)]
     driver_names = []
@@ -61,4 +62,27 @@ def create_transport_assignment_cost_matrix(form_data, submitted_num_items):
             if cost_val is None or not cost_val.isdigit():
                 raise ValueError(f"'{driver_names[i]}' -> '{zone_names[j]}' 비용이 유효한 숫자가 아닙니다.")
             cost_matrix[i][j] = int(cost_val)
-    return cost_matrix, driver_names, zone_names
+
+    input_data = {
+        "timestamp": datetime.datetime.now().isoformat(),
+        "problem_type": form_data.get('problem_type'),
+        "driver_names": driver_names,
+        "zone_names": zone_names,
+        "cost_matrix": cost_matrix,
+        "form_parameters": {
+            key: value for key, value in form_data.items() if key not in ['csrfmiddlewaretoken']
+        }
+    }
+    return input_data
+
+def save_matching_assignment_json_data(input_data):
+    dir=''
+    filename_pattern = ''
+    if "TRAS" == input_data.get('problem_type'):
+        num_driver = len(input_data.get('driver_names'))
+        num_zone = len(input_data.get('zone_names'))
+        dir = 'matching_transport_data'
+        filename_pattern = f"driver{num_driver}_zone{num_zone}"
+
+
+    return save_json_data(input_data, dir, filename_pattern)

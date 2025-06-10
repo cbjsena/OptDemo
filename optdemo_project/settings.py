@@ -25,6 +25,7 @@ if not os.path.exists(MEDIA_ROOT):
 
 DEMO_DIR = MEDIA_ROOT/ 'demo'
 DEMO_DIR_MAP ={'matching_cf_tft_data':DEMO_DIR/'match_cf_tft_data',
+               'matching_transport_data':DEMO_DIR/'matching_transport_data',
                'allocation_datacenter_data':DEMO_DIR/'allocation_datacenter_data',
                'allocation_budjet_data':DEMO_DIR/'allocation_budjet_data',
                'routing_vrp_data':DEMO_DIR/'routing_vrp_data',

@@ -409,10 +409,15 @@ def transport_assignment_demo_view(request):
     if request.method == 'POST':
         logger.info("Transportation Assignment Demo POST request processing.")
         try:
-            cost_matrix, driver_names, zone_names =create_transport_assignment_cost_matrix(form_data, submitted_num_items)
+            input_data =create_transport_assignment__json_data(form_data, submitted_num_items)
+            saved_filename, save_error = save_matching_assignment_json_data(input_data)
+            if save_error:
+                context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
+            elif saved_filename:
+                context['success_save_message'] = f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.".strip()
 
             # 최적화 실행
-            assignment_results_data, error_msg_opt, processing_time_ms = run_assignment_optimizer(cost_matrix)
+            assignment_results_data, error_msg_opt, processing_time_ms = run_assignment_optimizer(input_data)
             context[
                 'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
 
@@ -423,8 +428,8 @@ def transport_assignment_demo_view(request):
                 for assignment in assignment_results_data['assignments']:
                     worker_idx = int(assignment['worker_id'].split(' ')[1]) - 1
                     task_idx = int(assignment['task_id'].split(' ')[1]) - 1
-                    assignment['worker_name'] = driver_names[worker_idx]
-                    assignment['task_name'] = zone_names[task_idx]
+                    assignment['worker_name'] = input_data['driver_names']
+                    assignment['task_name'] = input_data['zone_names']
 
                 context['assignment_results'] = assignment_results_data
                 context['success_message'] = f"최적 할당 완료! 최소 총 비용(시간): {assignment_results_data['total_cost']}"
