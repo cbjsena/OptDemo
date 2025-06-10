@@ -17,8 +17,6 @@ def run_vrp_optimizer(input_data):
     depot_location=input_data.get('depot_location')
     customer_locations=input_data.get('customer_locations')
     num_vehicles=input_data.get('num_vehicles')
-    demands=input_data.get('demands')
-    vehicle_capacities=input_data.get('vehicle_capacities')
 
     data = {}
     # 위치 데이터: 차고지를 0번 인덱스로 추가
@@ -157,17 +155,8 @@ def run_cvrp_optimizer(input_data):
     demands_input = [0]  # 차고지 수요는 0
     for cust in customer_locations:
         demands_input.append(cust.get('demand', 0))
+    vehicle_capacities=input_data.get('vehicle_capacities')
 
-    vehicle_capacities=input_data.get('vehicle_capacity')
-    if not isinstance(vehicle_capacities, list):  # 단일 값으로 용량이 주어졌을 경우
-        vehicle_capacities = [vehicle_capacities] * num_vehicles
-    elif len(vehicle_capacities) != num_vehicles:
-        logger.error("Number of vehicle capacities does not match number of vehicles. Using first capacity for all.")
-        # 또는 오류 처리. 여기서는 첫 번째 용량을 모든 차량에 적용하거나, 평균값을 사용하는 등 정책 필요.
-        # 가장 간단하게는 모든 차량 용량이 같다고 가정하고 하나의 값만 받도록 단순화할 수 있음.
-        # 여기서는 첫 번째 용량을 사용.
-        cap = vehicle_capacities[0] if vehicle_capacities else 100  # 기본값
-        vehicle_capacities = [cap] * num_vehicles
 
     data = {}
     # 위치 데이터: 차고지를 0번 인덱스로 추가

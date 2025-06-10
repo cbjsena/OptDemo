@@ -48,9 +48,32 @@ def get_item(dictionary, key_or_printf_args):
 # 아래는 get_item을 위한 간단한 버전. 템플릿의 printf는 제거.
 
 @register.filter
-def get_item_simple(dictionary, key):
-    if isinstance(dictionary, dict):
-        return dictionary.get(key)
+def get_item_simple(collection, key):
+    if isinstance(collection, dict):
+        return collection.get(key)
+    if isinstance(collection, list):
+        try:
+            # key가 정수형 인덱스로 변환 가능한지 확인
+            int_key = int(key)
+            logger.debug(f"get_item_simple: Trying to access list with index {int_key}")
+
+            # 인덱스가 유효한 범위 내에 있는지 확인
+            if 0 <= int_key < len(collection):
+                item = collection[int_key]
+                logger.debug(f"get_item_simple: Success! Returning item: {item}")
+                return item
+            else:
+                logger.warning(f"get_item_simple: Index {int_key} is out of bounds for list of size {len(collection)}.")
+                return None
+
+        except (ValueError, TypeError) as e:
+            # key를 정수로 변환할 수 없거나 다른 타입 에러 발생 시
+            logger.error(f"get_item_simple: Failed to convert key '{key}' to int or other type error. Error: {e}")
+            return None
+        except IndexError as e:
+            # 인덱스 에러 발생 시 (위의 범위 체크로 대부분 방지되지만, 만약을 위해)
+            logger.error(f"get_item_simple: IndexError for key '{key}'. Error: {e}")
+            return None
     return None
 
 @register.simple_tag(name='make_key')

@@ -292,8 +292,6 @@ def pdp_demo_view(request):
             for key, default_val in preset.items():
                 form_data[f'pair_{i}_{key}'] = request.GET.get(f'pair_{i}_{key}', default_val)
 
-        logger.info(form_data)
-
     elif request.method == 'POST':
         form_data = request.POST.copy()
         submitted_num_pairs = int(form_data.get('num_pairs', preset_num_pairs))
@@ -305,7 +303,7 @@ def pdp_demo_view(request):
         'active_submenu_category': 'pickup_delivery_problems',
         'active_submenu': 'pdp_demo',
         'form_data': form_data,
-        'pdp_results': None,
+        'opt_results': None,
         'error_message': None, 'success_message': None, 'info_message': None,
         'processing_time_seconds': "N/A",
         'num_pairs_options': range(1, 6),  # 1~5개 작업 쌍
@@ -320,34 +318,23 @@ def pdp_demo_view(request):
     if request.method == 'POST':
         logger.info("PDP Demo POST request processing.")
         try:
-            input_data = {}
-            input_data['depot_location'] = {'x': float(form_data.get('depot_x')), 'y': float(form_data.get('depot_y'))}
-            input_data['num_vehicles'] = int(form_data.get('num_vehicles'))
-
-            capacity = int(form_data.get('vehicle_capacity'))
-            input_data['vehicle_capacities'] = [capacity] * input_data['num_vehicles']
-
-            input_data['pickup_delivery_pairs'] = []
-            for i in range(submitted_num_pairs):
-                input_data['pickup_delivery_pairs'].append({
-                    'id': form_data.get(f'pair_{i}_id'),
-                    'pickup': {'x': float(form_data.get(f'pair_{i}_px')), 'y': float(form_data.get(f'pair_{i}_py'))},
-                    'delivery': {'x': float(form_data.get(f'pair_{i}_dx')), 'y': float(form_data.get(f'pair_{i}_dy'))},
-                    'demand': int(form_data.get(f'pair_{i}_demand'))
-                })
-
-            # ... (유효성 검사 로직 추가 필요) ...
+            input_data = create_pdp_json_data(form_data)
+            saved_filename, save_error = save_vrp_json_data(input_data)
+            if save_error:
+                context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
+            elif saved_filename:
+                context['success_save_message'] = f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.".strip()
 
             # 최적화 실행
-            pdp_results_data, error_msg_opt, processing_time_ms = run_pdp_optimizer(input_data)
+            results_data, error_msg_opt, processing_time_ms = run_pdp_optimizer(input_data)
             context[
                 'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
 
             if error_msg_opt:
                 context['error_message'] = error_msg_opt
-            elif pdp_results_data:
-                context['pdp_results'] = pdp_results_data
-                context['success_message'] = f"PDP 최적 경로 계산 완료! 총 거리: {pdp_results_data.get('total_distance', 0):.2f}"
+            elif results_data:
+                context['opt_results'] = results_data
+                context['success_message'] = f"PDP 최적 경로 계산 완료! 총 거리: {results_data.get('total_distance', 0):.2f}"
 
                 # 차트용 데이터 준비
                 plot_data = {'locations': [], 'routes': [], 'depot_index': 0, 'pairs': []}
@@ -363,20 +350,19 @@ def pdp_demo_view(request):
                     plot_data['pairs'].append({'p_idx': node_idx_counter, 'd_idx': node_idx_counter + 1})
                     node_idx_counter += 2
 
-                for route_info in pdp_results_data.get('routes', []):
+                for route_info in results_data.get('routes', []):
                     plot_data['routes'].append({
                         'vehicle_id': route_info['vehicle_id'],
                         'path_coords': route_info['route_locations']
                     })
+                context["locations_dict"] = {i: loc for i, loc in enumerate(plot_data["locations"])}
                 context['plot_data'] = json.dumps(plot_data)
-
         except (ValueError, TypeError) as ve:
             context['error_message'] = f"입력값 오류: {str(ve)}"
             logger.error(f"ValueError in pdp_demo_view (POST): {ve}", exc_info=True)
         except Exception as e:
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"
             logger.error(f"Unexpected error in pdp_demo_view (POST): {e}", exc_info=True)
-
     return render(request, 'routing_logistics_app/pdp_demo.html', context)
 
 

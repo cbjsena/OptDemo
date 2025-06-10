@@ -76,6 +76,7 @@
 
     <form method="POST" id="pdpForm">
         {% csrf_token %}
+        <input type="hidden" name="problem_type" value="PDP" id="problem_type">
         <input type="hidden" name="num_pairs" value="{{ submitted_num_pairs }}" id="form_num_pairs">
         <input type="hidden" name="num_vehicles" value="{{ submitted_num_vehicles }}">
         <input type="hidden" name="vehicle_capacity" value="{{ submitted_vehicle_capa }}">
@@ -93,19 +94,19 @@
 
             {% for i in submitted_num_pairs|get_range %}
                 {% make_key 'pair' i 'id' as key_name %}
-                <input type="hidden" name="pair_{{ i }}_id" id="hidden_pair_{{ i }}_id"
+                <input type="hidden" name="{{key_name}}" id="hidden_pair_{{ i }}_id"
                        value="{{ form_data|get_item_simple:key_name }}">
-                {% make_key 'hidden_pair' i 'px' as key_name %}
-                <input type="hidden" name="pair_{{ i }}_px" id="hidden_pair_{{ i }}_px"
+                {% make_key 'pair' i 'px' as key_name %}
+                <input type="hidden" name="{{key_name}}" id="hidden_pair_{{ i }}_px"
                        value="{{ form_data|get_item_simple:key_name }}">
-                {% make_key 'hidden_pair' i 'py' as key_name %}
-                <input type="hidden" name="pair_{{ i }}_py" id="hidden_pair_{{ i }}_py"
+                {% make_key 'pair' i 'py' as key_name %}
+                <input type="hidden" name="{{key_name}}" id="hidden_pair_{{ i }}_py"
                        value="{{ form_data|get_item_simple:key_name }}">
-                {% make_key 'hidden_pair' i 'dx' as key_name %}
-                <input type="hidden" name="pair_{{ i }}_dx" id="hidden_pair_{{ i }}_dx"
+                {% make_key 'pair' i 'dx' as key_name %}
+                <input type="hidden" name="{{key_name}}" id="hidden_pair_{{ i }}_dx"
                        value="{{ form_data|get_item_simple:key_name }}">
-                {% make_key 'hidden_pair' i 'dy' as key_name %}
-                <input type="hidden" name="pair_{{ i }}_dy" id="hidden_pair_{{ i }}_dy"
+                {% make_key 'pair' i 'dy' as key_name %}
+                <input type="hidden" name="{{key_name}}" id="hidden_pair_{{ i }}_dy"
                        value="{{ form_data|get_item_simple:key_name }}">
             {% endfor %}
         </div>
@@ -136,24 +137,87 @@
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">PDP 최적 경로 계산 실행</button>
     </form>
 
-    {# ... (결과 표시 영역은 이전과 유사하게 구성) ... #}
-    {% if pdp_results or error_message or success_message or info_message %}
-        <hr class="my-4">
-        <h3 class="mt-4">Optimization Results (PDP)</h3>
-        {# ... 메시지 표시 ... #}
-        {% if pdp_results.routes %}
-            {# ... 경로 테이블 (경로별 적재량 변화(route_loads)도 표시 가능) ... #}
+    {% if request.method == 'POST' %} {# POST 요청이 있었을 때만 결과 영역 표시 #}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Results (PDP)</h3>
+
+        {# 1. 메시지 표시 영역 #}
+        {% if error_message %}
+            <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+        {% elif success_message %}
+            {% if info_message %}
+            <div class="alert alert-info" role="alert">{{ info_message }}</div>
+            {% endif %}
+            <div class="alert alert-success" role="alert">{{ success_message }}</div>
+        {% elif info_message %} {# 성공은 아니지만 정보 메시지가 있는 경우 #}
+            <div class="alert alert-info" role="alert">{{ info_message }}</div>
+        {% else %} {# 결과가 없는 경우 #}
+            <p class="text-muted mt-3"><em>최적화 결과가 없습니다. 입력값을 확인하거나, 솔버가 해를 찾지 못했을 수 있습니다.</em></p>
         {% endif %}
+
+        {# 2. 결과 요약 및 시각화 #}
+        {% if opt_results %}
+        <div class="card mt-4">
+            <div class="card-header"><strong>결과 요약</strong></div>
+            <div class="card-body">
+                <p><strong>총 운행 거리:</strong> {{ opt_results.total_distance|floatformat:2 }}</p>
+                <p><strong>사용된 차량 수:</strong> {{ opt_results.routes|length }} / {{ submitted_num_vehicles }}</p>
+                <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if opt_results.routes %}
+        <div class="card mt-3">
+            <div class="card-header"><strong>차량별 최적 경로 및 적재량 변화</strong></div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover results-table mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>차량 ID</th>
+                            <th>경로 (노드 순서)</th>
+                            <th>경로별 이동 거리</th>
+                            <th>경로별 적재량 변화</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for route in opt_results.routes %}
+                        <tr>
+                            <td>차량 {{ route.vehicle_id|add:1 }}</td>
+                            <td class="route-path">
+                                {% for node_index in route.route_nodes %}
+                                    {# 뷰의 plot_data 생성 로직과 유사하게 노드 ID 찾기 #}
+                                    {% with loc=locations_dict|get_item_simple:node_index %}
+                                        {{ loc.id|default:"?" }}{% if not forloop.last %} &rarr; {% endif %}
+                                    {% endwith %}
+                                {% endfor %}
+                            </td>
+                            <td>{{ route.distance|floatformat:2 }}</td>
+                            <td class="route-path">
+                                {% for load in route.route_loads %}
+                                    {{ load }}{% if not forloop.last %} &rarr; {% endif %}
+                                {% endfor %}
+                                <br><small class="text-muted">(차량 용량: {{ route.capacity }})</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
         {% if plot_data %}
-            <div class="card mt-3">
-                <div class="card-header"><strong>경로 시각화 (PDP)</strong></div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="pdpRouteChart"></canvas>
-                    </div>
+        <div class="card mt-3">
+            <div class="card-header"><strong>경로 시각화 (PDP)</strong></div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="pdpRouteChart"></canvas>
                 </div>
             </div>
+        </div>
         {% endif %}
+
     {% endif %}
 
 </div>
