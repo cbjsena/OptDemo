@@ -177,7 +177,7 @@ def run_matching_cf_tft_algorithm(cf_panels, tft_panels):
     return matched_pairs_info, total_yield_val, error_msg, solver_time_ms
 
 
-def run_assignment_optimizer(input_data):
+def run_matching_transport_optimizer(input_data):
     """
     OR-Tools의 LinearSumAssignment 솔버를 사용하여 작업 배정 문제를 해결합니다.
     cost_matrix: 비용 행렬 (리스트의 리스트)
@@ -185,49 +185,63 @@ def run_assignment_optimizer(input_data):
     logger.info("Running Assignment Problem Optimizer.")
     logger.debug(f"Cost Matrix: {input_data}")
 
-    num_workers = len(input_data['driver_names'])
-    if num_workers == 0:
-        return [], 0, "오류: 비용 행렬 데이터가 없습니다."
-    num_tasks = len(input_data['zone_names'])
-    cost_matrix=input_data['cost_matrix']
-    # 솔버 생성
-    assignment = linear_sum_assignment.SimpleLinearSumAssignment()
+    workers = input_data['driver_names']
+    if len(workers) == 0:
+        return [], 0, "Error: There is no workers."
 
-    # 비용(Arcs) 추가
-    for worker in range(num_workers):
-        for task in range(num_tasks):
-            if cost_matrix[worker][task] is not None:  # 유효한 비용만 추가
-                assignment.add_arc_with_cost(worker, task, int(cost_matrix[worker][task]))
+    tasks = input_data['zone_names']
+    if len(tasks) == 0:
+        return [], 0, "Error: There is no tasks."
 
-    # 문제 해결
+    costs=input_data['cost_matrix']
+    num_workers = len(costs)
+    num_tasks = len(costs[0])
+    solver = pywraplp.Solver.CreateSolver("SCIP")
+    x ={}
+    for i in range(num_workers):
+        for j in range(num_tasks):
+            x[i,j] = solver.IntVar(0, 1, f'{workers[i]}_{tasks[j]}')
+
+    # Each worker is assigned to at most 1 task.
+    for i in range(num_workers):
+        solver.Add(solver.Sum([x[i, j] for j in range(num_tasks)]) == 1)
+
+    # Each task is assigned to exactly one worker.
+    for j in range(num_tasks):
+        solver.Add(solver.Sum([x[i, j] for i in range(num_workers)]) == 1)
+
+    objective_terms = []
+    for i in range(num_workers):
+        for j in range(num_tasks):
+            objective_terms.append(costs[i][j] * x[i, j])
+    solver.Minimize(solver.Sum(objective_terms))
+
     logger.info("Solving the assignment model...")
     solve_start_time = datetime.datetime.now()
-    status = assignment.solve()
+    status = solver.Solve()
     solve_end_time = datetime.datetime.now()
     processing_time_ms = (solve_end_time - solve_start_time).total_seconds() * 1000
     logger.info(f"Solver finished. Status: {status}, Time: {processing_time_ms:.2f} ms")
 
-    # 결과 추출
-    results = {'assignments': [], 'total_cost': 0}
+    results = {'assignments':[], 'total_cost':0}
     error_msg = None
 
-    if status == assignment.OPTIMAL:
-        results['total_cost'] = assignment.optimal_cost()
-        logger.info(f'Total cost = {results["total_cost"]}')
+    if status == pywraplp.Solver.OPTIMAL or pywraplp.Solver.FEASIBLE:
+        results['total_cost'] = solver.Objective().Value()
+        logger.info(f"Total cost = {results['total_cost']}")
         for i in range(num_workers):
-            assigned_task = assignment.right_mate(i)
-            cost = assignment.assignment_cost(i)
-            results['assignments'].append({
-                'worker_id': f'기사 {i + 1}',  # 또는 실제 이름
-                'task_id': f'구역 {assigned_task + 1}',
-                'cost': cost
-            })
-            logger.debug(f'Worker {i} assigned to task {assigned_task} with a cost of {cost}')
+            for j in range(num_tasks):
+                cost = costs[i][j]
+                if x[i, j].solution_value() > 0.5:
+                    results['assignments'].append({
+                        'worker_name': workers[i],
+                        'task_name': tasks[j],
+                        'cost':cost
+                    })
+                    logger.debug(f'Worker {i} assigned to task {j} with a cost of {cost}')
 
-    elif status == assignment.INFEASIBLE:
+    elif status == pywraplp.Solver.INFEASIBLE:
         error_msg = "실행 불가능한 문제입니다. 모든 작업자/작업 쌍에 대한 비용이 정의되었는지 확인하세요."
-    elif status == assignment.POSSIBLE_OVERFLOW:
-        error_msg = "계산 중 오버플로우가 발생했습니다. 비용 값의 크기를 확인하세요."
     else:
         error_msg = f"최적 할당을 찾지 못했습니다. (솔버 상태: {status})"
 

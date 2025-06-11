@@ -48,7 +48,7 @@ def create_matching_cf_tft_json_data(num_cf_panels, num_tft_panels, panel_rows, 
     }
     return generated_data
 
-def create_transport_assignment__json_data(form_data, submitted_num_items):
+def create_matching_transport_json_data(form_data, submitted_num_items):
     num_items = submitted_num_items
     cost_matrix = [[0] * num_items for _ in range(num_items)]
     driver_names = []
