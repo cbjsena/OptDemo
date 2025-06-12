@@ -75,6 +75,38 @@ def create_matching_transport_json_data(form_data, submitted_num_items):
     }
     return input_data
 
+
+def create_matching_resource_skill_json_data(form_data, num_resources, num_projects):
+    resources_data = []
+    for i in range(num_resources):
+        skills_str = form_data.get(f'res_{i}_skills', '')
+        resources_data.append({
+            'id': form_data.get(f'res_{i}_id'),
+            'name': form_data.get(f'res_{i}_name'),
+            'cost': int(form_data.get(f'res_{i}_cost')),
+            'skills': [s.strip() for s in skills_str.split(',') if s.strip()]  # 쉼표로 구분된 문자열을 리스트로
+        })
+
+    projects_data = []
+    for i in range(num_projects):
+        req_skills_str = form_data.get(f'proj_{i}_required_skills', '')
+        projects_data.append({
+            'id': form_data.get(f'proj_{i}_id'),
+            'name': form_data.get(f'proj_{i}_name'),
+            'required_skills': [s.strip() for s in req_skills_str.split(',') if s.strip()]
+        })
+
+    input_data = {
+        "timestamp": datetime.datetime.now().isoformat(),
+        "problem_type": form_data.get('problem_type'),
+        "resources_data": resources_data,
+        "projects_data": projects_data,
+        "form_parameters": {
+            key: value for key, value in form_data.items() if key not in ['csrfmiddlewaretoken']
+        }
+    }
+    return input_data
+
 def save_matching_assignment_json_data(input_data):
     dir=''
     filename_pattern = ''
@@ -83,6 +115,11 @@ def save_matching_assignment_json_data(input_data):
         num_zone = len(input_data.get('zone_names'))
         dir = 'matching_transport_data'
         filename_pattern = f"driver{num_driver}_zone{num_zone}"
-
+    elif "RESK" == input_data.get('problem_type'):
+        num_resources = len(input_data.get('resources_data'))
+        num_projects = len(input_data.get('projects_data'))
+        dir = 'matching_resource_data'
+        filename_pattern = f"resource{num_resources}_project{num_projects}"
 
     return save_json_data(input_data, dir, filename_pattern)
+

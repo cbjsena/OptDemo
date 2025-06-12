@@ -439,9 +439,90 @@ def transport_assignment_demo_view(request):
 
     return render(request, 'matching_assignment_app/transport_assignment_demo.html', context)
 
-def stable_matching_introduction_view():
-    return None
+
+def resource_skill_matching_introduction_view(request):
+    """
+    Resource-Skill Matching Problem Introduction Page.
+    """
+    context = {
+        'active_model': 'Matching & Assignment',
+        'active_submenu_category': 'resource_skill_matching_problems',
+        'active_submenu': 'resource_skill_matching_introduction'
+    }
+    logger.debug("Rendering Resource-Skill Matching introduction page.")
+    return render(request, 'matching_assignment_app/resource_skill_matching_introduction.html', context)
 
 
-def resource_skill_matching_introduction_view():
-    return None
+def resource_skill_matching_demo_view(request):
+    """
+    Resource-Skill Matching 데모 뷰.
+    """
+    form_data = {}
+
+    # GET 요청 시: URL 파라미터 또는 기본값으로 항목 수 결정
+    if request.method == 'GET':
+        submitted_num_resources = int(request.GET.get('num_resources_to_show', preset_num_resources))
+        submitted_num_projects = int(request.GET.get('num_projects_to_show', preset_num_projects))
+        submitted_num_resources = max(1, min(10, submitted_num_resources))
+        submitted_num_projects = max(1, min(5, submitted_num_projects))
+
+        # 선택된 수만큼 form_data 채우기
+        for i in range(submitted_num_resources):
+            preset = preset_resources[i % len(preset_resources)]
+            for key, default_val in preset.items():
+                form_data[f'res_{i}_{key}'] = request.GET.get(f'res_{i}_{key}', default_val)
+        for i in range(submitted_num_projects):
+            preset = preset_projects[i % len(preset_resources)]
+            for key, default_val in preset.items():
+                form_data[f'proj_{i}_{key}'] = request.GET.get(f'proj_{i}_{key}', default_val)
+        logger.info(form_data)
+    elif request.method == 'POST':
+        form_data = request.POST.copy()
+        submitted_num_resources = int(form_data.get('num_resources', preset_num_resources))
+        submitted_num_projects = int(form_data.get('num_projects', preset_num_projects))
+
+    context = {
+        'active_model': 'Matching & Assignment',
+        'active_submenu_category': 'resource_skill_matching_problems',
+        'active_submenu': 'resource_skill_matching_demo',
+        'form_data': form_data,
+        'results': None, 'error_message': None, 'success_message': None,
+        'processing_time_seconds': "N/A",
+        'num_resources_options': range(1, 11),  # 1~10명 인력
+        'num_projects_options': range(1, 6),  # 1~5개 프로젝트
+        'submitted_num_resources': submitted_num_resources,
+        'submitted_num_projects': submitted_num_projects,
+    }
+
+    if request.method == 'POST':
+        logger.info("Resource-Skill Matching Demo POST request processing.")
+        try:
+            input_data=create_matching_resource_skill_json_data(form_data, submitted_num_resources, submitted_num_projects)
+            saved_filename, save_error = save_matching_assignment_json_data(input_data)
+            if save_error:
+                context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
+            elif saved_filename:
+                context['success_save_message'] = f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.".strip()
+
+            # --- 2. 최적화 실행 ---
+            results_data, error_msg_opt, processing_time_ms = run_skill_matching_optimizer(input_data)
+            context[
+                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+
+            if error_msg_opt:
+                context['error_message'] = error_msg_opt
+            elif results_data:
+                context['results'] = results_data
+                context['success_message'] = f"최적 팀 구성 완료! 예상 총 비용: {results_data.get('total_cost', 0)}"
+                logger.info(f"Skill matching successful. Total cost: {results_data.get('total_cost')}")
+            else:
+                context['error_message'] = "최적 할당 결과를 가져오지 못했습니다."
+
+        except ValueError as ve:
+            context['error_message'] = f"입력값 오류: {str(ve)}"
+            logger.error(f"ValueError in skill matching demo: {ve}", exc_info=True)
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+            logger.error(f"Unexpected error in skill matching demo: {e}", exc_info=True)
+
+    return render(request, 'matching_assignment_app/resource_skill_matching_demo.html', context)

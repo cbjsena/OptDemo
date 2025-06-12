@@ -14,13 +14,9 @@ urlpatterns = [
     path('assignment/introduction/', views.assignment_introduction_view, name='assignment_introduction'),
     path('transport-assignment/introduction/', views.transport_assignment_introduction_view, name='transport_assignment_introduction'),
     path('transport-assignment/demo/', views.transport_assignment_demo_view, name='transport_assignment_demo'),
-    # ... 데이터 생성, 데모 URL ...
-
-    # 안정적인 매칭 문제 (Stable Matching Problem)
-    path('stable-matching/introduction/', views.stable_matching_introduction_view, name='stable_matching_introduction'),
-    # ... 데이터 생성, 데모 URL ...
 
     # 자원-기술 매칭 최적화 (Resource-Skill Matching)
     path('resource-skill-matching/introduction/', views.resource_skill_matching_introduction_view, name='resource_skill_matching_introduction'),
-    # ... 데이터 생성, 데모 URL ...
+    path('resource-skill-matching/demo/', views.resource_skill_matching_demo_view, name='resource_skill_matching_demo'),
+
 ]

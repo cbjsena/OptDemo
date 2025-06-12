@@ -47,3 +47,25 @@ preset_pair_locations = [
 preset_trans_assign_items=3
 preset_trans_assign_drivers=["김기사", "이배달", "박운송", "최신속", "정안전"]
 preset_trans_assign_zones = ["강남구", "서초구", "송파구", "마포구", "영등포구"]
+
+preset_num_resources=7
+preset_num_projects=3
+preset_resources = [
+        {'id': 'R1', 'name': '김개발', 'cost': '100', 'skills': 'Python,ML'},
+        {'id': 'R2', 'name': '이엔지', 'cost': '120', 'skills': 'Java,SQL,Cloud'},
+        {'id': 'R3', 'name': '박기획', 'cost': '90', 'skills': 'SQL,Tableau'},
+        {'id': 'R4', 'name': '최신입', 'cost': '70', 'skills': 'Python'},
+        {'id': 'R5', 'name': '정고급', 'cost': '150', 'skills': 'Cloud,Python,K8s'},
+        {'id': 'R6', 'name': '한디자', 'cost': '105', 'skills': 'UI,AWS,UX,React'},
+        {'id': 'R7', 'name': '백엔드', 'cost': '110', 'skills': 'Java,Spring,SQL'},
+        {'id': 'R8', 'name': '프론트', 'cost': '90', 'skills': 'React,JavaScript'},
+        {'id': 'R9', 'name': '데브옵', 'cost': '140', 'skills': 'K8s,AWS,Cloud'},
+        {'id': 'R10', 'name': '데이터', 'cost': '130', 'skills': 'SQL,Python,Tableau'},
+    ]
+preset_projects = [
+        {'id': 'P1', 'name': 'AI 모델 개발', 'required_skills': 'Python,ML,SQL'},
+        {'id': 'P2', 'name': '데이터베이스 마이그레이션', 'required_skills': 'AWS,SQL,Cloud'},
+        {'id': 'P3', 'name': '웹 서비스 프론트엔드', 'required_skills': 'React,JavaScript'},
+        {'id': 'P4', 'name': '클라우드 인프라 구축', 'required_skills': 'AWS,K8s'},
+        {'id': 'P5', 'name': 'BI 대시보드 제작', 'required_skills': 'SQL,Tableau'},
+    ]

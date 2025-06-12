@@ -1,0 +1,129 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Resource-Skill Matching - Introduction{% endblock %}
+
+{% block styles %}
+<style>
+    /* 다른 소개 페이지와 유사한 스타일 */
+    .introduction-content {
+        line-height: 1.7;
+        font-size: 1.03rem;
+    }
+    .introduction-content h4 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #0056b3;
+        padding-bottom: 0.25rem;
+        border-bottom: 2px solid #007bff;
+    }
+    .math-model-section {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    .intro-image {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 5px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .image-caption {
+        font-size: 0.9rem;
+        color: #555;
+        text-align: center;
+        margin-top: -10px;
+        margin-bottom: 20px;
+    }
+    .link-to-more-info {
+        margin-top: 15px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 5px;
+        text-align: left;
+        font-size: 0.95rem;
+    }
+    .link-to-more-info a {
+        font-weight: bold;
+        text-decoration: none;
+    }
+    .link-to-more-info a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">자원-기술 매칭 문제 (Resource-Skill Matching)</h1>
+    </div>
+
+    <p><strong>범주: Ⅱ. 매칭 및 할당 (Matching & Assignment)</strong></p>
+    <p>
+        <strong>자원-기술 매칭 문제</strong>는 단순한 1:1 할당을 넘어, 각 자원(인력)이 보유한 <strong>다양한 기술 스택</strong>과
+        <strong>각 작업(프로젝트)</strong>이 요구하는 <strong>특정 기술들</strong>을 모두 고려하여 최적의 팀을 구성하는 복잡한 할당 문제입니다.
+        이는 현대 기업의 프로젝트 기반 업무 환경에서 매우 중요한 역할을 합니다.
+    </p>
+
+    <figure>
+        <img src="{% static 'matching_assignment_app/images/resource_skill_matching_concept.png' %}"
+             alt="자원-기술 매칭 문제 개념도" class="intro-image" style="max-width: 600px;">
+        <figcaption class="image-caption">그림 1: 자원-기술 매칭 개념 - 각 인력의 보유 기술과 프로젝트의 요구 기술을 고려하여 최적의 팀을 구성합니다.</figcaption>
+    </figure>
+
+    <h4>1. 문제 설명 및 목표</h4>
+    <p>
+        이 문제의 핵심은 단순히 사람을 일에 배정하는 것을 넘어, "프로젝트 성공을 위해 최적의 기술 조합을 가진 팀을 어떻게 구성할 것인가?"에 대한 해답을 찾는 것입니다. 최적화 목표는 상황에 따라 다양하게 설정될 수 있습니다.
+    </p>
+    <ul>
+        <li><strong>프로젝트 요구사항 만족도 최대화:</strong> 프로젝트에 필요한 모든 기술이 배정된 팀원들에 의해 충족되는 것을 최우선 목표로 합니다.</li>
+        <li><strong>총비용 최소화:</strong> 각 인력의 인건비를 고려하여, 요구사항을 만족시키면서 가장 적은 비용으로 팀을 구성합니다.</li>
+        <li><strong>인력 활용률 극대화 (Load Balancing):</strong> 특정 인력에게 업무가 과도하게 집중되지 않도록, 여러 프로젝트에 걸쳐 업무량을 균등하게 분배합니다.</li>
+        <li><strong>프로젝트 완료 시간 최소화:</strong> 각 인력의 기술 숙련도를 고려하여, 가장 숙련된 인력을 우선적으로 배정함으로써 전체 프로젝트 기간을 단축합니다.</li>
+    </ul>
+    <p>
+        이러한 다중 목표(Multi-objective)를 고려해야 하는 경우가 많아, 문제의 난이도가 높습니다.
+    </p>
+
+    <h4>2. 산업 응용 분야</h4>
+    <ul>
+        <li><strong>IT 프로젝트 팀 구성:</strong> 소프트웨어 개발 프로젝트에서 프론트엔드, 백엔드, 데이터베이스, 클라우드 등 다양한 기술을 요구할 때, 각 개발자의 기술 스택을 고려하여 최적의 개발팀을 구성합니다.</li>
+        <li><strong>컨설팅 펌프:</strong> 고객사의 복잡한 문제를 해결하기 위해, 금융, 전략, 마케팅, IT 등 다양한 전문 분야의 컨설턴트들로 팀을 구성합니다.</li>
+        <li><strong>제조업 및 유지보수:</strong> 특정 설비의 유지보수 작업을 위해 전기, 기계, 제어 등 각기 다른 기술을 가진 엔지니어들을 한 팀으로 파견합니다.</li>
+        <li><strong>병원 운영:</strong> 특정 수술을 위해 외과의, 마취과 의사, 전문 간호사 등 필수 인력으로 수술팀을 구성합니다.</li>
+    </ul>
+
+    <h4>3. 수학적 모델의 복잡성</h4>
+    <div class="math-model-section">
+        <p>자원-기술 매칭 문제는 작업 배정 문제보다 훨씬 복잡한 모델을 요구합니다.</p>
+        <ul>
+            <li><strong>결정 변수:</strong>
+                <p>$$ x_{ij} = 1 \text{ assign Person } i \text{ to Project } j \text{ or} $$</p>
+                <p>$$ x_{ijk} = 1 \text{ assign Person } i \text{to Project }j \text{ in role } k $$</p>
+                <p>케이스에 따라 더 세분화된 변수를 생성할 수 있습니다.</p>
+            </li>
+            <li><strong>핵심 제약 조건 예시:</strong>
+                <p><strong>1. 기술 요구사항 충족 제약:</strong> 프로젝트 j가 요구하는 기술 s에 대해, 해당 기술을 보유한 인력 중 최소 한 명 이상이 프로젝트 j에 배정되어야 한다.</p>
+                <p>$$\sum_{i \in \text{Resources}} \text{has_skill}(i, s) \cdot x_{ij} \ge 1, \quad \forall j \in \text{Projects}, s \in \text{required_skills}(j)$$</p>
+                <p><strong>2. 인력 할당 제약:</strong> 각 인력 i는 동시에 참여할 수 있는 프로젝트 수에 한계가 있다 (보통 1개).</p>
+                <p>$$\sum_{j \in \text{Projects}} x_{ij} \le 1, \quad \forall i \in \text{Resources}$$</p>
+            </li>
+        </ul>
+        <p>OR-Tools에서는 이러한 복잡한 제약 조건들을 정수 계획법(Integer Programming) 또는 제약 프로그래밍(Constraint Programming, CP-SAT) 솔버를 사용하여 모델링하고 해결할 수 있습니다.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+{% endblock %}

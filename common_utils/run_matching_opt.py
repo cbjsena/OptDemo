@@ -249,3 +249,109 @@ def run_matching_transport_optimizer(input_data):
         logger.error(f"Assignment optimization failed: {error_msg}")
 
     return results, error_msg, processing_time_ms
+
+
+# --- 자원-기술 매칭 최적화 실행 함수 ---
+def run_skill_matching_optimizer(input_data):
+    """
+    자원-기술 매칭 문제를 해결하여 총 비용을 최소화합니다.
+    resources_data: [{'id': 'R1', 'name': '김개발', 'cost': 100, 'skills': ['Python', 'ML']}, ...]
+    projects_data: [{'id': 'P1', 'name': 'AI 모델 개발', 'required_skills': ['Python', 'ML', 'Cloud']}, ...]
+    """
+    logger.info("Running Resource-Skill Matching Optimizer...")
+    resources_data = input_data['resources_data']
+    projects_data = input_data['projects_data']
+    num_resources = len(resources_data)
+    num_projects = len(projects_data)
+
+    if num_resources == 0 or num_projects == 0:
+        return None, "오류: 인력 또는 프로젝트 데이터가 없습니다.", 0.0
+
+    solver = pywraplp.Solver.CreateSolver('CBC')
+    if not solver:
+        logger.error("CBC MIP Solver not available for skill matching.")
+        return None, "오류: MIP 솔버를 생성할 수 없습니다.", 0.0
+
+    # --- 1. 결정 변수 생성 ---
+    # x[i][j] = 1 if resource i is assigned to project j, 0 otherwise
+    x = {}
+    for i in range(num_resources):
+        for j in range(num_projects):
+            x[i, j] = solver.BoolVar(f'x_{i}_{j}')
+
+    logger.debug(f"Created {len(x)} assignment variables.")
+
+    # --- 2. 제약 조건 설정 ---
+    # 제약 1: 각 인력은 최대 하나의 프로젝트에만 할당됨
+    for i in range(num_resources):
+        solver.Add(sum(x[i, j] for j in range(num_projects)) <= 1, f"resource_assignment_{i}")
+
+    # 제약 2: 각 프로젝트에 요구되는 모든 기술은 반드시 충족되어야 함
+    all_skills = set()
+    for p in projects_data:
+        all_skills.update(p.get('required_skills', []))
+
+    for j in range(num_projects):
+        project = projects_data[j]
+        for skill in project.get('required_skills', []):
+            # 프로젝트 j의 기술 s 요구는, 기술 s를 가진 인력 i 중 최소 한명이 프로젝트 j에 할당되어야 충족됨
+            solver.Add(
+                sum(x[i, j] for i in range(num_resources) if skill in resources_data[i].get('skills', [])) >= 1,
+                f"skill_requirement_{j}_{skill}"
+            )
+    logger.debug("Added resource and skill requirement constraints.")
+
+    # --- 3. 목표 함수 설정 ---
+    # 총 비용(급여) 최소화
+    objective = solver.Objective()
+    for i in range(num_resources):
+        for j in range(num_projects):
+            objective.SetCoefficient(x[i, j], resources_data[i].get('cost', 0))
+    objective.SetMinimization()
+    logger.debug("Objective function set to minimize total cost.")
+
+    # --- 4. 문제 해결 ---
+    logger.info("Solving the skill matching model...")
+    solve_start_time = datetime.datetime.now()
+    status = solver.Solve()
+    solve_end_time = datetime.datetime.now()
+    processing_time_ms = (solve_end_time - solve_start_time).total_seconds() * 1000
+    logger.info(f"Solver finished. Status: {status}, Time: {processing_time_ms:.2f} ms")
+
+    # --- 5. 결과 추출 ---
+    results = {'assignments': {}, 'total_cost': 0, 'unassigned_resources': []}
+    error_msg = None
+
+    if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
+        if status == pywraplp.Solver.FEASIBLE:
+            logger.warning("Feasible solution found, but it might not be optimal.")
+
+        results['total_cost'] = solver.Objective().Value()
+        assigned_resource_indices = set()
+
+        for j in range(num_projects):
+            project_id = projects_data[j].get('id', f'P{j + 1}')
+            results['assignments'][project_id] = []
+            for i in range(num_resources):
+                if x[i, j].solution_value() > 0.5:
+                    resource = resources_data[i]
+                    results['assignments'][project_id].append({
+                        'resource_id': resource.get('id', f'R{i + 1}'),
+                        'name': resource.get('name', f'인력{i + 1}'),
+                        'cost': resource.get('cost', 0),
+                        'skills': resource.get('skills', [])
+                    })
+                    assigned_resource_indices.add(i)
+
+        for i in range(num_resources):
+            if i not in assigned_resource_indices:
+                results['unassigned_resources'].append(resources_data[i])
+
+    else:  # 해를 찾지 못한 경우
+        if status == pywraplp.Solver.INFEASIBLE:
+            error_msg = "실행 불가능한 문제입니다. 프로젝트의 필수 기술을 가진 인력이 없거나, 제약 조건을 만족하는 할당이 불가능합니다."
+        else:
+            error_msg = f"최적 할당을 찾지 못했습니다. (솔버 상태: {status})"
+        logger.error(f"Skill matching optimization failed: {error_msg}")
+
+    return results, error_msg, processing_time_ms

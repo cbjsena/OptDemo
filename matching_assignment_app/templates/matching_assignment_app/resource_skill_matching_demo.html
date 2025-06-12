@@ -1,0 +1,198 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load matching_filters %}
+
+{% block title %}Resource-Skill Matching Demo{% endblock %}
+
+{% block styles %}
+<style>
+    .form-section { margin-bottom: 2rem; }
+    .item-card { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: .3rem; padding: 1rem; margin-bottom: 1rem; }
+    .results-card { margin-top: 1rem; }
+    .team-members { list-style-type: none; padding-left: 0; }
+    .team-members li { background-color: #e9ecef; border-radius: 4px; padding: 5px 10px; margin-bottom: 5px; }
+    .skill-tag {
+        display: inline-block;
+        padding: .25em .6em;
+        font-size: 85%;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: .25rem;
+        color: #fff;
+        background-color: #007bff;
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
+    .unassigned-list { color: #6c757d; }
+    .success-message { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Resource-Skill Matching Demo</h1>
+    </div>
+    <p>인력들의 보유 기술과 프로젝트의 요구 기술을 바탕으로, 모든 프로젝트 요구사항을 만족시키면서 총 투입 비용을 최소화하는 최적의 팀을 구성합니다.</p>
+
+    <form method="GET" class="mb-3 form-inline">
+        <div class="form-group mr-2">
+            <label for="num_resources_to_show" class="mr-2">인력 수 (1-10):</label>
+            <select name="num_resources_to_show" id="num_resources_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in num_resources_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_resources %}selected{% endif %}>{{ i }}명</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group mr-2">
+            <label for="num_projects_to_show" class="mr-2">프로젝트 수 (1-5):</label>
+            <select name="num_projects_to_show" id="num_projects_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in num_projects_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_projects %}selected{% endif %}>{{ i }}개</option>
+                {% endfor %}
+            </select>
+        </div>
+        <noscript><button type="submit" class="btn btn-sm btn-secondary">설정 적용</button></noscript>
+    </form>
+
+    <form method="POST" id="skillMatchingForm">
+        {% csrf_token %}
+        <input type="hidden" name="problem_type" value="RESK" id="problem_type">
+        <input type="hidden" name="num_resources" value="{{ submitted_num_resources }}">
+        <input type="hidden" name="num_projects" value="{{ submitted_num_projects }}">
+
+        <div class="form-section">
+            <h4>1. 인력 (Resources) 정보 (총 {{ submitted_num_resources }}명)</h4>
+            {% for i in submitted_num_resources|get_range %}
+            {% make_key2 'res' i 'id' as keyName %}
+            <input type="hidden" name="{{keyName}}"
+                   value="{{form_data|get_item_simple:keyName}}">
+            <div class="form-row">
+                {% make_key2 'res' i 'name' as keyName %}
+                <div class="form-group row">
+                    <label for="{{keyName}}" class="mr-2">이름:</label>
+                    <div class="col-sm-6">
+                        <input type="text" class="form-control form-control-sm" name="{{keyName}}"
+                               value="{{form_data|get_item_simple:keyName}}">
+                    </div>
+                </div>
+                {% make_key2 'res' i 'cost' as keyName %}
+                <div class="form-group row">
+                    <label for="{{keyName}}">비용 (급여):</label>
+                    <div class="col-sm-4">
+                    <input type="number" min="0" class="form-control form-control-sm" name="{{keyName}}"
+                           value="{{form_data|get_item_simple:keyName}}">
+                    </div>
+                </div>
+                {% make_key2 'res' i 'skills' as keyName %}
+                <div class="form-group row">
+                    <label for="{{keyName}}">보유 기술 (쉼표로 구분):</label>
+                    <div class="col-sm-6">
+                    <input type="text" class="form-control form-control-sm" name="{{keyName}}"
+                           value="{{form_data|get_item_simple:keyName}}">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-section">
+            <h4>2. 프로젝트 (Projects) 정보 (총 {{ submitted_num_projects }}개)</h4>
+            {% for i in submitted_num_projects|get_range %}
+            {% make_key2 'proj' i 'id' as keyName %}
+            <input type="hidden" name="{{keyName}}"
+                   value="{{form_data|get_item_simple:keyName}}">
+            <div class="form-row">
+                {% make_key2 'proj' i 'name' as keyName %}
+                <div class="form-group row">
+                    <label for="{{keyName}}" class="mr-2">프로젝트명:</label>
+                    <div class="col-sm-6">
+                        <input type="text" class="form-control form-control-sm" name="{{keyName}}"
+                               value="{{form_data|get_item_simple:keyName}}">
+                    </div>
+                </div>
+                {% make_key2 'proj' i 'required_skills' as keyName %}
+                <div class="form-group row">
+                    <label for="{{keyName}}">요구 기술(쉼표로 구분):</label>
+                    <div class="col-sm-6">
+                    <input type="text" class="form-control form-control-sm" name="{{keyName}}"
+                           value="{{form_data|get_item_simple:keyName}}">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 팀 구성 실행</button>
+    </form>
+
+    {% if success_save_message%}
+        <div class="success-message" role="alert">{{ success_save_message }}</div>
+    {% endif %}
+
+    {% if results or error_message or success_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Results</h3>
+    {% endif %}
+
+    {% if error_message %}<div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>{% endif %}
+    {% if success_message and not error_message %}<div class="alert alert-success" role="alert">{{ success_message }}</div>{% endif %}
+
+    {% if results %}
+    <div class="card mt-4">
+        <div class="card-header"><strong>결과 요약</strong></div>
+        <div class="card-body">
+            <p class="h4"><strong>최소 총 투입 비용: {{ results.total_cost|floatformat:0 }}</strong></p>
+            <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        {% for project_id, members in results.assignments.items %}
+            {% with project_name=form_data|get_item_simple:'proj_'|add:forloop.counter0|stringformat:'s'|add:'_name' %}
+            <div class="col-md-6">
+                <div class="card results-card">
+                    <div class="card-header"><strong>{{ project_name }} 팀 구성</strong></div>
+                    <div class="card-body">
+                        {% if members %}
+                            <ul class="team-members">
+                            {% for member in members %}
+                                <li>
+                                    <strong>{{ member.name }}</strong> (비용: {{ member.cost }}) <br>
+                                    <small>
+                                        {% for skill in member.skills %}
+                                        <span class="skill-tag">{{ skill }}</span>
+                                        {% endfor %}
+                                    </small>
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted">이 프로젝트에 배정된 인력이 없습니다.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+        {% endfor %}
+    </div>
+
+    {% if results.unassigned_resources %}
+    <div class="card mt-3">
+        <div class="card-header"><strong>미배정 인력</strong></div>
+        <div class="card-body">
+            <ul class="unassigned-list">
+            {% for resource in results.unassigned_resources %}
+                <li>{{ resource.name }} (비용: {{ resource.cost }})</li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    {% endif %}
+</div>
+{% endblock %}
