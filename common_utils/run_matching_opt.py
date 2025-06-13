@@ -261,8 +261,8 @@ def run_skill_matching_optimizer(input_data):
     logger.info("Running Resource-Skill Matching Optimizer...")
     resources_data = input_data['resources_data']
     projects_data = input_data['projects_data']
-    num_resources = len(resources_data)
-    num_projects = len(projects_data)
+    num_resources = input_data['num_resources']
+    num_projects = input_data['num_projects']
 
     if num_resources == 0 or num_projects == 0:
         return None, "오류: 인력 또는 프로젝트 데이터가 없습니다.", 0.0

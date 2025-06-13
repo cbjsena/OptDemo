@@ -497,12 +497,20 @@ def resource_skill_matching_demo_view(request):
     if request.method == 'POST':
         logger.info("Resource-Skill Matching Demo POST request processing.")
         try:
-            input_data=create_matching_resource_skill_json_data(form_data, submitted_num_resources, submitted_num_projects)
+            input_data = create_matching_resource_skill_json_data(form_data, submitted_num_resources, submitted_num_projects)
             saved_filename, save_error = save_matching_assignment_json_data(input_data)
             if save_error:
                 context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
             elif saved_filename:
                 context['success_save_message'] = f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.".strip()
+            unmatched, formatted_html = validate_required_skills(input_data)
+            if unmatched:
+                from django.utils.safestring import mark_safe
+                context['error_message'] = mark_safe(
+                    f"Cannot solve the problem: No available resources possess all the required skills for the project(s):<br>{formatted_html}"
+                )
+                logger.error(f"Validation error in resource-skill matching demo. Raw data: {unmatched}")
+                return render(request, 'matching_assignment_app/resource_skill_matching_demo.html', context)
 
             # --- 2. 최적화 실행 ---
             results_data, error_msg_opt, processing_time_ms = run_skill_matching_optimizer(input_data)

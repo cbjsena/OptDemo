@@ -95,10 +95,13 @@ def create_matching_resource_skill_json_data(form_data, num_resources, num_proje
             'name': form_data.get(f'proj_{i}_name'),
             'required_skills': [s.strip() for s in req_skills_str.split(',') if s.strip()]
         })
-
+    num_resources = len(resources_data)
+    num_projects = len(projects_data)
     input_data = {
         "timestamp": datetime.datetime.now().isoformat(),
         "problem_type": form_data.get('problem_type'),
+        "num_resources": num_resources,
+        "num_projects": num_projects,
         "resources_data": resources_data,
         "projects_data": projects_data,
         "form_parameters": {
@@ -106,6 +109,48 @@ def create_matching_resource_skill_json_data(form_data, num_resources, num_proje
         }
     }
     return input_data
+
+def validate_required_skills(input_data):
+    """
+    각 프로젝트의 required_skills 중 resources_data의 skills에 없는 항목을 찾아 반환합니다.
+    반환값: {스킬명: [포함하지 않은 프로젝트ID, ...], ...}
+    """
+    resources_data = input_data['resources_data']
+    projects_data = input_data['projects_data']
+    # 모든 리소스의 스킬을 집합으로 만듦
+    all_skills = set()
+    for res in resources_data:
+        all_skills.update(res.get('skills', []))
+
+    unmatched = {}
+    for proj in projects_data:
+        proj_id = proj.get('id')
+        req_skills = set(proj.get('required_skills', []))
+        missing = req_skills - all_skills
+        for skill in missing:
+            if skill not in unmatched:
+                unmatched[skill] = []
+            unmatched[skill].append(proj_id)
+
+    # JSON을 key: value 형태의 HTML로 변환
+    if isinstance(unmatched, dict):
+        formatted_html = "<ul>"
+        for k, v in unmatched.items():
+            formatted_html += f"<li><strong>{k}</strong>: {v}</li>"
+        formatted_html += "</ul>"
+    elif isinstance(unmatched, list):
+        formatted_html = "<ul>"
+        for item in unmatched:
+            if isinstance(item, dict):
+                for k, v in item.items():
+                    formatted_html += f"<li><strong>{k}</strong>: {v}</li>"
+            else:
+                formatted_html += f"<li>{item}</li>"
+        formatted_html += "</ul>"
+    else:
+        formatted_html = str(unmatched)
+    formatted_html = formatted_html.replace("'", "")
+    return unmatched, formatted_html
 
 def save_matching_assignment_json_data(input_data):
     dir=''
@@ -116,8 +161,8 @@ def save_matching_assignment_json_data(input_data):
         dir = 'matching_transport_data'
         filename_pattern = f"driver{num_driver}_zone{num_zone}"
     elif "RESK" == input_data.get('problem_type'):
-        num_resources = len(input_data.get('resources_data'))
-        num_projects = len(input_data.get('projects_data'))
+        num_resources = input_data.get('num_resources')
+        num_projects = input_data.get('num_projects')
         dir = 'matching_resource_data'
         filename_pattern = f"resource{num_resources}_project{num_projects}"
 

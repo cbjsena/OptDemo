@@ -47,7 +47,7 @@ SECRET_KEY=os.environ.get('SECRET_KEY', 'django-insecure-5)=z06nprnb$ua_#)c**%n0
 DEBUG=os.environ.get('DEBUG', 'False').upper()=='TRUE'
 allowed_hosts_str=os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
-
+# ALLOWED_HOSTS = ['opt-demo-462706.an.r.appspot.com']
 
 # Application definition
 INSTALLED_APPS = [
