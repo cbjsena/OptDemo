@@ -58,7 +58,8 @@ def lcd_cf_tft_introduction_view(request):
 def lcd_cf_tft_data_generation_view(request):
     context = {
         'active_model': 'Matching & Assignment',
-        'active_submenu': 'data_generation',
+        'active_submenu_category': 'lcd_tft_cf_matching',
+        'active_submenu': 'lcd_tft_cf_data_generation',
         'cf_tft_panel_range': range(3, 11),
         'cell_dimension_range': range(3, 6),
         'form_values': request.POST if request.method == 'POST' else {},  # GET 요청 시 빈 dict
@@ -67,15 +68,17 @@ def lcd_cf_tft_data_generation_view(request):
     if request.method == 'POST':
         logger.debug(f"Data generation POST request received. Data: {request.POST}")
         try:
-            num_cf_panels = int(request.POST.get('num_cf_panels', 5))
-            num_tft_panels = int(request.POST.get('num_tft_panels', 5))
+            num_cf_panels = int(request.POST.get('num_cf_panels', 3))
+            num_tft_panels = int(request.POST.get('num_tft_panels', 3))
             panel_rows = int(request.POST.get('panel_rows', 3))
             panel_cols = int(request.POST.get('panel_cols', 3))
             defect_rate = int(request.POST.get('defect_rate', 10))
 
             generated_data = create_matching_cf_tft_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defect_rate)
             context['generated_data'] = generated_data
-            context['generated_data_json_pretty'] = json.dumps(generated_data, indent=4)
+            generated_data_json_pretty = json.dumps(generated_data, indent=4)
+            context['generated_data_json_pretty'] = generated_data_json_pretty
+            request.session['generated_lcd_data'] = generated_data_json_pretty
             logger.info("Panel data generated successfully.")
         except ValueError as e:
             context['error_message'] = "잘못된 입력입니다. 모든 숫자가 올바르게 입력되었는지 확인하세요."
@@ -90,8 +93,18 @@ def lcd_cf_tft_data_generation_view(request):
 def lcd_cf_tft_small_scale_demo_view(request):
     context = {
         'active_model': 'Matching & Assignment',
-        'active_submenu': 'small_scale_demo'
+        'active_submenu_category': 'lcd_tft_cf_matching',
+        'active_submenu': 'lcd_cf_tft_small_scale_demo'
     }
+
+    if 'generated_lcd_data' in request.session:
+        # 세션에 데이터가 있으면 가져와서 context에 추가
+        generated_data = request.session['generated_lcd_data']
+        context['submitted_json_data'] = generated_data
+        # 사용 후 세션 데이터 삭제 (새로고침 시 재사용 방지)
+        del request.session['generated_lcd_data']
+        logger.info("Loaded generated data from session.")
+
     if request.method == 'POST':
         test_data_json_str = request.POST.get('test_data_json')
         context['submitted_json_data'] = test_data_json_str
@@ -161,7 +174,8 @@ def lcd_cf_tft_small_scale_demo_view(request):
 def lcd_cf_tft_large_scale_demo_view(request):
     context = {
         'active_model': 'Matching & Assignment',
-        'active_submenu': 'large_scale_demo',
+        'active_submenu_category': 'lcd_tft_cf_matching',
+        'active_submenu': 'lcd_cf_tft_large_scale_demo',
         'available_json_files': []
     }
 
