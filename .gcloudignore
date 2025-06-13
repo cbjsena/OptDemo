@@ -1,0 +1,31 @@
+# Git 관련 파일 및 폴더 제외
+.git
+.gitignore
+
+# gcloud 설정 파일 자신을 제외
+.gcloudignore
+
+# 파이썬 가상환경 폴더 제외 (매우 중요)
+venv/
+env/
+*.venv
+
+# 파이썬 컴파일 캐시 파일 제외
+__pycache__/
+*.pyc
+
+# 로컬에서만 사용하는 데이터베이스 파일 제외
+*.sqlite3
+db.sqlite3
+
+# 로컬 개발용 미디어 파일 폴더 제외
+# (Cloud Storage를 사용하므로 업로드할 필요 없음)
+/media/
+
+# 로컬 개발용 정적 파일 폴더 제외
+# (Cloud Storage에 이미 업로드했으므로 업로드할 필요 없음)
+/static/
+
+# 운영체제 관련 파일 제외
+.DS_Store
+Thumbs.db
