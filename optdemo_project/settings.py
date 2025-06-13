@@ -31,7 +31,12 @@ DEMO_DIR_MAP ={'matching_cf_tft_data':DEMO_DIR/'match_cf_tft_data',
                'allocation_budjet_data':DEMO_DIR/'allocation_budjet_data',
                'routing_vrp_data':DEMO_DIR/'routing_vrp_data',
                'routing_cvrp_data':DEMO_DIR/'routing_cvrp_data',
-               'routing_pdp_data':DEMO_DIR/'routing_pdp_data'}
+               'routing_pdp_data':DEMO_DIR/'routing_pdp_data',
+               'production_lot_sizing_data':DEMO_DIR/'production_lot_sizing_data',
+               'production_single_machine_data':DEMO_DIR/'production_single_machine_data',
+               'production_flow_shop_data':DEMO_DIR/'production_flow_shop_data',
+               'production_jop_shop_data':DEMO_DIR/'production_jop_shop_data',
+               'production_rcpsp_data':DEMO_DIR/'production_rcpsp_data'}
 
 # DEMO_DIR_MAP에 정의된 모든 디렉토리 생성 (없으면)
 for demo_key, dir_path in DEMO_DIR_MAP.items():

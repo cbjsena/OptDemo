@@ -102,7 +102,30 @@
                             </li>
 
                         {% elif active_model == 'Production & Scheduling' %}
-                            {# ... Lot Sizing, Job Shop, RCPSP 등 하위 메뉴 ... #}
+                            <li class="nav-item"><strong class="sidebar-subtitle">Lot Sizing Problem</strong></li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'lot_sizing_introduction' %}active{% endif %}" href="{% url 'production_scheduling_app:lot_sizing_introduction' %}">Introduction</a>
+                            </li>
+
+                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">Single Machine Scheduling</strong></li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'single_machine_introduction' %}active{% endif %}" href="{% url 'production_scheduling_app:single_machine_introduction' %}">Introduction</a>
+                            </li>
+
+                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">Flow Shop Scheduling</strong></li>
+                             <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'flow_shop_introduction' %}active{% endif %}" href="{% url 'production_scheduling_app:flow_shop_introduction' %}">Introduction</a>
+                            </li>
+
+                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">Job Shop Scheduling</strong></li>
+                             <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'job_shop_introduction' %}active{% endif %}" href="{% url 'production_scheduling_app:job_shop_introduction' %}">Introduction</a>
+                            </li>
+
+                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">RCPSP</strong></li>
+                             <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'rcpsp_introduction' %}active{% endif %}" href="{% url 'production_scheduling_app:rcpsp_introduction' %}">Introduction</a>
+                            </li>
                         {% endif %}
                     </ul>
                 {% else %}
@@ -129,7 +152,6 @@
                             <li class="nav-item">
                                 <a class="nav-link {% if active_model == 'Resource Allocation' %}active{% endif %}"
                                    href="{% url 'resource_allocation_app:budget_allocation_introduction' %}">Resource Allocation</a>
-
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if active_model == 'Routing & Logistics' %}active{% endif %}"
@@ -137,7 +159,7 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if active_model == 'Production & Scheduling' %}active{% endif %}"
-                                   href="#">Production & Scheduling (준비중)</a>
+                                   href="{% url 'production_scheduling_app:main_introduction' %}">Production & Scheduling</a> {# 링크 수정 #}
                             </li>
                         </ul>
                     </div>

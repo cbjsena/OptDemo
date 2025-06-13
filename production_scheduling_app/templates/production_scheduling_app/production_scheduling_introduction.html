@@ -1,0 +1,68 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Production & Scheduling - Introduction{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Production & Scheduling Optimization</h1>
+    </div>
+
+    <p>
+        생산 및 일정 계획 최적화는 제한된 자원(기계, 인력, 자재 등)을 사용하여 시간의 흐름에 따라 변하는 수요를 효율적으로 만족시키는 방법을 찾는 데 중점을 둡니다. 이는 비용 절감, 생산성 향상, 납기 준수 등 기업의 핵심 경쟁력과 직결되는 중요한 분야입니다.
+    </p>
+
+    <figure class="text-center">
+        <img src="{% static 'production_scheduling_app/images/production_scheduling_concept.png' %}"
+             alt="생산 및 일정 계획 개념도" class="intro-image img-fluid" style="max-width: 600px;">
+        <figcaption class="image-caption">그림 1: 생산 및 일정 계획 개념도</figcaption>
+    </figure>
+    <hr class="my-4">
+
+    <h3>Core Problem Areas</h3>
+    <p>이 범주에서는 다음과 같은 대표적인 생산 및 일정 계획 문제들을 다룹니다.</p>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="problem-card">
+                <h4><a href="{% url 'production_scheduling_app:lot_sizing_introduction' %}">Lot Sizing Problem</a></h4>
+                <p>시간에 따라 변동하는 수요를 만족시키기 위해 언제, 얼마나 많이 생산할지(로트 크기)를 결정하여, 생산 준비 비용과 재고 유지 비용의 총합을 최소화합니다.</p>
+                <small class="text-muted"><strong>주요 목표:</strong> 비용 최소화 (재고 vs 생산)</small>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="problem-card">
+                <h4><a href="{% url 'production_scheduling_app:single_machine_introduction' %}">Single Machine Scheduling</a></h4>
+                <p>하나의 기계(자원)에서 여러 작업을 어떤 순서로 처리해야 총 작업 시간, 지연 시간 등을 최소화할 수 있는지 결정하는 가장 기본적인 스케줄링 문제입니다.</p>
+                 <small class="text-muted"><strong>주요 목표:</strong> 시간 최소화, 순서 결정</small>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="problem-card">
+                <h4><a href="{% url 'production_scheduling_app:flow_shop_introduction' %}">Flow Shop Scheduling</a></h4>
+                <p>모든 작업이 동일한 순서로 여러 기계를 거쳐가는 생산 라인에서, 전체 완료 시간을 최소화하는 최적의 작업 투입 순서를 찾습니다.</p>
+                 <small class="text-muted"><strong>주요 목표:</strong> 전체 완료 시간(Makespan) 최소화</small>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="problem-card">
+                <h4><a href="{% url 'production_scheduling_app:job_shop_introduction' %}">Job Shop Scheduling</a></h4>
+                <p>작업마다 거쳐가는 기계의 순서가 다른 복잡한 생산 환경에서, 전체 완료 시간을 최소화하는 최적의 작업 순서와 기계별 작업 계획을 수립합니다.</p>
+                 <small class="text-muted"><strong>주요 목표:</strong> 전체 완료 시간(Makespan) 최소화</small>
+            </div>
+        </div>
+         <div class="col-md-6">
+            <div class="problem-card">
+                <h4><a href="{% url 'production_scheduling_app:rcpsp_introduction' %}">Project Scheduling (RCPSP)</a></h4>
+                <p>여러 활동으로 구성된 프로젝트에서 활동 간의 선후 관계, 소요 시간, 필요한 자원을 모두 고려하여 프로젝트 전체 완료 시간을 최소화하는 일정을 계획합니다.</p>
+                 <small class="text-muted"><strong>주요 목표:</strong> 프로젝트 기간 최소화</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
