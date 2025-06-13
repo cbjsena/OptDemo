@@ -4,70 +4,19 @@
 {% block title %}Resource-Skill Matching - Introduction{% endblock %}
 
 {% block styles %}
-<style>
-    /* 다른 소개 페이지와 유사한 스타일 */
-    .introduction-content {
-        line-height: 1.7;
-        font-size: 1.03rem;
-    }
-    .introduction-content h4 {
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-        color: #0056b3;
-        padding-bottom: 0.25rem;
-        border-bottom: 2px solid #007bff;
-    }
-    .math-model-section {
-        background-color: #f8f9fa;
-        border: 1px solid #e9ecef;
-        border-radius: 5px;
-        padding: 15px;
-        margin-top: 15px;
-    }
-    .intro-image {
-        max-width: 100%;
-        height: auto;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        padding: 5px;
-        margin-top: 10px;
-        margin-bottom: 20px;
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    .image-caption {
-        font-size: 0.9rem;
-        color: #555;
-        text-align: center;
-        margin-top: -10px;
-        margin-bottom: 20px;
-    }
-    .link-to-more-info {
-        margin-top: 15px;
-        padding: 10px;
-        background-color: #f0f0f0;
-        border-radius: 5px;
-        text-align: left;
-        font-size: 0.95rem;
-    }
-    .link-to-more-info a {
-        font-weight: bold;
-        text-decoration: none;
-    }
-    .link-to-more-info a:hover {
-        text-decoration: underline;
-    }
-</style>
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid introduction-content">
+    <p><strong>범주: Ⅰ. 매칭 및 배정 (Matching & Assignment)</strong></p>
+    <p>특정 기준이나 목적 함수를 최적화하기 위해 서로 다른 두 개 이상의 그룹 간의 요소들을 짝짓거나 할당하는 문제들을 다룹니다.</p>
+
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">자원-기술 매칭 문제 (Resource-Skill Matching)</h1>
     </div>
 
-    <p><strong>범주: Ⅱ. 매칭 및 할당 (Matching & Assignment)</strong></p>
     <p>
         <strong>자원-기술 매칭 문제</strong>는 단순한 1:1 할당을 넘어, 각 자원(인력)이 보유한 <strong>다양한 기술 스택</strong>과
         <strong>각 작업(프로젝트)</strong>이 요구하는 <strong>특정 기술들</strong>을 모두 고려하여 최적의 팀을 구성하는 복잡한 할당 문제입니다.
@@ -102,23 +51,32 @@
         <li><strong>병원 운영:</strong> 특정 수술을 위해 외과의, 마취과 의사, 전문 간호사 등 필수 인력으로 수술팀을 구성합니다.</li>
     </ul>
 
-    <h4>3. 수학적 모델의 복잡성</h4>
-    <div class="math-model-section">
-        <p>자원-기술 매칭 문제는 작업 배정 문제보다 훨씬 복잡한 모델을 요구합니다.</p>
+    <h4>3. 수학적 모델</h4>
+    <div class="model-definition-content">
+        <strong>결정 변수:</strong> 케이스에 따라 더 세분화된 변수를 생성합니다.
+            <div class="math-block">
+                <p>$$ x_{ij} = 1 \text{if resource } i \text{ is assigned to project } j  $$</p>
+                <p>$$ \text{ or} $$</p>
+                <p>$$ x_{ijk} = 1 \text{if resource } i \text{ is assigned to project }j \text{ in role } k $$</p>
+            </div>
+        <strong>목적 함수:</strong> 총 비용 최소화
+            <div class="math-block">
+                <p>$$\min \sum_{i=1}^{n} \sum_{j=1}^{n} c_{ij} x_{ij}$$</p>
+                <p>$$ \text{where } c_{ij} \text{ is the cost when resource } i \text{ is assigned to project } j $$</p>
+            </div>
+        <strong>제약 조건:</strong>
         <ul>
-            <li><strong>결정 변수:</strong>
-                <p>$$ x_{ij} = 1 \text{ assign Person } i \text{ to Project } j \text{ or} $$</p>
-                <p>$$ x_{ijk} = 1 \text{ assign Person } i \text{to Project }j \text{ in role } k $$</p>
-                <p>케이스에 따라 더 세분화된 변수를 생성할 수 있습니다.</p>
+            <li>기술 요구사항 충족 제약: 프로젝트 j가 요구하는 기술 s에 대해, 해당 기술을 보유한 인력 중 최소 한 명 이상이 프로젝트 j에 배정되어야 한다.
+                <div class="math-block">
+                    $$\sum_{i \in \text{Resources}} \text{has_skill}(i, s) \cdot x_{ij} \ge 1, \quad \forall j \in \text{Projects}, s \in \text{required_skills}(j)$$
+                </div>
             </li>
-            <li><strong>핵심 제약 조건 예시:</strong>
-                <p><strong>1. 기술 요구사항 충족 제약:</strong> 프로젝트 j가 요구하는 기술 s에 대해, 해당 기술을 보유한 인력 중 최소 한 명 이상이 프로젝트 j에 배정되어야 한다.</p>
-                <p>$$\sum_{i \in \text{Resources}} \text{has_skill}(i, s) \cdot x_{ij} \ge 1, \quad \forall j \in \text{Projects}, s \in \text{required_skills}(j)$$</p>
-                <p><strong>2. 인력 할당 제약:</strong> 각 인력 i는 동시에 참여할 수 있는 프로젝트 수에 한계가 있다 (보통 1개).</p>
-                <p>$$\sum_{j \in \text{Projects}} x_{ij} \le 1, \quad \forall i \in \text{Resources}$$</p>
+            <li>인력 할당 제약: 각 인력 i는 동시에 참여할 수 있는 프로젝트 수에 한계가 있다 (보통 1개)
+                <div class="math-block">
+                    $$\sum_{j \in \text{Projects}} x_{ij} \le 1, \quad \forall i \in \text{Resources}$$
+                </div>
             </li>
         </ul>
-        <p>OR-Tools에서는 이러한 복잡한 제약 조건들을 정수 계획법(Integer Programming) 또는 제약 프로그래밍(Constraint Programming, CP-SAT) 솔버를 사용하여 모델링하고 해결할 수 있습니다.</p>
     </div>
 </div>
 {% endblock %}

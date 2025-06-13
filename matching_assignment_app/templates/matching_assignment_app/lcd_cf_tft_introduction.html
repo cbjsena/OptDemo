@@ -4,67 +4,18 @@
 {% block title %}Matching Model - Introduction{% endblock %}
 
 {% block styles %}
-<style>
-    .introduction-content {
-        line-height: 1.8;
-        font-size: 1.05rem;
-    }
-    .introduction-content h4 {
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-        color: #0056b3;
-        padding-bottom: 0.25rem;
-        border-bottom: 2px solid #007bff;
-    }
-    .introduction-content ul {
-        padding-left: 20px;
-    }
-    .introduction-content li {
-        margin-bottom: 0.5rem;
-    }
-    .cite { /* PDF 출처 표시는 일단 유지 */
-        font-size: 0.8rem;
-        color: #6c757d;
-    }
-    .math-formula {
-        margin: 10px 0;
-        padding: 10px;
-        background-color: #f8f9fa;
-        border: 1px solid #e9ecef;
-        border-radius: 4px;
-        font-family: monospace;
-        white-space: pre;
-    }
-    .intro-image { /* 이미지 스타일 */
-        max-width: 100%;
-        height: auto;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        padding: 5px;
-        margin-top: 10px;
-        margin-bottom: 20px;
-        display: block; /* 가운데 정렬을 위해 block으로 변경 */
-        margin-left: auto;
-        margin-right: auto;
-    }
-    .image-caption {
-        font-size: 0.9rem;
-        color: #555;
-        text-align: center;
-        margin-top: -10px; /* 이미지와의 간격 */
-        margin-bottom: 20px;
-    }
-</style>
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid introduction-content">
+    <p><strong>범주: Ⅰ. 매칭 및 배정 (Matching & Assignment)</strong></p>
+    <p>특정 기준이나 목적 함수를 최적화하기 위해 서로 다른 두 개 이상의 그룹 간의 요소들을 짝짓거나 할당하는 문제들을 다룹니다.</p>
+
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">LCD TFT-CF Matching: 최적화를 통한 수율 극대화</h1>
     </div>
-
-    <p><strong>범주: Ⅰ. 매칭 및 배정 (Matching & Assignment)</strong></p>
-    <p>특정 기준이나 목적 함수를 최적화하기 위해 서로 다른 두 개 이상의 그룹 간의 요소들을 짝짓거나 할당하는 문제들을 다룹니다.</p>
 
     <h4>1. 문제 배경 및 정의</h4>
     <p>
@@ -78,25 +29,29 @@
     </figure>
 
     <p>
-        이때, 각 TFT 기판과 CF 기판은 여러 개의 셀로 구성되며, 생산 과정에서 일부 셀에 결함이 발생할 수 있습니다. 최종적으로 조립된 패널의 특정 셀이 양품으로 인정받기 위해서는 해당 위치의 TFT 셀과 CF 셀이 모두 양호해야 합니다. 따라서, 어떤 TFT 기판과 어떤 CF 기판을 서로 매칭하여 결합하느냐에 따라 전체 양품 패널의 수(수율)가 크게 달라질 수 있습니다. 이 문제를 해결하기 위한 최적의 매칭 조합을 찾는 것이 본 사례 연구의 핵심입니다.
+        이때, 각 TFT 기판과 CF 기판은 여러 개의 셀로 구성되며, 생산 과정에서 일부 셀에 결함이 발생할 수 있습니다.
+        최종적으로 조립된 패널의 특정 셀이 양품으로 인정받기 위해서는 해당 위치의 TFT 셀과 CF 셀이 모두 양호해야 합니다.
+        따라서, 어떤 TFT 기판과 어떤 CF 기판을 서로 매칭하여 결합하느냐에 따라 전체 양품 패널의 수(수율)가 크게 달라질 수 있습니다.
+        이 문제를 해결하기 위한 최적의 매칭 조합을 찾는 것이 핵심입니다.
     </p>
 
     {# --- 그림 2 & 3: 결함 매칭 및 패널 스택 --- #}
     <div class="row">
-        <div class="col-md-7">
-            <figure>
-                <img src="{% static 'matching_assignment_app/images/cell_defect_matching.png' %}" alt="결함 셀 매칭 예시" class="intro-image" style="height: 400px; object-fit: contain;">
-                <figcaption class="image-caption">그림 2: CF와 TFT의 결함 셀 매칭</figcaption>
-            </figure>
-        </div>
         <div class="col-md-5">
             <figure>
                  <img src="{% static 'matching_assignment_app/images/panel_inventories.png' %}" alt="CF 및 TFT 패널 재고" class="intro-image" style="height: 400px; object-fit: contain;">
-                 <figcaption class="image-caption">그림 3: CF 및 TFT 패널</figcaption>
+                 <figcaption class="image-caption">그림 2: CF 및 TFT 패널</figcaption>
+            </figure>
+        </div>
+        <div class="col-md-7">
+            <figure>
+                <img src="{% static 'matching_assignment_app/images/cell_defect_matching.png' %}" alt="결함 셀 매칭 예시" class="intro-image" style="height: 400px; object-fit: contain;">
+                <figcaption class="image-caption">그림 3: CF와 TFT의 결함 셀 매칭</figcaption>
             </figure>
         </div>
     </div>
 
+    <h4>2. 해결 방안: 최대 가중 이분 매칭 문제</h4>
     <p>
         이 LCD TFT-CF 매칭 문제는 다음과 같은 이유로 최적화 기법을 적용하기에 이상적인 사례로 평가되었습니다:
         <ul>
@@ -105,13 +60,15 @@
             <li>공정이 비교적 정적임 (Static process)</li>
         </ul>
     </p>
-
-    <h4>2. 해결 방안: 수학적 최적화 모델</h4>
     <p>
-        이 문제는 한정된 자원(TFT 및 CF 기판)을 사용하여 최대의 성과(양품 셀 최대화)를 얻기 위한 의사결정 문제로, 수학적 최적화 기법을 통해 효과적으로 해결할 수 있습니다. 구체적으로 이 문제는 **최대 가중 이분 매칭 문제 (Maximum Weighted Bipartite Matching Problem)**로 정형화될 수 있습니다.
+        한정된 자원(TFT 및 CF 기판)을 사용하여 최대의 성과(양품 셀 최대화)를 얻기 위한 의사결정 문제로,
+        수학적 최적화 기법을 통해 효과적으로 해결할 수 있습니다.
+        구체적으로 이 문제는 <strong>최대 가중 이분 매칭 문제 (Maximum Weighted Bipartite Matching Problem)</strong>로 정형화될 수 있습니다.
     </p>
     <p>
-        여기서 이분 그래프의 한쪽 노드 집합은 가용한 CF 기판들을, 다른 쪽 노드 집합은 가용한 TFT 기판들을 나타냅니다. 두 기판(CF $i$와 TFT $j$)을 연결하는 간선(edge)의 가중치($C_{ij}$)는 해당 조합으로 매칭했을 때 얻을 수 있는 양품 셀의 총 개수 또는 그 가치로 정의됩니다.
+        여기서 이분 그래프의 한쪽 노드 집합은 가용한 CF 기판들을, 다른 쪽 노드 집합은 가용한 TFT 기판들을 나타냅니다.
+        두 기판(CF i 와 TFT j)을 연결하는 간선(edge)의 가중치(C_ij)는 해당 조합으로 매칭했을 때
+        얻을 수 있는 양품 셀의 총 개수 또는 그 가치로 정의됩니다.
     </p>
 
     {# --- 그림 4: 이분 매칭 다이어그램 --- #}
@@ -120,22 +77,44 @@
         <figcaption class="image-caption">그림 4: 최대 가중 이분 매칭 문제 표현 (출처: PDF Page 34)</figcaption>
     </figure>
 
-    <p>모델의 목표는 다음과 같습니다:</p>
-    <div class="math-formula">
-        Maximize  &sum;<sub>i</sub>&sum;<sub>j</sub> C<sub>ij</sub>X<sub>ij</sub>
+    <h4>3. 수학적 모델</h4>
+    <p>최대 가중 이분 매칭 문제의 일반적인 수학적 모델 입니다.</p>
+    <div class="model-definition-content">
+        <strong>결정 변수:</strong>
+            <div class="math-block">
+                $$ x_{ij} = \begin{cases} 1 & \text{CF glass } i \text{ is matched with TFT glass } j \\ 0 & \text{otherwise} \end{cases} $$
+            </div>
+        <strong>목적 함수: </strong> 양품 수율 최대화
+            <div class="math-block">
+                <p>$$ \max \sum_{i=1}^{n} \sum_{j=1}^{n} c_{ij} x_{ij}$$</p>
+                <p>$$ \text{whre } c_{ij} \text{ is the total price of good panels (cells)} $$</p>
+            </div>
+        <strong>제약 조건:</strong>
+        <ul>
+            <li>각 CF 기판은 하나의 TFT 기판에만 매칭됩니다
+                <div class="math-block">
+                    $$\sum_{j=1}^{n} x_{ij} = 1 \quad \forall i$$
+                </div>
+            </li>
+            <li>각 TFT 기판은 하나의 CF 기판에만 매칭됩니다
+                <div class="math-block">
+                    $$\sum_{i=1}^{n} x_{ij} = 1 \quad \forall j$$
+                </div>
+            </li>
+        </ul>
     </div>
-    <p>여기서 $X_{ij}$는 CF 기판 $i$와 TFT 기판 $j$가 매칭되면 1, 그렇지 않으면 0의 값을 갖는 이진 결정 변수입니다.</p>
-    <p>주요 제약 조건은 다음과 같습니다:</p>
-    <ul>
-        <li>각 CF 기판은 최대 하나의 TFT 기판에만 매칭될 수 있습니다:  &sum;<sub>j</sub>X<sub>ij</sub> &le; 1,  &forall;i</li>
-        <li>각 TFT 기판은 최대 하나의 CF 기판에만 매칭될 수 있습니다:  &sum;<sub>i</sub>X<sub>ij</sub> &le; 1,  &forall;j</li>
-    </ul>
-    <p><small>(참고: PDF 자료에서는 제약조건이 등호(=1)로 표현되어 있으나, 이는 모든 패널이 매칭에 참여하고 CF와 TFT의 수가 같은 이상적인 경우를 나타낼 수 있습니다. 실제 상황에서는 사용 가능한 패널 수가 다르거나 일부 패널이 매칭되지 않을 수 있으므로, 위와 같이 부등호(&le;1) 제약이 더 일반적일 수 있습니다.)</small></p>
+
+    <p><small>(참고: 제약조건이 등호(=1)로 표현되었습니다.
+        이는 모든 패널이 매칭에 참여하고 CF와 TFT의 수가 같은 이상적인 경우를 나타낼 수 있습니다.
+        사용 가능한 패널 수가 다르거나 일부 패널이 매칭되지 않을 경우 제약 변경이 필요합니다.
+    </small></p>
     <p>
-        이러한 최대 가중 이분 매칭 문제는 운송 문제나 할당 문제의 특수한 형태로, 이미 잘 알려진 효율적인 다항 시간 최적 알고리즘(예: 헝가리안 알고리즘 또는 최소 비용 최대 유량 알고리즘 변형)이 존재합니다. 따라서 계산 복잡도가 비교적 낮고 실제 시스템에 구현하기 용이하다는 장점이 있습니다.
+        이러한 최대 가중 이분 매칭 문제는 운송 문제나 할당 문제의 특수한 형태로,
+        이미 잘 알려진 효율적인 다항 시간 최적 알고리즘(예: 헝가리안 알고리즘 또는 최소 비용 최대 유량 알고리즘 변형)이 존재합니다.
+        따라서 계산 복잡도가 비교적 낮고 실제 시스템에 구현하기 용이하다는 장점이 있습니다.
     </p>
 
-    <h4>3. 최적화 도입 효과</h4>
+    <h4>4. 최적화 도입 효과</h4>
     <p>
         이 최적 매칭 알고리즘을 실제 5개 LCD 생산 공장에 적용한 결과 다음과 같은 다양한 이점을 얻을 수 있었습니다:
         <ul>
@@ -145,7 +124,7 @@
         </ul>
     </p>
 
-    <h4>4. OptDemo 소개</h4>
+    <h4>5. OptDemo 소개</h4>
     <p>
         본 "Matching" 데모는 바로 이러한 LCD TFT-CF 매칭 최적화 문제를 사용자가 직접 경험하고 그 원리를 이해할 수 있도록 구성되었습니다.
         데모를 통해 다음 기능들을 체험할 수 있습니다:
@@ -158,4 +137,9 @@
     </p>
     <p>해당 케이스는 POSTECH 이강복 교수님의 "산업 응용을 위한 최적화: 실질적인 권장 사항" 발표 자료에서 소개된 LCD 패널 생산 공정의 TFT-CF 매칭 최적화 사례 연구를 바탕으로 작성되었습니다.</p>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 {% endblock %}
