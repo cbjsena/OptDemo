@@ -503,14 +503,15 @@ def resource_skill_matching_demo_view(request):
                 context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
             elif saved_filename:
                 context['success_save_message'] = f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.".strip()
-            unmatched, formatted_html = validate_required_skills(input_data)
-            if unmatched:
-                from django.utils.safestring import mark_safe
-                context['error_message'] = mark_safe(
-                    f"Cannot solve the problem: No available resources possess all the required skills for the project(s):<br>{formatted_html}"
-                )
-                logger.error(f"Validation error in resource-skill matching demo. Raw data: {unmatched}")
-                return render(request, 'matching_assignment_app/resource_skill_matching_demo.html', context)
+            # solving 단계에서 다양한 케이스 탐색 가능하여 주석 처리
+            # unmatched, formatted_html = validate_required_skills(input_data)
+            # if unmatched:
+            #     from django.utils.safestring import mark_safe
+            #     context['error_message'] = mark_safe(
+            #         f"Cannot solve the problem: No available resources possess all the required skills for the project(s):<br>{formatted_html}"
+            #     )
+            #     logger.error(f"Validation error in resource-skill matching demo. Raw data: {unmatched}")
+            #     return render(request, 'matching_assignment_app/resource_skill_matching_demo.html', context)
 
             # --- 2. 최적화 실행 ---
             results_data, error_msg_opt, processing_time_ms = run_skill_matching_optimizer(input_data)
