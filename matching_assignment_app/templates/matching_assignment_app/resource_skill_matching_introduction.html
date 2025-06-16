@@ -10,9 +10,6 @@
 
 {% block content %}
 <div class="container-fluid introduction-content">
-    <p><strong>범주: Ⅰ. 매칭 및 배정 (Matching & Assignment)</strong></p>
-    <p>특정 기준이나 목적 함수를 최적화하기 위해 서로 다른 두 개 이상의 그룹 간의 요소들을 짝짓거나 할당하는 문제들을 다룹니다.</p>
-
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">자원-기술 매칭 문제 (Resource-Skill Matching)</h1>
     </div>
@@ -52,12 +49,12 @@
     </ul>
 
     <h4>3. 수학적 모델</h4>
-    <div class="model-definition-content">
+    <div class="col-md-8 model-definition-content">
         <strong>결정 변수:</strong> 케이스에 따라 더 세분화된 변수를 생성합니다.
             <div class="math-block">
-                <p>$$ x_{ij} = 1 \text{if resource } i \text{ is assigned to project } j  $$</p>
-                <p>$$ \text{ or} $$</p>
-                <p>$$ x_{ijk} = 1 \text{if resource } i \text{ is assigned to project }j \text{ in role } k $$</p>
+                $$ x_{ij} = \begin{cases} 1 & \text{if resource } i \text{ is assigned to project } j \\ 0 & \text{otherwise} \end{cases} $$
+                $$ \text{ or} $$
+                $$ x_{ijk} = \begin{cases} 1 & \text{if resource } i \text{ is assigned to project }j \text{ in role } k \\ 0 & \text{otherwise} \end{cases} $$
             </div>
         <strong>목적 함수:</strong> 총 비용 최소화
             <div class="math-block">
@@ -78,6 +75,12 @@
             </li>
         </ul>
     </div>
+
+    <h4>4. Resource Skill Matching Demo</h4>
+    <p>
+        <strong>Resource Skill Matching Demo</strong>에서는
+        보유 인력과 프로젝트 관련 정보를 설정하고, 최적의 프로젝트별 인력 할당 과정을 체험할 수 있습니다.
+    </p>
 </div>
 {% endblock %}
 

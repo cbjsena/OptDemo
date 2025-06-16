@@ -4,70 +4,8 @@
 {% block title %}Budget Allocation Problem - Introduction{% endblock %}
 
 {% block styles %}
-<style>
-    .introduction-content {
-        line-height: 1.8;
-        font-size: 1.05rem;
-    }
-    .introduction-content h4 {
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-        color: #0056b3;
-        padding-bottom: 0.25rem;
-        border-bottom: 2px solid #007bff;
-    }
-    .introduction-content ul {
-        padding-left: 20px;
-    }
-    .introduction-content li {
-        margin-bottom: 0.5rem;
-    }
-    .model-definition-content {
-        line-height: 1.7;
-        font-size: 1.03rem;
-        color: #333;
-    }
-    .objective-section { /* 각 목표 섹션 스타일 */
-        margin-bottom: 30px;
-        padding: 20px;
-        border: 1px solid #d1d9e0;
-        border-radius: 8px;
-        background-color: #f9f9f9;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-    .objective-section h3 {
-        margin-top: 0; /* 섹션 내 첫 h3의 상단 마진 제거 */
-        border-bottom: 1px dashed #17a2b8;
-        padding-bottom: 8px;
-    }
-    .summary-table { /* 종합 정리 테이블 스타일 */
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-        font-size: 0.95em;
-    }
-    .summary-table th, .summary-table td {
-        border: 1px solid #c5d0da;
-        padding: 10px 12px;
-        text-align: left;
-        vertical-align: top; /* 수식이 길 경우 상단 정렬 */
-    }
-    .summary-table th {
-        background-color: #007bff; /* OptDemo 테마와 유사하게 */
-        color: white;
-        font-weight: bold;
-    }
-    .summary-table tr:nth-child(even) {
-        background-color: #f2f9ff;
-    }
-    .summary-table .math-block { /* 테이블 내 수식 블록 스타일 약간 조정 */
-        margin-top: 5px;
-        margin-bottom: 5px;
-        padding: 5px;
-        font-size: 1em;
-        text-align: left;
-    }
-</style>
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -92,58 +30,45 @@
         <li><strong>자본 예산 책정:</strong> 기업이 여러 투자 가능한 프로젝트(설비 투자, 신규 사업 진출 등)에 대해 제한된 자본을 배분하여 순현재가치(NPV)나 내부수익률(IRR)을 최대화합니다.</li>
     </ul>
 
-    <h4>3. 수학적 모델 (개념)</h4>
-    <div class="model-definition-content">
-        <p>예산 분배 문제는 일반적으로 다음과 같은 요소들을 포함하는 선형 계획법(Linear Programming, LP) 또는 정수 계획법(Integer Programming, IP) 문제로 정형화될 수 있습니다.</p>
-
-        <ul>
-            <strong>결정 변수:</strong>
-            <ul>
-                <li> <strong>\( x_{i} \)</strong>: 활동 또는 항목 \( i \)에 할당되는 예산 금액</li>
-                <li> <strong>(선택적) \( y_{i} \)</strong>: 활동 또는 항목 \( i \)에 투자할지 여부를 나타내는 이진 변수 (1이면 투자, 0이면 미투자)</li>
-            </ul>
-            <hr>
-            <strong>목표 함수 (총 기대 수익 극대화):</strong>
+    <h4>3. 수학적 모델</h4>
+    <div class="col-md-8 model-definition-content">
+        <strong>결정 변수:</strong>
             <div class="math-block">
-                $$ Max \sum_{i \in I} cost_{i} \cdot x_{i}$$
+                $$ x_{i} = \text{ Budjet amount allocated to item or activity } i$$
+                $$ y_{i} = \begin{cases} 1 & \text{if item } i \text{ is invested } \\ 0 & \text{otherwise} \end{cases} $$
             </div>
-            <hr>
-            <strong>제약 조건:</strong>
-            <li>총 예산 제약
+        <strong>목적 함수: </strong> 총 기대 수익 극대화
+            <div class="math-block">
+                <p>$$\max \sum_{i=1}^{n} pro_{i} x_{i}$$</p>
+                <p>$$ \text{where } pro_{i} \text{ is the profit obtained when investing in item } i $$</p>
+            </div>
+        <strong>제약 조건:</strong>
+        <ul>
+            <li>투자된 예산의 합은 총 예산 금액 이하여야 합니다.
                 <div class="math-block">
                     $$ \sum_{i \in I} x_{i} \le TotalBudjet$$
                 </div>
             </li>
-            <li>항목 i 에 투자시 결정(y_i=1)인 경우, 최소/최대 투자 금액을 제약
+            <li>항목 별 최소/최대 투자 금액을 만족해야 합니다.
                 <div class="math-block">
-                    $$ {MinAllocation}_i  \le x_{i} \le {MaxAllocation}_i $$
+                     $$ {MinAllocation}_i  \le x_{i} \le {MaxAllocation}_i $$
                 </div>
             </li>
-            <li>기타 특정 조건 (예: 특정 항목 그룹에 대한 최소/최대 총 투자 금액 등)</li>
+             <li>기타 특정 조건 (예: 특정 항목 그룹에 대한 최소/최대 총 투자 금액 등)</li>
         </ul>
-
-        <p>이러한 모델은 OR-Tools와 같은 최적화 솔버를 사용하여 해를 구할 수 있습니다.</p>
     </div>
 
-    <h4>4. OptDemo에서의 체험</h4>
+    <h4>4. Budjet Allocation Demo</h4>
     <p>
-        본 데모의 "예산 분배 최적화" 섹션에서는 사용자가 직접 총 예산, 투자 항목 수, 각 항목의 기대 수익률 (또는 수익 함수 계수), 최소/최대 투자액 등의 파라미터를 설정하고, 최적의 예산 배분 결과를 확인하는 과정을 체험할 수 있도록 구성될 예정입니다.
+        <strong>Budjet Allocation Demo</strong>에서는
+        사용자가 직접 총 예산, 투자 항목 수, 각 항목의 기대 수익률 (또는 수익 함수 계수), 최소/최대 투자액 등의 파라미터를 설정하고,
+        최적의 예산 배분 결과를 확인하는 과정을 체험할 수 있습니다.
     </p>
 </div>
 {% endblock %}
 
 
 {% block scripts %}
-{# MathJax 로드 (base.html에 이미 Chart.js 등이 있다면 그 이후에 로드하는 것이 좋음) #}
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log("VRP Model Definition page script loaded.");
-        if (typeof MathJax !== 'undefined' && MathJax.typeset) {
-            // 페이지 로드 후 MathJax가 수식을 렌더링하도록 명시적 호출 (필요한 경우)
-            // MathJax.typesetPromise(); // 또는 MathJax.typeset();
-        }
-    });
-</script>
 {% endblock %}

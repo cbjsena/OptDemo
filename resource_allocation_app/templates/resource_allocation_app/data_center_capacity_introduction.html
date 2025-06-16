@@ -161,24 +161,15 @@
         <p>이러한 모델은 OR-Tools와 같은 최적화 솔버를 통해 다양한 시나리오에 대한 최적의 투자 및 할당 계획을 도출하는 데 사용될 수 있습니다.</p>
     </div>
 
-    <h4>4. OptDemo에서의 체험</h4>
+    <h4>4. Data Center Capacity Demo</h4>
     <p>
-        본 데모의 "데이터 센터 용량 계획" 섹션에서는 사용자가 간략화된 시나리오(예: 여러 유형의 서버와 서비스 수요)를 설정하고, 제한된 예산 및 공간 하에서 어떤 서버를 얼마나 도입하고 각 서비스에 어떻게 할당해야 총 비용을 최소화하거나 서비스 만족도를 높일 수 있는지 확인하는 과정을 체험할 수 있도록 구성될 예정입니다.
+        <strong>Data Center Capacity Demo</strong>에서는
+        서버와 서비스 관련 정보를 설정하고, 최적의 데이터 센터 용량 계획을 수립하는 과정을 체험할 수 있습니다.
     </p>
 </div>
 {% endblock %}
 
 {% block scripts %}
-{# MathJax 로드 (base.html에 이미 Chart.js 등이 있다면 그 이후에 로드하는 것이 좋음) #}
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log("VRP Model Definition page script loaded.");
-        if (typeof MathJax !== 'undefined' && MathJax.typeset) {
-            // 페이지 로드 후 MathJax가 수식을 렌더링하도록 명시적 호출 (필요한 경우)
-            // MathJax.typesetPromise(); // 또는 MathJax.typeset();
-        }
-    });
-</script>
 {% endblock %}

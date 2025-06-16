@@ -499,7 +499,6 @@ def resource_skill_matching_demo_view(request):
             preset = preset_projects[i % len(preset_resources)]
             for key, default_val in preset.items():
                 form_data[f'proj_{i}_{key}'] = request.GET.get(f'proj_{i}_{key}', default_val)
-        logger.info(form_data)
     elif request.method == 'POST':
         form_data = request.POST.copy()
         submitted_num_resources = int(form_data.get('num_resources', preset_num_resources))

@@ -10,9 +10,6 @@
 
 {% block content %}
 <div class="container-fluid introduction-content">
-    <p><strong>범주: Ⅰ. 매칭 및 배정 (Matching & Assignment)</strong></p>
-    <p>특정 기준이나 목적 함수를 최적화하기 위해 서로 다른 두 개 이상의 그룹 간의 요소들을 짝짓거나 할당하는 문제들을 다룹니다.</p>
-
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">LCD TFT-CF Matching: 최적화를 통한 수율 극대화</h1>
     </div>
@@ -79,7 +76,7 @@
 
     <h4>3. 수학적 모델</h4>
     <p>최대 가중 이분 매칭 문제의 일반적인 수학적 모델 입니다.</p>
-    <div class="model-definition-content">
+    <div class="col-md-8 model-definition-content">
         <strong>결정 변수:</strong>
             <div class="math-block">
                 $$ x_{ij} = \begin{cases} 1 & \text{CF glass } i \text{ is matched with TFT glass } j \\ 0 & \text{otherwise} \end{cases} $$
@@ -87,7 +84,7 @@
         <strong>목적 함수: </strong> 양품 수율 최대화
             <div class="math-block">
                 <p>$$ \max \sum_{i=1}^{n} \sum_{j=1}^{n} c_{ij} x_{ij}$$</p>
-                <p>$$ \text{whre } c_{ij} \text{ is the total price of good panels (cells)} $$</p>
+                <p>$$ \text{where } c_{ij} \text{ is the total price of good panels (cells)} $$</p>
             </div>
         <strong>제약 조건:</strong>
         <ul>
@@ -124,18 +121,17 @@
         </ul>
     </p>
 
-    <h4>5. OptDemo 소개</h4>
+    <h4>5. LCD TFT-CF Matching Demo</h4>
     <p>
-        본 "Matching" 데모는 바로 이러한 LCD TFT-CF 매칭 최적화 문제를 사용자가 직접 경험하고 그 원리를 이해할 수 있도록 구성되었습니다.
-        데모를 통해 다음 기능들을 체험할 수 있습니다:
+        <strong>LCD TFT-CF Matching Demo</strong>는  이러한 LCD TFT-CF 매칭 최적화 문제를 사용자가 직접 경험하고
+        그 원리를 이해할 수 있도록 구성되었습니다. 데모를 통해 다음 기능들을 체험할 수 있습니다:
         <ul>
             <li><strong>데이터 생성 (Data Generation):</strong> 다양한 크기와 결함률을 가진 CF 및 TFT 패널 데이터를 직접 생성하거나 기존 데이터를 활용할 수 있습니다.</li>
             <li><strong>소규모 테스트 (Small-scale Test):</strong> 적은 수의 패널에 대해 매칭 알고리즘을 실행하고, 그 결과를 시각적으로 확인하여 최적화 과정을 직관적으로 이해할 수 있습니다. (매칭된 CF, TFT 및 결합 패널 표시)</li>
             <li><strong>대규모 테스트 (Large-scale Test):</strong> 다수의 패널 데이터에 대해 최적 매칭을 실행하고, 전체적인 수율, 처리 시간 등 요약된 결과를 통해 대규모 문제에서의 최적화 효과를 가늠해볼 수 있습니다.</li>
         </ul>
-        이 데모를 통해 수학적 최적화가 실제 산업 현장에서 어떻게 가치를 창출하는지 간접적으로나마 체험해보시기 바랍니다.
     </p>
-    <p>해당 케이스는 POSTECH 이강복 교수님의 "산업 응용을 위한 최적화: 실질적인 권장 사항" 발표 자료에서 소개된 LCD 패널 생산 공정의 TFT-CF 매칭 최적화 사례 연구를 바탕으로 작성되었습니다.</p>
+<!--    <p>해당 케이스는 POSTECH 이강복 교수님의 "산업 응용을 위한 최적화: 실질적인 권장 사항" 발표 자료에서 소개된 LCD 패널 생산 공정의 TFT-CF 매칭 최적화 사례 연구를 바탕으로 작성되었습니다.</p>-->
 </div>
 {% endblock %}
 
