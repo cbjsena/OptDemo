@@ -69,3 +69,6 @@ preset_projects = [
         {'id': 'P4', 'name': '클라우드 인프라 구축', 'required_skills': 'AWS,K8s'},
         {'id': 'P5', 'name': 'BI 대시보드 제작', 'required_skills': 'SQL,Tableau'},
     ]
+
+
+preset_num_periods = 6

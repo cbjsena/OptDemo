@@ -21,7 +21,7 @@ def resource_allocation_introduction_view(request):
         'active_submenu': 'main_introduction'
     }
     logger.debug("Rendering general Resource & Allocation introduction page.")
-    return render(request, 'resource_allocation_app/resource_allocation_introduction_view.html', context)
+    return render(request, 'resource_allocation_app/resource_allocation_introduction.html', context)
 
 def resource_allocation_view():
     return None

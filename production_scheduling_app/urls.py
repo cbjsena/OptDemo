@@ -9,7 +9,7 @@ urlpatterns = [
 
     # 1. Lot Sizing Problem
     path('lot-sizing/introduction/', views.lot_sizing_introduction_view, name='lot_sizing_introduction'),
-    # path('lot-sizing/demo/', views.lot_sizing_demo_view, name='lot_sizing_demo'),
+    path('lot-sizing/demo/', views.lot_sizing_demo_view, name='lot_sizing_demo'),
 
     # 2. Single Machine Scheduling
     path('single-machine/introduction/', views.single_machine_introduction_view, name='single_machine_introduction'),

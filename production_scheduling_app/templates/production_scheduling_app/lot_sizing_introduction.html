@@ -1,10 +1,102 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "core/base.html" %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}Lot Sizing Problem - Introduction{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">생산 로트 크기 결정 문제 (Lot Sizing Problem)</h1>
+    </div>
+
+    <p>
+        <strong>생산 로트 크기 결정 문제(Lot Sizing Problem)</strong>는 생산 계획 분야의 고전적이면서도 핵심적인 문제입니다. 이 문제는 시간에 따라 변동하는 고객 수요를 만족시키기 위해, **언제, 얼마나 많이 생산할 것인지(로트 크기)**를 결정하여 관련된 총비용을 최소화하는 것을 목표로 합니다.
+    </p>
+
+    <figure>
+        <img src="http://googleusercontent.com/image_generation_content/15" alt="생산 로트 크기 결정 문제 개념도" class="intro-image" style="max-width: 750px;">
+        <figcaption class="image-caption">그림 1: 시간에 따른 수요 변화에 맞춰, 생산 준비 비용과 재고 유지 비용을 모두 고려하여 최적의 생산량(로트 크기)을 결정합니다.</figcaption>
+    </figure>
+
+    <h4>1. 문제 설명 및 핵심 상충 관계(Trade-off)</h4>
+    <p>
+        이 문제의 핵심은 두 가지 상충되는 비용 사이의 균형점을 찾는 것입니다:
+    </p>
+    <ul>
+        <li><strong>생산 준비 비용 (Setup Cost):</strong> 생산을 한 번 시작할 때마다 발생하는 고정 비용입니다.
+            기계 설정, 자재 준비 등에 필요한 비용이 포함됩니다. 이 비용 때문에 생산을 너무 자주 하면 비효율적입니다.</li>
+        <li><strong>재고 유지 비용 (Holding Cost):</strong> 생산된 제품을 판매되기 전까지 창고에 보관하는 데 드는 비용입니다.
+            보관 공간 비용, 보험료, 자본 비용 등이 포함됩니다. 한 번에 너무 많이 생산하면 재고 유지 비용이 증가합니다.</li>
+    </ul>
+    <p>
+        따라서 최적화 모델은 "미리 많이 생산해서 재고를 쌓아둘 것인가(재고 비용 증가),
+        아니면 필요할 때마다 조금씩 자주 생산할 것인가(준비 비용 증가)"라는 근본적인 질문에 대한 최적의 해답을 제공합니다.
+    </p>
+
+    <h4>2. 산업 응용 분야</h4>
+    <ul>
+        <li><strong>제조업 생산 계획:</strong> 자동차, 전자제품, 소비재 등 다양한 제품의 주간/월간 생산 계획을 수립하여 비용을 최소화합니다.</li>
+        <li><strong>부품 조달 계획:</strong> 완성품 생산에 필요한 부품이나 원자재를 언제, 얼마나 주문할지 결정하여 조달 비용과 재고 비용을 최적화합니다.</li>
+        <li><strong>유통업 재고 관리:</strong> 대형마트나 편의점에서 각 상품의 재고 수준을 관리하고, 유통 센터로부터 언제 얼마나 물건을 공급받을지 결정합니다.</li>
+        <li><strong>전력 생산 계획:</strong> 시간에 따라 변하는 전력 수요를 맞추기 위해, 발전소의 가동(준비 비용)과 전력 저장(재고 비용) 계획을 수립합니다.</li>
+    </ul>
+
+    <h4>3. 기본 수학적 모델 (Capacitated Lot-Sizing)</h4>
+    <p>생산 용량 제약을 포함한 기본적인 로트 크기 결정 문제는 다음과 같이 모델링될 수 있습니다.</p>
+
+    <div class="col-md-8 model-definition-content">
+        <strong>입력 데이터:</strong>
+        <div class="math-block">
+            $$ f_{t} = \text{ fixed setup cost in period } t  $$
+            $$ c_{t} = \text{ unit production cost in period } t $$
+            $$ h_{t} = \text{ unit inventory cost in period } t $$
+            $$ D_{t} = \text{ demand in period } t $$
+        </div>
+        <strong>결정 변수:</strong>
+        <div class="math-block">
+            $$ x_{t} = \text{ production quantity in the period } t \text{ (continuous or integer variable)} $$
+            $$ y_{t} = \begin{cases} 1 & \text{if production occurs in the period } t \\ 0 & \text{otherwise} \end{cases} $$
+            $$ I_{t} = \text{ inventory level at the end of period } t $$
+        </div>
+        <strong>목적 함수:</strong> 총비용 최소화
+            <div class="math-block">
+                $$\min \sum_{t=1}^{t} (f_{t} y_{t} + c_{t} x_{t} + h_{t} I_{t}) $$
+            </div>
+        <strong>제약 조건:</strong>
+        <ul>
+            <li><strong>재고 균형 제약:</strong> (이전 재고 + 현재 생산량 = 현재 수요 + 현재 재고)
+                <div class="math-block">
+                   $$I_{t-1} + x_t = D_t + I_t \quad \forall t$$
+                </div>
+            </li>
+            <li><strong>생산 준비 제약:</strong> (생산을 해야만 생산량이 발생)
+                <div class="math-block">
+                    $$x_t \le M \cdot y_t \quad \forall t$$
+                </div>
+            </li>
+            <li><strong>생산 용량 제약:</strong> (생산량은 생산 능력을 초과할 수 없음)
+                <div class="math-block">
+                    $$x_t \le \text{Capacity}_t \cdot y_t \quad \forall t$$
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <h4>4. Lot Sizing Demo</h4>
+    <p>
+        <strong>Lot Sizing Demo</strong>에서는
+        사용자가 직접 기간별 수요, 생산/재고/준비 비용, 생산 능력을 입력하여
+        총비용을 최소화하는 최적의 생산 계획을 수립하는 과정을 체험할 수 있습니다.
+    </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+{% endblock %}
