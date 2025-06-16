@@ -1,10 +1,85 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "core/base.html" %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}Job Shop Scheduling - Introduction{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">작업장 일정 계획 문제 (Job Shop Scheduling)</h1>
+    </div>
+
+    <h4>1. 문제 설명</h4>
+    <p>
+        <strong>작업장 일정 계획 문제(Job Shop Scheduling Problem, JSSP)</strong>는 스케줄링 분야에서 가장 유명하고 어려운 문제 중 하나입니다. 이 문제는 여러 개의 작업(Job)이 여러 대의 기계(Machine)를 거쳐 가공될 때, **각 작업이 거쳐가는 기계의 순서가 서로 다르다**는 특징이 있습니다.
+    </p>
+    <p>
+        이는 모든 작업이 동일한 순서로 기계를 거쳐가는 흐름 공정(Flow Shop)보다 훨씬 더 복잡하고 일반적인 생산 환경을 모델링합니다. 문제의 목표는 보통 모든 작업이 완료되는 총 소요 시간, 즉 **전체 작업 완료 시간(Makespan)**을 최소화하는 최적의 작업 순서와 기계별 작업 계획을 수립하는 것입니다.
+    </p>
+    <figure>
+        <img src="http://googleusercontent.com/image_generation_content/18" alt="작업장 일정 계획 문제 개념도" class="intro-image" style="max-width: 750px;">
+        <figcaption class="image-caption">그림 1: 각 작업(Job A, Job B)이 서로 다른 기계 순서(Routing)를 가집니다. 이로 인해 기계 점유를 위한 경쟁이 발생하며, 복잡한 스케줄링 문제가 됩니다.</figcaption>
+    </figure>
+
+    <h4>2. 산업 응용 분야</h4>
+    <p>주문 사양에 따라 생산 공정이 달라지는 다품종 소량생산 환경에서 널리 적용됩니다.</p>
+    <ul>
+        <li><strong>기계 부품 가공 공장:</strong> 각기 다른 설계 도면에 따라 선반, 밀링, 드릴링 등 다양한 공작 기계를 다른 순서로 거쳐야 하는 부품 생산 계획.</li>
+        <li><strong>반도체 제조 공정:</strong> 다양한 종류의 반도체 칩이 설계에 따라 포토(Photo), 에칭(Etch), 증착(Deposition) 등 수백 개의 공정을 각기 다른 순서로 거치는 스케줄링.</li>
+        <li><strong>주문형 가구 제작:</strong> 고객의 주문에 따라 목재 재단, 조립, 샌딩, 도색 등 작업의 순서와 종류가 달라지는 생산 계획.</li>
+        <li><strong>병원 환자 관리:</strong> 각 환자가 진료, X-레이 촬영, 혈액 검사, 물리 치료 등 필요한 처치를 다른 순서로 받아야 할 때, 병원 내 자원(의사, 장비, 검사실)의 사용 계획을 최적화.</li>
+    </ul>
+
+    <h4>3. 수학적 모델</h4>
+    <div class="col-md-8 model-definition-content">
+        <strong>주요 파라미터:</strong>
+        <div class="math-block">
+            <p>$$ O_{ij} = \text{The } j^{th} \text{ operation of job } i $$</p>
+            <p>$$ M_{ij} = \text{The machine required for operation } O_{ij} $$</p>
+            <p>$$ p_{ij} = \text{The processing time for operation } O_{ij} $$</p>
+        </div>
+        <strong>결정 변수:</strong>
+         <div class="math-block">
+            <p>$$ S_{ij} = \text{The start time of operation } O_{ij} $$</p>
+        </div>
+        <strong>목표 함수:</strong>
+         <div class="math-block">
+            <p>$$ \min C_{max} = \min (\max_{i,j} (S_{ij} + p_{ij})) $$</p>
+            <p>$$ \text{(Minimize the makespan)} $$</p>
+        </div>
+
+        <hr>
+
+        <strong>주요 제약 조건:</strong>
+        <ul>
+            <li>
+                <strong>선행 공정 제약 (Precedence Constraint):</strong> 한 작업 내에서, 이전 공정이 완료되어야만 다음 공정을 시작할 수 있습니다.
+                <div class="math-block">
+                    <p>$$ S_{i,j+1} \ge S_{ij} + p_{ij} $$</p>
+                </div>
+            </li>
+            <li>
+                <strong>자원 제약 (Disjunctive Constraint):</strong> 각 기계는 한 번에 하나의 작업(공정)만 처리할 수 있습니다. 동일한 기계를 사용해야 하는 두 개의 다른 공정($O_{ij}$와 $O_{kl}$)이 있다면, 둘 중 하나는 반드시 다른 하나가 끝난 후에 시작해야 합니다.
+                <div class="math-block">
+                     <p>$$ (S_{ij} + p_{ij} \le S_{kl}) \lor (S_{kl} + p_{kl} \le S_{ij}) \quad \text{if } M_{ij} = M_{kl} $$</p>
+                </div>
+            </li>
+        </ul>
+
+        <strong>해법 (Solution Methods):</strong>
+        <p>
+            Job Shop 스케줄링은 대표적인 NP-hard 문제입니다. 작은 규모의 문제에 대해서는 정수 계획법(MIP)이나 제약 프로그래밍(CP)으로 최적해를 구할 수 있지만, 규모가 커지면 매우 오랜 시간이 걸립니다. 따라서 실제 산업 현장에서는 시뮬레이티드 어닐링(Simulated Annealing), 타부 탐색(Tabu Search) 등 다양한 메타휴리스틱(Metaheuristic) 기법들이 널리 사용됩니다. OR-Tools의 CP-SAT 솔버는 이러한 종류의 문제를 푸는 데 매우 강력한 성능을 보입니다.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+{% endblock %}
