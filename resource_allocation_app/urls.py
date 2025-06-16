@@ -4,6 +4,9 @@ from . import views
 app_name = 'resource_allocation_app' # 앱 네임스페이스
 
 urlpatterns = [
+    # General Introduction Page
+    path('', views.resource_allocation_introduction_view, name='resource_allocation_introduction'),
+
     # Budget Allocation
     path('budget-allocation/introduction/', views.budget_allocation_introduction_view, name='budget_allocation_introduction'),
     # path('budget-allocation/data/', views.budget_allocation_data_view, name='budget_allocation_data'),

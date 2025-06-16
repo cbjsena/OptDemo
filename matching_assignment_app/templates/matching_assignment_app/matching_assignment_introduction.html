@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Matching & Assignment - Introduction{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Matching & Assignment Optimization</h1>
+    </div>
+
+    <p>
+        매칭 및 할당 최적화는 서로 다른 두 그룹의 개체들(예: 사람과 일, 자원과 작업) 사이에서 **최적의 짝을 찾는** 문제입니다. 이는 주어진 비용, 시간, 또는 특정 제약 조건 하에서 최고의 효율성, 최소의 비용, 또는 최대의 만족도를 달성하는 것을 목표로 합니다.
+    </p>
+
+    <figure class="text-center">
+        <img src="{% static 'matching_assignment_app/images/matching_assignment_concept.png' %}"
+             alt="Matching Assignment Concept" class="intro-image img-fluid" style="max-width: 600px;">
+        <figcaption class="image-caption">Fig 1: Matching Assignment Concept </figcaption>
+    </figure>
+    <hr class="my-4">
+
+    <h3>Core Problem Areas</h3>
+    <p>이 범주에서는 다음과 같은 대표적인 매칭 및 할당 문제들을 다룹니다.</p>
+
+    <div class="row mt-4">
+<!--        <div class="col-md-6 col-lg-6 mb-4">-->
+<!--            <div class="problem-card">-->
+<!--                <h4><a href="{% url 'matching_assignment_app:assignment_introduction' %}">Assignment Problem</a></h4>-->
+<!--                <p>가장 기본적인 1:1 할당 문제입니다. 동일한 수의 작업자와 작업이 있을 때, 전체 비용이 최소화되도록 각 작업자에게 하나의 작업만을 할당합니다.</p>-->
+<!--                <p><strong>주요 목표:</strong> 총비용 최소화</p>-->
+<!--            </div>-->
+<!--        </div>-->
+        <div class="col-md-6 col-lg-6 mb-4">
+            <div class="problem-card">
+                <h4><a href="{% url 'matching_assignment_app:transport_assignment_introduction' %}">Transportation Assignment</a></h4>
+                <p>작업 배정 문제의 개념을 운송 분야에 적용한 문제입니다. 여러 명의 배송 기사를 여러 개의 배송 구역에 1:1로 할당하여 전체 운송 시간이나 거리를 최소화합니다.</p>
+                <p><strong>주요 목표:</strong> 총 운송 시간/거리 최소화</p>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-6 mb-4">
+            <div class="problem-card">
+                <h4><a href="{% url 'matching_assignment_app:resource_skill_matching_introduction' %}">Resource-Skill Matching</a></h4>
+                <p>단순한 1:1 할당을 넘어, 각 인력이 보유한 여러 기술과 프로젝트가 요구하는 여러 기술을 고려하여 최적의 팀을 구성하는 다대다(many-to-many) 할당 문제입니다.</p>
+                <p><strong>주요 목표:</strong> 요구사항 만족 및 비용 최소화</p>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-6 mb-4">
+            <div class="problem-card">
+                <h4><a href="{% url 'matching_assignment_app:lcd_cf_tft_introduction' %}">LCD TFT-CF Matching</a></h4>
+                <p>반도체/디스플레이 생산 공정에서, 불량 셀의 위치를 고려하여 두 종류의 패널(CF, TFT)을 겹쳤을 때 손실을 최소화하는 최적의 짝을 찾는 복잡한 매칭 문제입니다.</p>
+                <p><strong>주요 목표:</strong> 양품 수율(Yield) 극대화</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

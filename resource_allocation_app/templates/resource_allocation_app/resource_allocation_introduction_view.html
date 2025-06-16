@@ -1,0 +1,55 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Resource Allocation - Introduction{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Resource Allocation Optimization</h1>
+    </div>
+
+    <p>
+      자원 할당 최적화는 예산, 인력, 설비, 시간 등 <strong>제한된 자원</strong>을 여러 경쟁적인 활동이나 프로젝트에 어떻게 배분해야
+      <strong>전체적인 목표</strong>(이익 극대화, 비용 최소화, 효율성 증대 등)를 최적으로 달성하는 방법을 찾는 문제입니다.
+    </p>
+
+    <figure class="text-center">
+        <img src="{% static 'resource_allocation_app/images/resource_allocation_concept.png' %}"
+             alt="Resource Allocation Concept" class="intro-image img-fluid" style="max-width: 600px;">
+        <figcaption class="image-caption">Fig 1: Resource Allocation Concept</figcaption>
+    </figure>
+    <hr class="my-4">
+
+    <h3>Core Problem Areas</h3>
+    <p>이 범주에서는 다음과 같은 대표적인 자원 할당 문제들을 다룹니다.</p>
+
+    <div class="row mt-4">
+        <div class="col-md-6 col-lg-6 mb-4">
+            <div class="problem-card">
+                <h4><a href="{% url 'resource_allocation_app:budget_allocation_introduction' %}">Budget Allocation Problem</a></h4>
+                <p>제한된 총예산을 여러 마케팅 채널, R&D 프로젝트, 또는 부서에 분배하여 최대의 광고 효과나 투자 수익률(ROI)을 얻는 방법을 찾습니다.</p>
+                <p><strong>주요 목표:</strong> 효과 또는 수익률(ROI) 극대화</p>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-6 mb-4">
+            <div class="problem-card">
+                <h4><a href="{% url 'resource_allocation_app:data_center_capacity_introduction' %}">Data Center Capacity</a></h4>
+                <p>미래의 수요 예측을 바탕으로, 데이터 센터나 공장 설비 등에 대한 최적의 투자 시점과 규모를 결정하고, 여러 지역 또는 서비스에 용량을 할당하여 총비용을 최소화합니다.</p>
+                <p><strong>주요 목표:</strong> 총비용(투자+운영) 최소화<</p>
+            </div>
+        </div>
+<!--        <div class="col-md-6 col-lg-4 mb-4">-->
+<!--            <div class="problem-card">-->
+<!--                <h4><a href="{% url 'resource_allocation_app:financial_portfolio_introduction' %}">Financial Portfolio Optimization</a></h4>-->
+<!--                <p>여러 투자 자산(주식, 채권 등)에 자금을 배분하여, 주어진 위험 수준 하에서 최대의 기대 수익을 얻거나, 목표 수익률을 최소의 위험으로 달성하는 최적의 포트폴리오를 구성합니다.</p>-->
+<!--                 <small class="text-muted"><strong>주요 목표:</strong> 수익 극대화 또는 위험 최소화</small>-->
+<!--            </div>-->
+<!--        </div>-->
+    </div>
+</div>
+{% endblock %}

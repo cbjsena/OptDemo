@@ -49,3 +49,21 @@
     .link-to-more-info a:hover {
         text-decoration: underline;
     }
+    .col-lg-6 .problem-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        transition: box-shadow .3s;
+        height: 100%;
+    }
+    .col-lg-6 .problem-card:hover {
+        box-shadow: 0 4px 15px rgba(0,0,0,.1);
+    }
+    .col-lg-6 .problem-card h4 {
+        color: #0056b3;
+    }
+    .col-lg-6 .problem-card p {
+        font-size: 0.95rem;
+        color: #555;
+    }

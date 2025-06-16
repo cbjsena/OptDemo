@@ -13,6 +13,19 @@ from common_utils.default_data import (
 logger = logging.getLogger(__name__)  # settings.py에 정의된 'resource_allocation_app' 로거 사용
 
 
+def resource_allocation_introduction_view(request):
+    """General introduction page for the Resource Allocation category."""
+    context = {
+        'active_model': 'Resource Allocation',
+        # 이 페이지는 특정 소메뉴에 속하지 않으므로 active_submenu는 비워둠
+        'active_submenu': 'main_introduction'
+    }
+    logger.debug("Rendering general Resource & Allocation introduction page.")
+    return render(request, 'resource_allocation_app/resource_allocation_introduction_view.html', context)
+
+def resource_allocation_view():
+    return None
+
 def budget_allocation_introduction_view(request):
     context = {
         'active_model': 'Resource Allocation',

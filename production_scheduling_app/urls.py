@@ -5,7 +5,7 @@ app_name = 'production_scheduling_app' # 앱 네임스페이스
 
 urlpatterns = [
     # General Introduction Page
-    path('', views.production_scheduling_introduction_view, name='main_introduction'),
+    path('', views.production_scheduling_introduction_view, name='production_scheduling_introduction'),
 
     # 1. Lot Sizing Problem
     path('lot-sizing/introduction/', views.lot_sizing_introduction_view, name='lot_sizing_introduction'),

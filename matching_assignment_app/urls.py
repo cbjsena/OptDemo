@@ -4,6 +4,9 @@ from . import views
 app_name = 'matching_assignment_app' # 앱 네임스페이스
 
 urlpatterns = [
+    # General Introduction Page
+    path('', views.matching_assignment_introduction_view, name='matching_assignment_introduction'),
+
     # LCD cf-tft Matching (기존 matching_app에서 가져오거나 여기에 새로 정의)
     path('lcd-cf-tft/introduction/', views.lcd_cf_tft_introduction_view, name='lcd_cf_tft_introduction'),
     path('lcd-cf-tft/data-generation/', views.lcd_cf_tft_data_generation_view, name='lcd_cf_tft_data_generation'),

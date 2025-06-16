@@ -48,6 +48,16 @@ def validate_panel_data_structure(panel_list_items, panel_type_name):
     return None  # 유효성 검사 통과
 
 
+def matching_assignment_introduction_view(request):
+    """General introduction page for the Matching & Assignment category."""
+    context = {
+        'active_model': 'Matching & Assignment',
+        'active_submenu': 'main_introduction'
+    }
+    logger.debug("Rendering general Matching & Assignment introduction page.")
+    return render(request, 'matching_assignment_app/matching_assignment_introduction.html', context)
+
+
 def lcd_cf_tft_introduction_view(request):
     context = {
         'active_model': 'Matching & Assignment',
