@@ -22,7 +22,8 @@
         이는 모든 작업이 동일한 순서로 기계를 거쳐가는 흐름 공정(Flow Shop)보다 훨씬 더 복잡하고 일반적인 생산 환경을 모델링합니다. 문제의 목표는 보통 모든 작업이 완료되는 총 소요 시간, 즉 **전체 작업 완료 시간(Makespan)**을 최소화하는 최적의 작업 순서와 기계별 작업 계획을 수립하는 것입니다.
     </p>
     <figure>
-        <img src="http://googleusercontent.com/image_generation_content/18" alt="작업장 일정 계획 문제 개념도" class="intro-image" style="max-width: 750px;">
+        <img src="{% static 'production_scheduling_app/images/job_shop_concept.png' %}"
+             alt="작업장 일정 계획 문제 개념도" class="intro-image" style="max-width: 600px;">
         <figcaption class="image-caption">그림 1: 각 작업(Job A, Job B)이 서로 다른 기계 순서(Routing)를 가집니다. 이로 인해 기계 점유를 위한 경쟁이 발생하며, 복잡한 스케줄링 문제가 됩니다.</figcaption>
     </figure>
 

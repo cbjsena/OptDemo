@@ -22,7 +22,8 @@
         이 문제의 목표는 모든 작업이 마지막 기계까지 처리를 완료하는 총 소요 시간, 즉 **전체 작업 완료 시간(Makespan)**을 최소화하는 최적의 작업 투입 순서(sequence)를 찾는 것입니다.
     </p>
     <figure>
-        <img src="http://googleusercontent.com/image_generation_content/17" alt="흐름 공정 스케줄링 문제 개념도" class="intro-image" style="max-width: 750px;">
+        <img src="{% static 'production_scheduling_app/images/flow_shop_concept.png' %}"
+             alt="흐름 공정 스케줄링 문제 개념도" class="intro-image" style="max-width: 600px;">
         <figcaption class="image-caption">그림 1: 모든 작업이 고정된 기계 순서(M1 &rarr; M2 &rarr; M3)를 따를 때, 작업 투입 순서에 따라 전체 완료 시간이 어떻게 달라지는지를 보여줍니다.</figcaption>
     </figure>
 
