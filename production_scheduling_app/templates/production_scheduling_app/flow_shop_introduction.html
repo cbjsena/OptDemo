@@ -1,10 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "core/base.html" %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}Flow Shop Scheduling - Introduction{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">흐름 공정 스케줄링 (Flow Shop Scheduling)</h1>
+    </div>
+
+    <h4>1. 문제 설명</h4>
+    <p>
+        <strong>흐름 공정 스케줄링 문제</strong>는 여러 개의 작업(Job)이 모두 **동일한 순서**로 여러 대의 기계(Machine)를 거쳐 가공되는 생산 환경에서의 순서 최적화 문제입니다. 예를 들어, 모든 제품이 "1번 기계(절단) &rarr; 2번 기계(용접) &rarr; 3번 기계(도색)" 순서로 처리되는 경우를 말합니다.
+    </p>
+    <p>
+        이 문제의 목표는 모든 작업이 마지막 기계까지 처리를 완료하는 총 소요 시간, 즉 **전체 작업 완료 시간(Makespan)**을 최소화하는 최적의 작업 투입 순서(sequence)를 찾는 것입니다.
+    </p>
+    <figure>
+        <img src="http://googleusercontent.com/image_generation_content/17" alt="흐름 공정 스케줄링 문제 개념도" class="intro-image" style="max-width: 750px;">
+        <figcaption class="image-caption">그림 1: 모든 작업이 고정된 기계 순서(M1 &rarr; M2 &rarr; M3)를 따를 때, 작업 투입 순서에 따라 전체 완료 시간이 어떻게 달라지는지를 보여줍니다.</figcaption>
+    </figure>
+
+    <h4>2. 산업 응용 분야</h4>
+    <p>공정의 순서가 고정된 많은 조립 라인 및 연속 공정에서 이 모델을 활용할 수 있습니다.</p>
+    <ul>
+        <li><strong>조립 라인 제조업:</strong> 자동차, 가전제품, 스마트폰 등 부품이 일정한 순서로 조립되는 생산 라인의 효율성을 극대화합니다.</li>
+        <li><strong>인쇄 및 출판:</strong> 인쇄 &rarr; 코팅 &rarr; 재단 &rarr; 제본 순서로 진행되는 공정에서 책이나 인쇄물의 생산 시간을 최소화합니다.</li>
+        <li><strong>식품 가공:</strong> 원료 준비 &rarr; 조리 &rarr; 냉각 &rarr; 포장 등 정해진 순서를 따르는 식품 생산 라인의 처리량을 높입니다.</li>
+        <li><strong>반도체 일부 공정:</strong> 웨이퍼(Wafer)가 특정 장비들을 순서대로 거쳐가는 일부 연속 공정의 스케줄링에 적용됩니다.</li>
+    </ul>
+
+    <h4>3. 수학적 모델 및 해법</h4>
+    <div class="col-md-8 model-definition-content">
+        <strong>주요 파라미터:</strong>
+        <div class="math-block">
+            <p>$$ n = \text{The number of jobs} $$</p>
+            <p>$$ m = \text{The number of machines} $$</p>
+            <p>$$ p_{ij} = \text{Processing time of job } i \text{ on machine } j $$</p>
+        </div>
+        <strong>결정 변수:</strong>
+         <div class="math-block">
+            <p>$$ C_{ij} = \text{Completion time of job } i \text{ on machine } j $$</p>
+        </div>
+        <strong>목표 함수:</strong>
+         <div class="math-block">
+            <p>$$ \min C_{max} = \min (\max_{i=1...n} C_{im}) $$</p>
+            <p>$$ \text{(Minimize the makespan, which is the completion time of the last job on the last machine)} $$</p>
+        </div>
+
+        <hr>
+
+        <strong>주요 제약 조건:</strong>
+        <ul>
+            <li>
+                <strong>순서 제약 (Sequence Constraint):</strong> 모든 기계에서 작업 처리 순서는 동일해야 합니다(Permutation Flow Shop). 작업들의 순서를 $\pi = (\pi_1, \pi_2, ..., \pi_n)$ 라고 할 때, 이 순서는 모든 기계에 동일하게 적용됩니다.
+            </li>
+            <li>
+                <strong>공정 제약 (Operation Constraint):</strong> 한 작업은 이전 기계에서의 공정이 끝나야만 다음 기계에서 공정을 시작할 수 있습니다.
+                <div class="math-block">
+                    <p>$$ C_{\pi_k, j} \ge C_{\pi_k, j-1} + p_{\pi_k, j} \quad (\forall k=1..n, j=2..m) $$</p>
+                </div>
+            </li>
+            <li>
+                <strong>자원 제약 (Resource Constraint):</strong> 각 기계는 한 번에 하나의 작업만 처리할 수 있습니다. 즉, 특정 기계에서 다음 순서의 작업은 이전 순서의 작업이 끝나야 시작할 수 있습니다.
+                <div class="math-block">
+                     <p>$$ C_{\pi_k, j} \ge C_{\pi_{k-1}, j} + p_{\pi_k, j} \quad (\forall k=2..n, j=1..m) $$</p>
+                </div>
+            </li>
+        </ul>
+
+        <strong>해법 (Solution Methods):</strong>
+        <ul>
+            <li><strong>2-기계 문제:</strong> 존슨의 알고리즘 (Johnson's Algorithm)이라는 간단하고 효율적인 방법으로 최적해를 찾을 수 있습니다.</li>
+            <li><strong>3-기계 이상 문제:</strong> NP-hard 문제로, 최적해를 찾는 데 매우 오랜 시간이 걸릴 수 있습니다. 따라서 파머(Palmer), CDS와 같은 휴리스틱(Heuristic) 방법이나, 정수 계획법(MIP), 제약 프로그래밍(CP)과 같은 최적화 솔버를 사용합니다.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+{% endblock %}
