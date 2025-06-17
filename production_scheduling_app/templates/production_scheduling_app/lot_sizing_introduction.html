@@ -11,7 +11,7 @@
 {% block content %}
 <div class="container-fluid introduction-content">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">생산 로트 크기 결정 문제 (Lot Sizing Problem)</h1>
+        <h2>생산 로트 크기 결정 문제 (Lot Sizing Problem)</h2>
     </div>
 
     <p>
@@ -19,11 +19,12 @@
     </p>
 
     <figure>
-        <img src="http://googleusercontent.com/image_generation_content/15" alt="생산 로트 크기 결정 문제 개념도" class="intro-image" style="max-width: 750px;">
+        <img src="{% static 'production_scheduling_app/images/lot_sizing_concept.png' %}"
+             alt="생산 로트 크기 결정 문제 개념도" class="intro-image" style="max-width: 600px;">
         <figcaption class="image-caption">그림 1: 시간에 따른 수요 변화에 맞춰, 생산 준비 비용과 재고 유지 비용을 모두 고려하여 최적의 생산량(로트 크기)을 결정합니다.</figcaption>
     </figure>
 
-    <h4>1. 문제 설명 및 핵심 상충 관계(Trade-off)</h4>
+    <h3>1. 문제 설명 및 핵심 상충 관계(Trade-off)</h3>
     <p>
         이 문제의 핵심은 두 가지 상충되는 비용 사이의 균형점을 찾는 것입니다:
     </p>
@@ -38,7 +39,7 @@
         아니면 필요할 때마다 조금씩 자주 생산할 것인가(준비 비용 증가)"라는 근본적인 질문에 대한 최적의 해답을 제공합니다.
     </p>
 
-    <h4>2. 산업 응용 분야</h4>
+    <h3>2. 산업 응용 분야</h3>
     <ul>
         <li><strong>제조업 생산 계획:</strong> 자동차, 전자제품, 소비재 등 다양한 제품의 주간/월간 생산 계획을 수립하여 비용을 최소화합니다.</li>
         <li><strong>부품 조달 계획:</strong> 완성품 생산에 필요한 부품이나 원자재를 언제, 얼마나 주문할지 결정하여 조달 비용과 재고 비용을 최적화합니다.</li>
@@ -46,28 +47,33 @@
         <li><strong>전력 생산 계획:</strong> 시간에 따라 변하는 전력 수요를 맞추기 위해, 발전소의 가동(준비 비용)과 전력 저장(재고 비용) 계획을 수립합니다.</li>
     </ul>
 
-    <h4>3. 기본 수학적 모델 (Capacitated Lot-Sizing)</h4>
+    <h3>3. 기본 수학적 모델 (Capacitated Lot-Sizing)</h3>
     <p>생산 용량 제약을 포함한 기본적인 로트 크기 결정 문제는 다음과 같이 모델링될 수 있습니다.</p>
 
     <div class="col-md-8 model-definition-content">
-        <strong>입력 데이터:</strong>
-        <div class="math-block">
-            $$ f_{t} = \text{ fixed setup cost in period } t  $$
-            $$ c_{t} = \text{ unit production cost in period } t $$
-            $$ h_{t} = \text{ unit inventory cost in period } t $$
-            $$ D_{t} = \text{ demand in period } t $$
-        </div>
-        <strong>결정 변수:</strong>
-        <div class="math-block">
-            $$ x_{t} = \text{ production quantity in the period } t \text{ (continuous or integer variable)} $$
-            $$ y_{t} = \begin{cases} 1 & \text{if production occurs in the period } t \\ 0 & \text{otherwise} \end{cases} $$
-            $$ I_{t} = \text{ inventory level at the end of period } t $$
-        </div>
-        <strong>목적 함수:</strong> 총비용 최소화
+        <h4 class="model-definition-content"><strong>입력 데이터:</strong></h4>
+        <ul>
+            <li> <strong>\( T \)</strong> : 생산 용량 계획 기간의 집합</li>
+            <li> <strong>\( D_{t} \)</strong> : 기간 \( t \)에 수요량</li>
+            <li> <strong>\( f_{t} \)</strong> : 기간 \( t \)에 고정 준비 비용</li>
+            <li> <strong>\( c_{t} \)</strong> : 기간 \( t \)에 단위 당 생산 비용</li>
+            <li> <strong>\( h_{t} \)</strong> : 기간 \( t \)에 단위 당 재고 비용</li>
+        </ul>
+        <hr>
+
+        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
+        <ul>
+            <li> <strong>\( x_{t} \)</strong> : 기간 \( t \)에 생산량 변수</li>
+            <li> <strong>\( y_{t} \)</strong> : 기간 \( t \)에 생산 하면 1, 아니면 0(이진 변수)</li>
+            <li> <strong>\( I_{t} \)</strong> : 기간 \( t \) 마지막 재고 용량 저장하는 밸런스 변수</li>
+        </ul>
+        <hr>
+
+        <h4 class="model-definition-content"><strong>목적 함수:</strong> 총비용 최소화</h4>
             <div class="math-block">
                 $$\min \sum_{t=1}^{t} (f_{t} y_{t} + c_{t} x_{t} + h_{t} I_{t}) $$
             </div>
-        <strong>제약 조건:</strong>
+        <h4 class="model-definition-content"><strong>제약 조건:</strong></h4>
         <ul>
             <li><strong>재고 균형 제약:</strong> (이전 재고 + 현재 생산량 = 현재 수요 + 현재 재고)
                 <div class="math-block">
@@ -87,7 +93,7 @@
         </ul>
     </div>
 
-    <h4>4. Lot Sizing Demo</h4>
+    <h3>4. Lot Sizing Demo</h3>
     <p>
         <strong>Lot Sizing Demo</strong>에서는
         사용자가 직접 기간별 수요, 생산/재고/준비 비용, 생산 능력을 입력하여

@@ -11,7 +11,7 @@
 {% block content %}
 <div class="container-fluid introduction-content">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">자원-기술 매칭 문제 (Resource-Skill Matching)</h1>
+        <h2>자원-기술 매칭 문제 (Resource-Skill Matching)</h2>
     </div>
 
     <p>
@@ -26,7 +26,7 @@
         <figcaption class="image-caption">그림 1: 자원-기술 매칭 개념 - 각 인력의 보유 기술과 프로젝트의 요구 기술을 고려하여 최적의 팀을 구성합니다.</figcaption>
     </figure>
 
-    <h4>1. 문제 설명 및 목표</h4>
+    <h3>1. 문제 설명 및 목표</h3>
     <p>
         이 문제의 핵심은 단순히 사람을 일에 배정하는 것을 넘어, "프로젝트 성공을 위해 최적의 기술 조합을 가진 팀을 어떻게 구성할 것인가?"에 대한 해답을 찾는 것입니다. 최적화 목표는 상황에 따라 다양하게 설정될 수 있습니다.
     </p>
@@ -40,7 +40,7 @@
         이러한 다중 목표(Multi-objective)를 고려해야 하는 경우가 많아, 문제의 난이도가 높습니다.
     </p>
 
-    <h4>2. 산업 응용 분야</h4>
+    <h3>2. 산업 응용 분야</h3>
     <ul>
         <li><strong>IT 프로젝트 팀 구성:</strong> 소프트웨어 개발 프로젝트에서 프론트엔드, 백엔드, 데이터베이스, 클라우드 등 다양한 기술을 요구할 때, 각 개발자의 기술 스택을 고려하여 최적의 개발팀을 구성합니다.</li>
         <li><strong>컨설팅 펌프:</strong> 고객사의 복잡한 문제를 해결하기 위해, 금융, 전략, 마케팅, IT 등 다양한 전문 분야의 컨설턴트들로 팀을 구성합니다.</li>
@@ -48,27 +48,30 @@
         <li><strong>병원 운영:</strong> 특정 수술을 위해 외과의, 마취과 의사, 전문 간호사 등 필수 인력으로 수술팀을 구성합니다.</li>
     </ul>
 
-    <h4>3. 수학적 모델</h4>
+    <h3>3. 수학적 모델</h3>
     <div class="col-md-8 model-definition-content">
-        <strong>결정 변수:</strong> 케이스에 따라 더 세분화된 변수를 생성합니다.
-            <div class="math-block">
-                $$ x_{ij} = \begin{cases} 1 & \text{if resource } i \text{ is assigned to project } j \\ 0 & \text{otherwise} \end{cases} $$
-                $$ \text{ or} $$
-                $$ x_{ijk} = \begin{cases} 1 & \text{if resource } i \text{ is assigned to project }j \text{ in role } k \\ 0 & \text{otherwise} \end{cases} $$
-            </div>
-        <strong>목적 함수:</strong> 총 비용 최소화
-            <div class="math-block">
-                <p>$$\min \sum_{i=1}^{n} \sum_{j=1}^{n} c_{ij} x_{ij}$$</p>
-                <p>$$ \text{where } c_{ij} \text{ is the cost when resource } i \text{ is assigned to project } j $$</p>
-            </div>
-        <strong>제약 조건:</strong>
+        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
         <ul>
-            <li>기술 요구사항 충족 제약: 프로젝트 j가 요구하는 기술 s에 대해, 해당 기술을 보유한 인력 중 최소 한 명 이상이 프로젝트 j에 배정되어야 한다.
+            <li> <strong>\( x_{ij} \)</strong> : 인력 \( i \) 를 프로젝트 \( j \) 에 배정하면 1, 아니면 0(이진 변수)</li>
+            <p>또는 케이스에 따라 </p>
+            <li> <strong>\( x_{ijk} \)</strong> : 인력 \( i \) 를 프로젝트 \( j \) 에 역할 \( k \)로 배정하면 1, 아니면 0(이진 변수)</li>
+        </ul>
+        <hr>
+
+        <h4 class="model-definition-content"><strong>목적 함수:</strong> 총비용 최소화</h4>
+        <div class="math-block">
+            <p>$$\min \sum_{i=1}^{n} \sum_{j=1}^{n} c_{ij} x_{ij}$$</p>
+            <p>$$ \text{where } c_{ij} \text{ is the cost when resource } i \text{ is assigned to project } j $$</p>
+        </div>
+
+        <h4 class="model-definition-content"><strong>제약 조건:</strong></h4>
+        <ul>
+            <li><strong>기술 요구사항 충족 제약:</strong> 프로젝트 j가 요구하는 기술 s에 대해, 해당 기술을 보유한 인력 배정
                 <div class="math-block">
                     $$\sum_{i \in \text{Resources}} \text{has_skill}(i, s) \cdot x_{ij} \ge 1, \quad \forall j \in \text{Projects}, s \in \text{required_skills}(j)$$
                 </div>
             </li>
-            <li>인력 할당 제약: 각 인력 i는 동시에 참여할 수 있는 프로젝트 수에 한계가 있다 (보통 1개)
+            <li><strong>인력 할당 제약:</strong> 각 인력는 동시에 참여할 수 있는 프로젝트 수에 한계 (보통 1개)
                 <div class="math-block">
                     $$\sum_{j \in \text{Projects}} x_{ij} \le 1, \quad \forall i \in \text{Resources}$$
                 </div>
@@ -76,7 +79,7 @@
         </ul>
     </div>
 
-    <h4>4. Resource Skill Matching Demo</h4>
+    <h3>4. Resource Skill Matching Demo</h3>
     <p>
         <strong>Resource Skill Matching Demo</strong>에서는
         보유 인력과 프로젝트 관련 정보를 설정하고, 최적의 프로젝트별 인력 할당 과정을 체험할 수 있습니다.

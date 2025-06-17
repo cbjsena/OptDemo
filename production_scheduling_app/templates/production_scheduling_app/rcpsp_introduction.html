@@ -11,10 +11,10 @@
 {% block content %}
 <div class="container-fluid introduction-content">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">프로젝트 일정 및 자원 제약 스케줄링 (RCPSP)</h1>
+        <h2>프로젝트 일정 및 자원 제약 스케줄링 (RCPSP)</h2>
     </div>
 
-    <h4>1. 문제 설명</h4>
+    <h3>1. 문제 설명</h3>
     <p>
         <strong>자원 제약 프로젝트 스케줄링 문제(Resource-Constrained Project Scheduling Problem, RCPSP)</strong>는 여러 개의 활동(Activity)으로 구성된 프로젝트의 일정을 계획하는 문제입니다. 이 문제는 각 활동의 소요 시간과 활동 간의 **선후 관계(Precedence Constraint)**뿐만 아니라, 프로젝트 수행에 필요한 **제한된 자원(Resource Constraint)**을 동시에 고려한다는 점에서 매우 현실적이고 복잡합니다.
     </p>
@@ -27,7 +27,7 @@
         <figcaption class="image-caption">그림 1: 활동 간 선후 관계와 더불어, 제한된 자원(인력, 장비 등)으로 인해 동시에 수행할 수 있는 활동의 수가 제약을 받아 전체 프로젝트 기간이 늘어나는 것을 보여줍니다.</figcaption>
     </figure>
 
-    <h4>2. 산업 응용 분야</h4>
+    <h3>2. 산업 응용 분야</h3>
     <p>RCPSP는 자원과 시간의 제약이 중요한 모든 종류의 프로젝트 관리에 핵심적으로 사용됩니다.</p>
     <ul>
         <li><strong>건설 프로젝트:</strong> 건물이나 교량을 건설할 때, '기초 공사 &rarr; 골조 공사 &rarr; 마감 공사'와 같은 선후 관계와 함께, 제한된 수의 인력, 크레인, 트럭 등의 자원을 고려하여 최단 공사 기간을 계획합니다.</li>
@@ -36,7 +36,7 @@
         <li><strong>대규모 플랜트 유지보수:</strong> 정해진 기간 동안 발전소나 공장의 가동을 멈추고 여러 유지보수 활동을 수행할 때, 제한된 유지보수 인력과 특수 장비를 활용하여 작업 중단 시간을 최소화합니다.</li>
     </ul>
 
-    <h4>3. 수학적 모델</h4>
+    <h3>3. 수학적 모델</h3>
     <div class="col-md-8 model-definition-content">
         <strong>주요 파라미터:</strong>
         <div class="math-block">
@@ -45,7 +45,7 @@
             <p>$$ r_{jk} = \text{The amount of resource } k \text{ required by activity } j $$</p>
             <p>$$ R_k = \text{The total availability of resource } k \text{ at any time} $$</p>
         </div>
-        <strong>결정 변수:</strong>
+        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
          <div class="math-block">
             <p>$$ S_j = \text{The start time of activity } j $$</p>
         </div>
@@ -78,6 +78,12 @@
             RCPSP는 Job Shop 스케줄링보다 더 일반화된 문제로, 대표적인 NP-hard 문제입니다. 이 문제는 다양한 우선순위 규칙(Priority rule)을 기반으로 한 휴리스틱 방법이나, 유전 알고리즘(Genetic Algorithm) 등의 메타휴리스틱으로 근사해를 찾을 수 있습니다. 최적해를 찾기 위해서는 제약 프로그래밍(Constraint Programming, CP)이 매우 효과적이며, OR-Tools의 CP-SAT 솔버는 RCPSP를 모델링하고 해결하는 데 강력한 기능을 제공합니다.
         </p>
     </div>
+    <h3>4. RCPSP Demo</h3>
+    <p>
+        <strong>RCPSP Demo</strong>에서는
+        사용자가 ???을 입력하여
+        ??? 최소화하는 생산 계획을 수립하는 과정을 체험할 수 있습니다.
+    </p>
 </div>
 {% endblock %}
 

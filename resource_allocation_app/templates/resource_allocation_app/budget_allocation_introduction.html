@@ -11,10 +11,10 @@
 {% block content %}
 <div class="container-fluid introduction-content">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">예산 분배 최적화 (Budget Allocation Problem)</h1>
+        <h2>예산 분배 최적화 (Budget Allocation Problem)</h2>
     </div>
 
-    <h4>1. 문제 설명</h4>
+    <h3>1. 문제 설명</h3>
     <p>
         예산 분배 최적화 문제는 주어진 총 예산 한도 내에서 여러 투자 대상(예: 마케팅 채널, 연구개발 과제, 광고 캠페인 등)에 예산을 어떻게 배분해야 전반적인 목표(예: 총 투자 대비 효과(ROI) 극대화, 시장 점유율 최대화, 브랜드 인지도 향상 등)를 가장 효과적으로 달성할 수 있는지를 결정하는 문제입니다.
     </p>
@@ -22,7 +22,7 @@
         각 투자 대상은 일반적으로 투자 금액에 따라 다른 성과를 보이며, 때로는 최소 투자 금액이나 최대 투자 금액과 같은 제약 조건이 있을 수 있습니다.
     </p>
 
-    <h4>2. 산업 응용 분야</h4>
+    <h3>2. 산업 응용 분야</h3>
     <ul>
         <li><strong>마케팅 믹스 최적화:</strong> 다양한 광고 채널(TV, 라디오, 온라인, SNS 등)에 마케팅 예산을 분배하여 광고 효과를 극대화합니다.</li>
         <li><strong>R&D 포트폴리오 관리:</strong> 여러 연구개발 프로젝트 중 어떤 프로젝트에 얼마의 자금을 투자할지 결정하여 기술 혁신 가능성이나 미래 수익을 최대화합니다.</li>
@@ -30,26 +30,29 @@
         <li><strong>자본 예산 책정:</strong> 기업이 여러 투자 가능한 프로젝트(설비 투자, 신규 사업 진출 등)에 대해 제한된 자본을 배분하여 순현재가치(NPV)나 내부수익률(IRR)을 최대화합니다.</li>
     </ul>
 
-    <h4>3. 수학적 모델</h4>
+    <h3>3. 수학적 모델</h3>
     <div class="col-md-8 model-definition-content">
-        <strong>결정 변수:</strong>
-            <div class="math-block">
-                $$ x_{i} = \text{ Budjet amount allocated to item or activity } i$$
-                $$ y_{i} = \begin{cases} 1 & \text{if item } i \text{ is invested } \\ 0 & \text{otherwise} \end{cases} $$
-            </div>
-        <strong>목적 함수: </strong> 총 기대 수익 극대화
-            <div class="math-block">
-                <p>$$\max \sum_{i=1}^{n} pro_{i} x_{i}$$</p>
-                <p>$$ \text{where } pro_{i} \text{ is the profit obtained when investing in item } i $$</p>
-            </div>
-        <strong>제약 조건:</strong>
+        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
         <ul>
-            <li>투자된 예산의 합은 총 예산 금액 이하여야 합니다.
+            <li> <strong>\( x_{i} \)</strong>: 아이템 \( i \)에 할당된 예산 규모(연속 또는 정수 변수)</li>
+            <li> <strong>\( y_{i} \)</strong>: 아이템 \( i \)에 투자할 경우 1, 아니면 0(이진 변수)</li>
+        </ul>
+        <hr>
+
+        <h4 class="model-definition-content"><strong>목적 함수: </strong> 총 기대 수익 극대화 </h4>
+        <div class="math-block">
+            <p>$$\max \sum_{i=1}^{n} pro_{i} x_{i}$$</p>
+            <p>$$ \text{where } pro_{i} \text{ is the profit obtained when investing in item } i $$</p>
+        </div>
+
+        <h4 class="model-definition-content"><strong>제약 조건:</strong></h4>
+        <ul>
+            <li><strong>총 예산 제약:</strong> 투자된 예산의 합은 총 예산 금액 이하
                 <div class="math-block">
                     $$ \sum_{i \in I} x_{i} \le TotalBudjet$$
                 </div>
             </li>
-            <li>항목 별 최소/최대 투자 금액을 만족해야 합니다.
+            <li><strong>항목 금액 제약:</strong> 항목 별 최소/최대 투자 금액 범위 제약
                 <div class="math-block">
                      $$ {MinAllocation}_i  \le x_{i} \le {MaxAllocation}_i $$
                 </div>
@@ -58,7 +61,7 @@
         </ul>
     </div>
 
-    <h4>4. Budjet Allocation Demo</h4>
+    <h3>4. Budjet Allocation Demo</h3>
     <p>
         <strong>Budjet Allocation Demo</strong>에서는
         사용자가 직접 총 예산, 투자 항목 수, 각 항목의 기대 수익률 (또는 수익 함수 계수), 최소/최대 투자액 등의 파라미터를 설정하고,

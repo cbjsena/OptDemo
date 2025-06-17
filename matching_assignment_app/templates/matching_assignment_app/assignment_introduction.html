@@ -50,16 +50,16 @@
 
     <h4>3. 수학적 모델</h4>
     <div class="col-md-8 model-definition-content">
-        <strong>결정 변수:</strong>
+        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
             <div class="math-block">
                 $$ x_{ij} = \begin{cases} 1 & \text{if worker } i \text{ is assigned to job } j \\ 0 & \text{otherwise} \end{cases} $$
             </div>
-        <strong>목적 함수: </strong> 비용 최소화
+        <h4 class="model-definition-content"><strong>목적 함수:</strong> 총비용 최소화</h4>
             <div class="math-block">
                 <p>$$\min \sum_{i=1}^{n} \sum_{j=1}^{n} c_{ij} x_{ij}$$</p>
                 <p>$$ \text{where } c_{ij} \text{ is the cost when resource } i \text{ is assigned to project } j $$</p>
             </div>
-        <strong>제약 조건:</strong>
+        <h4 class="model-definition-content"><strong>제약 조건:</strong></h4>
         <ul>
             <li>각 작업자는 정확히 하나의 작업에 배정되어야 합니다
                 <div class="math-block">

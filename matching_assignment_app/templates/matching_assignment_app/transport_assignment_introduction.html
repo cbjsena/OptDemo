@@ -10,11 +10,8 @@
 
 {% block content %}
 <div class="container-fluid introduction-content">
-    <p><strong>범주: Ⅰ. 매칭 및 배정 (Matching & Assignment)</strong></p>
-    <p>특정 기준이나 목적 함수를 최적화하기 위해 서로 다른 두 개 이상의 그룹 간의 요소들을 짝짓거나 할당하는 문제들을 다룹니다.</p>
-
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">운송 할당 문제 (Transportation Assignment)</h1>
+        <h2>운송 할당 문제 (Transportation Assignment)</h2>
     </div>
 
     <p>
@@ -32,7 +29,7 @@
             작업 배정 문제 (Assignment Problem) 소개 페이지 &rarr;
         </a>
     </div>
-    <h4>1. 문제 설명 및 응용</h4>
+    <h3>1. 문제 설명 및 응용</h3>
     <p>
         이 문제는 "누가 어느 지역을 담당해야 가장 효율적인가?"라는 질문에 대한 답을 찾는 과정입니다. 각 기사는 특정 지역에 대한 숙련도, 거주지와의 거리, 해당 지역의 교통 패턴에 대한 이해도 등이 다르기 때문에, 기사별로 특정 구역을 담당하는 데 드는 비용이나 시간이 달라집니다.
     </p>
@@ -43,7 +40,7 @@
         <li><strong>장거리 화물 운송:</strong> 여러 대의 트럭과 운전기사를 각각 다른 장거리 운행 노선에 배정하여 유류비와 운행 시간을 최적화합니다.</li>
     </ul>
 
-    <h4>2. VRP와의 관계</h4>
+    <h3>2. VRP와의 관계</h3>
     <p>
         운송 할당 문제는 차량 경로 문제(VRP)와 밀접한 관련이 있지만, 문제의 초점이 다릅니다.
     </p>
@@ -55,25 +52,28 @@
         실제 물류 환경에서는 2단계 접근법을 사용하기도 합니다: <strong>(1단계)</strong> 먼저 운송 할당 문제 모델로 각 기사에게 최적의 구역을 할당하고, <strong>(2단계)</strong> 각 기사는 할당된 구역 내에서 VRP 모델을 사용하여 최적의 배송 경로를 찾습니다.
     </p>
 
-    <h4>3. 수학적 모델</h4>
+    <h3>3. 수학적 모델</h3>
     <div class="col-md-8 model-definition-content">
-        <strong>결정 변수:</strong>
-            <div class="math-block">
-                $$ x_{ij} = \begin{cases} 1 & \text{if driver } i \text{ is assigned to zone } j \\ 0 & \text{otherwise} \end{cases} $$
-            </div>
-        <strong>목적 함수:</strong> 총 운송 시간 최소화
-            <div class="math-block">
-                <p>$$\min \sum_{i=1}^{n} \sum_{j=1}^{n} c_{ij} x_{ij}$$</p>
-                <p>$$ \text{where } c_{ij} \text{ is the cost or time when driver } i \text{ is assigned to zone} j $$</p>
-            </div>
-        <strong>제약 조건:</strong>
+        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
         <ul>
-            <li>각 기사는 정확히 하나의 구역에 배정됩니다
+            <li> <strong>\( x_{ij} \)</strong> : 드라이버 \( i \) 가 구역 \( j \) 에 할당되면 1, 아니면 0(이진 변수)</li>
+        </ul>
+        <hr>
+
+        <h4 class="model-definition-content"><strong>목적 함수:</strong> 총 운송 시간 최소화</h4>
+        <div class="math-block">
+            <p>$$\min \sum_{i=1}^{n} \sum_{j=1}^{n} c_{ij} x_{ij}$$</p>
+            <p>$$ \text{where } c_{ij} \text{ is the cost or time when driver } i \text{ is assigned to zone} j $$</p>
+        </div>
+
+        <h4 class="model-definition-content"><strong>제약 조건:</strong></h4>
+        <ul>
+            <li><strong>기사 제약:</strong> 각 기사는 정확히 하나의 구역에 배정
                 <div class="math-block">
                     $$\sum_{j=1}^{n} x_{ij} = 1 \quad \forall i$$
                 </div>
             </li>
-            <li>각 구역은 정확히 한 명의 기사에게 배정됩니다
+            <li><strong>구역 제약:</strong> 각 구역은 정확히 한 명의 기사에게 배정
                 <div class="math-block">
                     $$\sum_{i=1}^{n} x_{ij} = 1 \quad \forall j$$
                 </div>
@@ -81,7 +81,7 @@
         </ul>
     </div>
 
-    <h4>4. Transport Assignment Demo</h4>
+    <h3>4. Transport Assignment Demo</h3>
     <p>
         <strong>Transport Assignment Demo</strong>에서는
         사용자가 직접 배송 기사와 배송 구역의 수, 기사별 배송 구역의 비용을 설정하고,

@@ -11,10 +11,10 @@
 {% block content %}
 <div class="container-fluid introduction-content">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">LCD TFT-CF Matching: 최적화를 통한 수율 극대화</h1>
+        <h2>LCD TFT-CF Matching: 최적화를 통한 수율 극대화</h2>
     </div>
 
-    <h4>1. 문제 배경 및 정의</h4>
+    <h3>1. 문제 배경 및 정의</h3>
     <p>
         액정 디스플레이(LCD) 패널 제조 공정은 매우 복잡하며, 높은 수율을 달성하는 것이 생산 효율성 및 비용 절감에 매우 중요합니다. LCD 패널은 주로 하부의 박막 트랜지스터(Thin Film Transistor, TFT) 기판과 상부의 컬러 필터(Color Filter, CF) 기판을 정밀하게 결합하여 셀(Cell)을 조립하는 과정을 거칩니다.
     </p>
@@ -48,7 +48,7 @@
         </div>
     </div>
 
-    <h4>2. 해결 방안: 최대 가중 이분 매칭 문제</h4>
+    <h3>2. 해결 방안: 최대 가중 이분 매칭 문제</h3>
     <p>
         이 LCD TFT-CF 매칭 문제는 다음과 같은 이유로 최적화 기법을 적용하기에 이상적인 사례로 평가되었습니다:
         <ul>
@@ -74,26 +74,29 @@
         <figcaption class="image-caption">그림 4: 최대 가중 이분 매칭 문제 표현 (출처: PDF Page 34)</figcaption>
     </figure>
 
-    <h4>3. 수학적 모델</h4>
+    <h3>3. 수학적 모델</h3>
     <p>최대 가중 이분 매칭 문제의 일반적인 수학적 모델 입니다.</p>
     <div class="col-md-8 model-definition-content">
-        <strong>결정 변수:</strong>
-            <div class="math-block">
-                $$ x_{ij} = \begin{cases} 1 & \text{CF glass } i \text{ is matched with TFT glass } j \\ 0 & \text{otherwise} \end{cases} $$
-            </div>
-        <strong>목적 함수: </strong> 양품 수율 최대화
-            <div class="math-block">
-                <p>$$ \max \sum_{i=1}^{n} \sum_{j=1}^{n} c_{ij} x_{ij}$$</p>
-                <p>$$ \text{where } c_{ij} \text{ is the total price of good panels (cells)} $$</p>
-            </div>
-        <strong>제약 조건:</strong>
+        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
         <ul>
-            <li>각 CF 기판은 하나의 TFT 기판에만 매칭됩니다
+            <li> <strong>\( x_{ij} \)</strong> : CF 기판 \( i \) 와 TFT 기판\( j \) 를 매칭하면 1, 아니면 0(이진 변수)</li>
+        </ul>
+        <hr>
+
+        <h4 class="model-definition-content"><strong>목적 함수: </strong> 양품 수율 최대화 </h4>
+        <div class="math-block">
+            <p>$$ \max \sum_{i=1}^{n} \sum_{j=1}^{n} c_{ij} x_{ij}$$</p>
+            <p>$$ \text{where } c_{ij} \text{ is the total price of good panels (cells)} $$</p>
+        </div>
+
+        <h4 class="model-definition-content"><strong>제약 조건:</strong></h4>
+        <ul>
+            <li><strong>CF 기판 제약:</strong> 각 CF 기판은 하나의 TFT 기판에만 매칭
                 <div class="math-block">
                     $$\sum_{j=1}^{n} x_{ij} = 1 \quad \forall i$$
                 </div>
             </li>
-            <li>각 TFT 기판은 하나의 CF 기판에만 매칭됩니다
+            <li><strong>TFT 기판 제약:</strong> 각 TFT 기판은 하나의 CF 기판에만 매칭
                 <div class="math-block">
                     $$\sum_{i=1}^{n} x_{ij} = 1 \quad \forall j$$
                 </div>
@@ -111,7 +114,7 @@
         따라서 계산 복잡도가 비교적 낮고 실제 시스템에 구현하기 용이하다는 장점이 있습니다.
     </p>
 
-    <h4>4. 최적화 도입 효과</h4>
+    <h3>4. 최적화 도입 효과</h3>
     <p>
         이 최적 매칭 알고리즘을 실제 5개 LCD 생산 공장에 적용한 결과 다음과 같은 다양한 이점을 얻을 수 있었습니다:
         <ul>
@@ -121,7 +124,7 @@
         </ul>
     </p>
 
-    <h4>5. LCD TFT-CF Matching Demo</h4>
+    <h3>5. LCD TFT-CF Matching Demo</h3>
     <p>
         <strong>LCD TFT-CF Matching Demo</strong>는  이러한 LCD TFT-CF 매칭 최적화 문제를 사용자가 직접 경험하고
         그 원리를 이해할 수 있도록 구성되었습니다. 데모를 통해 다음 기능들을 체험할 수 있습니다:
