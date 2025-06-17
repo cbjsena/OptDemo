@@ -113,6 +113,12 @@
                             <li class="nav-item nested">
                                 <a class="nav-link {% if active_submenu == 'single_machine_introduction' %}active{% endif %}" href="{% url 'production_scheduling_app:single_machine_introduction' %}">Introduction</a>
                             </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'single_machine_demo' %}active{% endif %}" href="{% url 'production_scheduling_app:single_machine_demo' %}">Demo</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'single_machine_advanced' %}active{% endif %}" href="{% url 'production_scheduling_app:single_machine_advanced' %}">Advanced</a>
+                            </li>
 
                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">Flow Shop Scheduling</strong></li>
                              <li class="nav-item nested">

@@ -125,6 +125,21 @@ def single_machine_introduction_view(request):
     logger.debug("Rendering Single Machine Scheduling introduction page.")
     return render(request, 'production_scheduling_app/single_machine_introduction.html', context)
 
+
+def single_machine_demo_view(request):
+    return None
+
+
+def single_machine_advanced_view(request):
+    """Single Machine Scheduling Advanced Page."""
+    context = {
+        'active_model': 'Production & Scheduling',
+        'active_submenu_category': 'single_machine',
+        'active_submenu': 'single_machine_advanced'
+    }
+    logger.debug("Rendering Single Machine Scheduling advanced page.")
+    return render(request, 'production_scheduling_app/single_machine_advanced.html', context)
+
 def flow_shop_introduction_view(request):
     """Flow Shop Scheduling Introduction Page."""
     context = {
@@ -154,3 +169,5 @@ def rcpsp_introduction_view(request):
     }
     logger.debug("Rendering RCPSP introduction page.")
     return render(request, 'production_scheduling_app/rcpsp_introduction.html', context)
+
+

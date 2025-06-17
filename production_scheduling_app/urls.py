@@ -13,7 +13,9 @@ urlpatterns = [
 
     # 2. Single Machine Scheduling
     path('single-machine/introduction/', views.single_machine_introduction_view, name='single_machine_introduction'),
-    # path('single-machine/demo/', views.single_machine_demo_view, name='single_machine_demo'),
+    path('single-machine/demo/', views.single_machine_demo_view, name='single_machine_demo'),
+    path('single-machine/advanced/', views.single_machine_advanced_view, name='single_machine_advanced'),
+
 
     # 3. Flow Shop Scheduling
     path('flow-shop/introduction/', views.flow_shop_introduction_view, name='flow_shop_introduction'),

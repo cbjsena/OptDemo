@@ -1,0 +1,289 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Single Machine Scheduling - Advanced{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+<style>
+    /* highlight-box 스타일은 instruction.css 또는 model.definition.css에 이미 있다고 가정 */
+    /* 만약 없다면 여기에 추가 */
+    .highlight-box {
+        background-color: #e9f7fd;
+        border-left: 5px solid #007bff;
+        padding: 20px;
+        margin: 25px 0;
+        border-radius: 4px;
+    }
+    .highlight-box h4 {
+        margin-top: 0;
+        color: #0056b3;
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .highlight-box table {
+        font-size: 0.9em;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h2>단일 기계 스케줄링 문제 (Single Machine Scheduling Problem) - Advanced</h2>
+    </div>
+
+    <p>
+        <strong>단일 기계 스케줄링 문제</strong>는 모든 스케줄링 문제의 가장 기본이 되는 형태입니다.
+        단순해 보이지만, 어떤 목표를 설정하느냐에 따라 다양한 변형과 해법이 존재하며, 모든 복잡한 스케줄링 이론의 출발점이 됩니다.
+    </p>
+
+    <h3>1. 주요 목표와 해결 방법</h3>
+    <p>
+        이 문제의 핵심은 <strong>최적의 작업 순서(Sequence) 찾기</strong>입니다.
+        각 작업은 고유한 처리 시간, 납기일, 중요도 등의 속성을 가지며, 최적화의 목표는 이러한 속성들을 바탕으로 가장 효율적인 작업 순서(sequence)를 찾는 것입니다.
+        어떤 순서로 작업을 처리하는지에 따라 전체 생산성, 납기 준수율 등이 크게 달라지기 때문입니다.
+        최적화의 목표는 다음과 같이 다양하게 설정될 수 있습니다.
+    </p>
+
+    <h4>주요 목표</h4>
+    <ul>
+        <li><strong>총 완료 시간 최소화 (Minimizing Makespan, \( C_{max} \)):</strong>
+            모든 작업이 완료되는 시간을 최소화하는 것을 목표로 합니다. 마지막 작업이 끝나는 시간을 최대한 앞당기는 것입니다.</li>
+        <li><strong>총 흐름 시간 최소화 (Minimizing Total Flow Time, \( \sum C_{j} \)):</strong>
+            각 작업이 시스템에 머무르는 시간(완료 시간)의 총합을 최소화합니다. 시스템 전체의 재공 재고(WIP)를 줄이는 효과가 있습니다.</li>
+        <li><strong>총 지연 기간 최소화 (Minimizing Total Tardiness, \( \sum T_{j} \)):</strong>
+            각 작업의 지연 시간의 합을 최소화합니다. 납기일을 지키는 것이 중요한 경우 사용됩니다.</li>
+        <li><strong>최대 지연 시간 최소화 (Minimizing Maximum Tardiness, \( T_{max} \)):</strong>
+            모든 작업 중에서 가장 큰 지연 시간을 최소화하여, 특정 작업이 지나치게 늦어지는 것을 방지합니다.</li>
+        <li><strong>정시 완료 작업 수 최대화 (Maximizing Number of On-time Jobs, \( \sum U_j \)):</strong>
+            납기일 내에 완료되는 작업의 수를 최대화하는 것이 목표입니다.</li>
+    </ul>
+
+    <p>해결하려는 문제의 목표가 명확하고 제약 조건이 단순할 경우,
+        다음 소개하는 간단한 우선순위 규칙을 적용하여 문제를 해결할 수 있습니다.
+       이 규칙들은 해당 목표에 대해 <strong>항상 최적의 해</strong>를 찾아낸다는 것이 <strong>수학적으로 증명</strong> 되어 있습니다.
+    </p>
+    <hr>
+
+    <h4>해결 방법</h4>
+    <ul>
+        <li><strong>SPT (Shortest Processing Time) 규칙:</strong> 처리 시간이 가장 짧은 작업부터 순서대로 처리합니다.
+            이 규칙은 <strong>총 흐름 시간 \( \sum C_{j} \)</strong> 와 <strong>평균 완료 시간</strong> 을 최소화합니다.
+        </li>
+        <li><strong>EDD (Earliest Due Date) 규칙:</strong> 납기일이 가장 빠른 작업부터 순서대로 처리합니다.
+            이 규칙은 <strong>최대 지연 시간 \( T_{max} \)</strong> 와 <strong>최대 조기 완료 시간</strong>을 최소화합니다.
+        </li>
+        <li><strong>WSPT (Weighted Shortest Processing Time) 규칙: </strong> 처리 시간 대비 가중치가 가장 높은 작업
+            \( w_{j} / p_{j}  \) 부터 처리합니다.
+            <strong>가중치를 고려한 총 흐름 시간 \( \sum w_{j} C_{j} \)</strong> 을 최소화합니다.
+        </li>
+    </ul>
+    <hr>
+
+    <h3>2. 수리 모델이 반드시 필요한 경우 (우선순위 규칙의 한계)</h3>
+    <p>해결하려는 문제의 목표가 명확하고 제약 조건이 단순할 경우,
+        복잡한 수리 모델을 수립하고 푸는 것보다 간단한 우선순위 규칙을 적용하는 것이 훨씬 효율적이고 현명한 접근입니다.
+        우선순위 규칙은 현실 세계의 복잡한 제약 조건이 추가되면 더 이상 최적해를 보장하지 못하거나 아예 적용이 불가능해집니다.
+        이럴 때 수리 모델(또는 그에 준하는 복잡한 알고리즘)이 힘을 발휘합니다.
+    </p>
+
+    <p> <strong> 총 지연 시간 최소화: </strong> 간단한 규칙으로 최적해를 찾을 수 없는 대표적인 NP-hard 문제입니다.
+    따라서 수리 모델을 통한 최적화 기법이나 휴리스틱을 통한 근접해 탐색이 필요합니다.</p>
+
+    <strong> 현실적인 제약 조건이 추가될 때: </strong>
+    <ul>
+        <li><strong> 준비 시간 \( r_{j} \)이 다를 경우: </strong>
+            모든 작업을 동시에 시작할 수 없고, 특정 시간 이후에만 가능한 작업이 섞여있다면,
+            단순 SPT 규칙은 더 이상 총 흐름 시간 \( \sum C_{j} \) 최소화를 보장하지 못합니다.
+        </li>
+        <li><strong> 작업 간 선후 관계 (Precedence Constraints)가 있을 경우:</strong>
+            'A 작업이 끝나야 B 작업을 시작할 수 있다'와 같은 제약이 있다면, 처리 시간이 짧다고 해서 B를 먼저 할 수 없습니다.
+        </li>
+        <li><strong>순서 종속적인 준비 시간 (Sequence-Dependent Setup Times)이 있을 경우: </strong>
+            예를 들어, 페인트칠 작업을 할 때 '흰색 다음 빨간색'을 칠하는 것과 '검은색 다음 빨간색'을 칠할 때
+            기계 청소 및 준비 시간이 달라지는 경우입니다.
+            이 문제는 외판원 문제(TSP)와 유사한 형태가 되어 매우 복잡해집니다.
+        </li>
+    </ul>
+
+    <p><strong> 여러 목표를 동시에 고려해야 할 때:</strong>
+        여러 목표를 절충해야 하는 경우, 우선순위규칙만으로는 해결이 어렵습니다.
+        수리 모델에서는 각 목표에 가중치를 주거나 특정 목표를 제약 조건으로 설정하여
+        복합적인 해를 찾을 수 있습니다.</p>
+
+    <h3>3. 수학적 모델</h3>
+    <div class="col-md-8 model-definition-content">
+        <h4 class="model-definition-content"><strong>입력 데이터:</strong></h4>
+        <ul>
+            <li> <strong>\( J \)</strong> : 작업의 집합. 각 작업은 고유한 특성 보유, 예{JobA, JobB, ... JobJ}</li>
+            <li> <strong>\( NumJ \)</strong> : 총 작업의 개수</li>
+            <li> <strong>\( N \)</strong> : 작업의 순서
+                를 나타내는 집합, 예{1, 2, ... , NumJ}</li>
+            <li> <strong>\( p_{j} \)</strong> : 작업 \( j \) 을 기계에서 처리하는데 걸리는 시간(Processing time)</li>
+            <li> <strong>\( d_{j} \)</strong> : 작업 \( j \) 이 완료되어야 하는 목표 시간(Due Date)</li>
+            <li> <strong>\( r_{j} \)</strong> : 작업 \( j \) 을 시작할 수 있는 가장 이른 시간(Ready Time)</li>
+            <li> <strong>\( w_{j} \)</strong> : 작업 \( j \) 의 중요도를 나타내는 가중치</li>
+        </ul>
+
+        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
+        <ul>
+            <li> <strong>\( x_{jk} \)</strong> : 작업 \( j \) 가 \( k \) 번째 순서에 배정되면 1, 아니면 0 (이진 변수)</li>
+            <li> <strong>\( C_{j} \)</strong> : 작업 \( j \)의 완료 시간 변수,
+                이 변수는 \( x_{jk} \)에 의해 순서가 결정된 후 계산될 수도 있고, 모델 내에서 직접 최적화될 수도 있습니다. (연속 변수)</li>
+            <li> <strong>\(T_j\)</strong>: 작업 \( j \)의 지연 시간 변수</li>
+            <li> <strong>\(U_j\)</strong>: 작업 \( j \)가 지연 되면 1, 아니면 0으로,
+                수식으로 표현하면 \( C_j > d_j  \) 이면 1, 아니면 0 (이진 변수)</li>
+        </ul>
+
+        <h4 class="model-definition-content"><strong>목적 함수:</strong></h4>
+        <p>최적화의 목표는 다음과 같이 다양하게 설정될 수 있습니다.</p>
+        <ul>
+            <li><strong>총 완료 시간 최소화 (Minimizing Total Completion Time)</strong>
+                <p>모든 작업이 완료되는 시간을 최소화하는 것을 목표로 합니다.
+                    마지막 작업이 끝나는 시간을 최대한 앞당기는 것입니다.</p>
+                <div class="math-block">
+                    $$\min (\max_j (C_j)) $$
+                </div>
+            </li>
+            <li><strong>총 흐름 시간 최소화 (Minimizing Total Flow Time,)</strong>
+                <p>시스템 내 작업들의 평균 대기 시간을 줄이는 것과 같습니다.
+                    이는 <strong>SPT (Shortest Processing Time)</strong> 규칙,
+                    즉 처리 시간이 짧은 작업부터 순서대로 처리하여 최적해를 찾을 수 있습니다.</p>
+                <div class="math-block">
+                    $$\min \sum_{j \in J} C_j = \min \sum_{k \in N} \sum_{j \in J} p_j \cdot x_{jk} \cdot (NumJ - k + 1)$$
+                </div>
+            </li>
+            <li><strong>총 지연 시간 최소화 (Minimizing Total Tardiness)</strong>
+                <p>각 작업의 지연 시간의 합을 최소화합니다.
+                <div class="math-block">
+                    $$\min \sum_{j \in J} T_j \quad \text{where } T_j = max(0, C_j - d_j)$$
+                </div>
+            </li>
+            <li><strong>최대 지연 시간 최소화 (Minimizing Maximum Lateness)</strong>
+                <p>가장 심각한 납기 위반을 줄이는 데 중점을 둡니다. 이는 <strong>EDD (Earliest Due Date)</strong> 규칙,
+                    즉 납기일이 가장 빠른 작업부터 순서대로 처리하여 최적해를 찾을 수 있습니다.</p>
+                <div class="math-block">
+                    $$\min (\max_j (T_j)) \quad \text{where } T_j = C_j - d_j$$
+                </div>
+            </li>
+            <li><strong>납기 지연 작업 수 최소화 (Minimizing Number of Tardy Jobs)</strong>
+                <p>납기일을 지키지 못하는 작업의 총 개수를 최소화합니다.
+                    이는 <strong>무어-호지슨 알고리즘(Moore-Hodgson's Algorithm)</strong>으로 해결할 수 있습니다.</p>
+                <div class="math-block">
+                    $$\min \sum_{j} U_j \quad \text{where } U_j = \begin{cases} 1 & \text{if } C_j > d_j \\ 0 & \text{otherwise} \end{cases}$$
+                </div>
+            </li>
+        </ul>
+
+        <h4 class="model-definition-content"><strong>제약 조건</strong></h4>
+        <ul>
+            <li><strong>할당 제약 (Assignment Constraints):</strong>
+                <p>각 작업은 정확히 하나의 위치에, 각 위치에는 정확히 하나의 작업만 배정</p>
+                <div class="math-block">
+                    $$\sum_{k \in N} x_{jk} = 1, \quad \forall j \in J$$
+                    $$\sum_{j \in J} x_{jk} = 1, \quad \forall k \in N$$
+                </div>
+            </li>
+
+            <li><strong>완료 시간 계산 제약 (Completion Time Calculation):</strong>
+                <p>결정된 순서에 따라 각 작업의 완료 시간 \( C_j \)을 계산하는 핵심적인 제약</p>
+                <p>\( k=1 \) (첫 번째 작업)의 완료 시간:</p>
+                <div class="math-block">
+                    $$C_j \ge p_j \quad \text{if } x_{j1} = 1$$
+                    <p>(선형 표현 예: \( C_j \ge p_j - M(1 - x_{j1}) \))</p>
+                </div>
+                <p>\( k > 1 \) (두 번째 이후 작업)의 완료 시간:</p>
+                <div class="math-block">
+                    $$C_k \ge C_{k-1} + p_j \quad (\text{if job } j \text{ is at position } k)$$
+                    <p>(여기서 \(C_k\)는 k번째 위치의 완료 시간)</p>
+                </div>
+                <p><small>*참고: 실제 MIP 모델에서는 \(C_j\)와 \(x_{jk}\)를 연결하는 더 정교한 선형 제약식이 필요*</small></p>
+            </li>
+
+            <li><strong>지연 시간 계산을 위한 제약 (Tardiness Constraints):</strong>
+                <p>총 지연 시간 또는 최대 지연 시간을 목표 함수로 사용하기 위해 필요한 제약입니다.</p>
+                <div class="math-block">
+                    $$T_j \ge C_j - d_j, \quad \forall j \in J$$
+                    $$T_j \ge 0, \quad \forall j \in J$$
+                </div>
+            </li>
+
+             <li><strong>납기 지연 작업 수 계산을 위한 제약:</strong>
+                <p>납기 지연 작업 수를 목표 함수로 사용하기 위해 필요한 제약</p>
+                <div class="math-block">
+                    <p>$$C_j - d_j \le BigM \cdot U_j, \quad \forall j \in J$$</p>
+                    <p>$$ \text{where } BigM \text{ is large constant} $$</p>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <h3>4. 모델의 유사성</h3>
+    <p>단일 기계 스케줄링 문제의 수학적 모델에서 사용된 제약 조건들은 작업 배정 문제(Assignment Problem)와
+        구조적으로 매우 유사하거나 거의 동일합니다.<br>
+        이유는 두 문제 모두 두 개의 다른 그룹에 속한 요소들을 1:1로 짝짓는다는 공통점을 가집니다.<br>
+    작업 배정 문제: [작업자 그룹] <-> [작업 그룹]<br>
+    단일 기계 스케줄링: [작업 그룹] <-> [순서 그룹]
+    </p>
+
+    <div>
+    <p> 차이점은 목표 함수에서 발생합니다.</p>
+    <ul>
+        <li>작업 배정 문제의 목표 함수: 각 (작업자, 작업) 쌍에 대한 고정된 비용 \( c_{ij} \)의 합을 최소화</li>
+        <li>단일 기계 스케줄링의 목표 함수: 작업의 순서(k)에 따라 가중치(NumJ - k + 1)가 동적으로 변하는 처리 시간\( p_{j} \)의 가중합을 최소화</li>
+    </ul>
+    </div>
+    <p>이처럼 동일한 제약 조건 구조를 가진 문제라도 목표 함수를 어떻게 설정하느냐에 따라 전혀 다른 유형의 최적화 문제가 될 수 있다는 점이 매우 흥미로운 부분입니다.
+    </p>
+
+    <div class="highlight-box">
+        <h4>💡 목표 함수 심층 분석: Makespan vs. Total Flow Time</h4>
+        <p>
+            총 완료 시간 최소화 \( C_{max} \) 와 총 흐름 시간 최소화 \( \sum C_j\) 는 비슷해 보이지만, 전혀 다른 결과를 낳는 목표입니다.
+            아래 예시를 통해 그 차이를 이해해 보겠습니다.
+        </p>
+        <p class="mb-0">
+            <strong>상황:</strong> 처리 시간이 각각 10, 3, 2시간인 세 작업(A, B, C)이 있습니다.
+        </p>
+        <table class="table table-sm table-bordered mt-3">
+            <thead class="thead-light">
+                <tr>
+                    <th>목표</th>
+                    <th>스케줄 1: 긴 작업 먼저 (A &rarr; C &rarr; B)</th>
+                    <th>스케줄 2: 짧은 작업 먼저 (C &rarr; B &rarr; A)</th>
+                    <th>최적 스케줄</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>총 완료 시간 \( C_{max} \) </strong><br><small>(마지막 작업 완료 시점)</small></td>
+                    <td>10 + 2 + 3 = <strong>15 시간</strong></td>
+                    <td>2 + 3 + 10 = <strong>15 시간</strong></td>
+                    <td class="table-info">둘 다 동일</td>
+                </tr>
+                <tr>
+                    <td><strong>총 흐름 시간 \( \sum C_j\) </strong><br><small>(각 작업 완료 시간의 합)</small></td>
+                    <td>10 + (10+2) + (12+3) = <strong>37 시간</strong></td>
+                    <td>2 + (2+3) + (5+10) = <strong>22 시간</strong></td>
+                    <td class="table-success"><strong>스케줄 2</strong></td>
+                </tr>
+            </tbody>
+        </table>
+        <h5>결론</h5>
+        <p>
+            <strong>총 완료 시간 \( C_{max} \)</strong> 목표는 "오늘 공장 문을 언제 닫는가?"에만 관심이 있으므로,
+            단일 기계에서는 모든 작업을 처리해야 하는 총량이 같아 순서가 중요하지 않습니다.
+            하지만 <strong>총 흐름 시간 \( \sum C_j\)</strong> 목표는 "시스템 내에 일이 얼마나 쌓여있는가?"를 관리하므로,
+            짧은 작업을 먼저 처리하여 다른 작업들의 대기 시간을 줄이는 것이 압도적으로 유리합니다.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+{% endblock %}

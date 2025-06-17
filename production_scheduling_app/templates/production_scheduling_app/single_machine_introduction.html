@@ -11,23 +11,23 @@
 {% block content %}
 <div class="container-fluid introduction-content">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">단일 기계 스케줄링 (Single Machine Scheduling)</h1>
+        <h2>단일 기계 스케줄링 (Single Machine Scheduling)</h2>
     </div>
 
-    <h4>1. 문제 설명</h4>
+    <h3>1. 문제 설명</h3>
     <p>
-        <strong>단일 기계 스케줄링 문제</strong>는 여러 개의 작업(Job)을 단 하나의 기계(Machine) 또는 자원에서 처리해야 할 때, **어떤 순서로 작업을 처리**해야 특정 목표를 최적화할 수 있는지를 결정하는 가장 기본적이면서도 중요한 스케줄링 문제입니다. 이는 모든 복잡한 스케줄링 이론의 출발점이 됩니다.
+        <strong>단일 기계 스케줄링 문제</strong>는 여러 개의 작업(Job)을 단 하나의 기계(Machine) 또는 자원에서 처리해야 할 때,
+        어떤 순서로 작업을 처리해야 특정 목표를 최적화할 수 있는지를 결정하는
+        가장 기본적이면서도 중요한 스케줄링 문제입니다. 이는 모든 복잡한 스케줄링 이론의 출발점이 됩니다.
     </p>
-    <p>
-        각 작업은 고유한 처리 시간, 납기일, 중요도 등의 속성을 가지며, 최적화의 목표는 이러한 속성들을 바탕으로 가장 효율적인 작업 순서(sequence)를 찾는 것입니다.
-    </p>
+
     <figure>
         <img src="{% static 'production_scheduling_app/images/single_machine_concept.png' %}"
              alt="단일 기계 스케줄링 문제 개념도" class="intro-image" style="max-width: 600px;">
         <figcaption class="image-caption">그림 1: 작업 처리 순서에 따라 전체 시스템의 효율성이 크게 달라집니다. 최적의 순서는 목표에 따라 결정됩니다.</figcaption>
     </figure>
 
-    <h4>2. 산업 응용 분야</h4>
+    <h3>2. 산업 응용 분야</h3>
     <ul>
         <li><strong>제조업:</strong> 생산 라인에서 유일한 병목 현상을 일으키는 특정 기계의 작업 처리 순서 결정.</li>
         <li><strong>IT 서비스:</strong> 한 명의 전문가 또는 단일 고성능 서버가 처리해야 할 요청들의 처리 순서 결정.</li>
@@ -35,68 +35,55 @@
         <li><strong>물류 센터:</strong> 단 하나의 상/하역 도크(Dock)를 여러 트럭이 사용할 때, 도크 작업 순서를 정하여 트럭의 총 대기 시간을 최소화합니다.</li>
     </ul>
 
-    <h4>3. 수학적 모델</h4>
+    <h3>3. 수학적 모델</h3>
+    <p> 가장 대표적인 목표 중 하나인 <strong>총 흐름 시간 최소화</strong> 문제는 다음과 같이 모델링 될 수 있습니다. </p>
+
     <div class="col-md-8 model-definition-content">
-        <strong>주요 변수 및 파라미터:</strong>
-        <div class="math-block">
-            <p>$$ p_j = \text{Processing time of job } j $$</p>
-            <p>$$ d_j = \text{Due date of job } j $$</p>
-            <p>$$ w_j = \text{Weight (importance) of job } j $$</p>
-            <p>$$ C_j = \text{Completion time of job } j \text{ (a result of scheduling)} $$</p>
-        </div>
-
-        <strong>대표적인 목표 함수:</strong>
+        <h4 class="model-definition-content"><strong>입력 데이터:</strong></h4>
         <ul>
-            <li>
-                <strong>총 완료 시간 최소화 (Minimizing Total Completion Time)</strong>
-                <p>시스템 내 작업들의 평균 대기 시간을 줄이는 것과 같습니다. 이는 **SPT (Shortest Processing Time)** 규칙, 즉 처리 시간이 짧은 작업부터 순서대로 처리하여 최적해를 찾을 수 있습니다.</p>
-                <div class="math-block">
-                    $$\min \sum_{j} C_j$$
-                </div>
-            </li>
-            <li>
-                <strong>최대 지연 시간 최소화 (Minimizing Maximum Lateness)</strong>
-                <p>가장 심각한 납기 위반을 줄이는 데 중점을 둡니다. 이는 **EDD (Earliest Due Date)** 규칙, 즉 납기일이 가장 빠른 작업부터 순서대로 처리하여 최적해를 찾을 수 있습니다.</p>
-                <div class="math-block">
-                    $$\min (\max_j (L_j)) \quad \text{where } L_j = C_j - d_j$$
-                </div>
-            </li>
-            <li>
-                <strong>납기 지연 작업 수 최소화 (Minimizing Number of Tardy Jobs)</strong>
-                <p>납기일을 지키지 못하는 작업의 총 개수를 최소화합니다. 이는 **무어-호지슨 알고리즘(Moore-Hodgson's Algorithm)**으로 해결할 수 있습니다.</p>
-                <div class="math-block">
-                    $$\min \sum_{j} U_j \quad \text{where } U_j = \begin{cases} 1 & \text{if } C_j > d_j \\ 0 & \text{otherwise} \end{cases}$$
-                </div>
-            </li>
+            <li> <strong>\( J \)</strong> : 작업의 집합. 각 작업은 고유한 특성 보유, 예{JobA, JobB, ... JobJ}</li>
+            <li> <strong>\( NumJ \)</strong> : 총 작업의 개수</li>
+            <li> <strong>\( N \)</strong> : 작업의 순서(위치)를 나타내는 집합, 예{1, 2, ... , NumJ}</li>
+            <li> <strong>\( p_{j} \)</strong> : 작업 \( j \) 을 기계에서 처리하는데 걸리는 시간(Processing time)</li>
         </ul>
-
         <hr>
 
-        <strong>주요 제약 조건 (Implicit Constraints):</strong>
-        <p>
-            단일 기계 스케줄링의 기본 모델은 그 단순함 때문에 제약이 없어 보일 수 있지만, 다음과 같은 중요한 규칙들이 모든 문제에 기본적으로 적용됩니다.
-        </p>
+        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
         <ul>
-            <li>
-                <strong>단일 자원 제약 (Single Resource):</strong> 기계는 한 번에 오직 하나의 작업만 처리할 수 있습니다.
+            <li> <strong>\( x_{jk} \)</strong> : 작업 \( j \) 가 \( k \) 번째 위치에 배정되면 1, 아니면 0(이진 변수)</li>
+            <li> <strong>\( C_{j} \)</strong> : 작업 \( j \) 가 기계에서 모든 처리를 마치고 완료되는 시점을 의미 </li>
+        </ul>
+
+        <h4 class="model-definition-content"><strong> 목표 함수:</strong></h4> 총 완료 시간 최소화
+         <div class="math-block">
+            $$\min \sum_{j \in J} C_j = \min \sum_{k \in N} \sum_{j \in J} p_j \cdot x_{jk} \cdot (NumJ - k + 1)$$
+        </div>
+
+        <h4 class="model-definition-content"><strong>제약 조건</strong></h4>
+        <ul>
+            <li><strong>작업 위치 제약:</strong> 각 작업은 정확히 하나의 작업 위치만 배정
                 <div class="math-block">
-                    <p>$$ \text{If job } j \text{ is being processed at time } t, \text{ no other job } k \text{ can be processed at time } t. $$</p>
+                    $$\sum_{k \in N} x_{jk} = 1, \quad \forall j \in J$$
                 </div>
             </li>
-            <li>
-                <strong>선점 불가 제약 (Non-preemption):</strong> 일단 작업이 시작되면, 다른 작업 때문에 중간에 중단될 수 없고 반드시 완료되어야 합니다.
-            </li>
-             <li>
-                <strong>작업 가용성 (Job Availability):</strong> 모든 작업은 시간 0 (또는 각 작업의 준비 시간 $r_j$)부터 처리 가능합니다.
-            </li>
-             <li>
-                <strong>연속 처리:</strong> 기계는 유휴 시간(idle time)을 가질 수 있지만, 일반적으로는 가능한 한 빨리 다음 작업을 연속해서 처리합니다.
+            <li><strong>단일 자원 제약 제약:</strong> 기계는 한 번에 오직 하나의 작업만 처리
+                <div class="math-block">
+                    $$\sum_{j \in J} x_{jk} = 1, \quad \forall k \in N$$
+                </div>
             </li>
         </ul>
+
         <p>
            이러한 기본적인 제약 하에서, 문제의 핵심은 "어떤 순서로 작업을 나열할 것인가"라는 순서(Sequencing) 문제를 푸는 것이 됩니다.
         </p>
     </div>
+
+    <h3>4. Single Machine Demo</h3>
+    <p>
+        <strong>Single Machine Demo</strong>에서는
+        사용자가 ???을 입력하여
+        ??? 최소화하는 생산 계획을 수립하는 과정을 체험할 수 있습니다.
+    </p>
 </div>
 {% endblock %}
 
