@@ -4,10 +4,11 @@ import json
 from common_utils.run_production_opt import *
 from common_utils.default_data import (
     preset_lot_sizing_num_periods,
-    preset_single_machine_objective,
-    preset_single_machine_objective_choice,
     preset_single_machine_num_jobs,
     preset_single_machine_data,
+    preset_flow_shop_num_jobs,
+    preset_flow_shop_num_machines,
+    preset_flow_shop_data
 )
 from common_utils.data_utils_production import *
 
@@ -233,13 +234,69 @@ def flow_shop_introduction_view(request):
 
 
 def flow_shop_demo_view(request):
-    """Flow Shop Scheduling Introduction Page."""
+    form_data = {}
+
+    if request.method == 'GET':
+        submitted_num_jobs = int(request.GET.get('num_jobs_to_show', preset_flow_shop_num_jobs))
+        submitted_num_machines = int(request.GET.get('num_machines_to_show', preset_flow_shop_num_machines))
+        submitted_num_jobs = max(2, min(8, submitted_num_jobs))
+        submitted_num_machines = max(3, min(5, submitted_num_machines))
+
+        for i in range(submitted_num_jobs):
+            preset = preset_flow_shop_data [i]
+            form_data[f'job_{i}_id'] = request.GET.get(f'job_{i}_id', preset['id'])
+            for j in range(submitted_num_machines):
+                form_data[f'p_{i}_{j}'] = request.GET.get(f'p_{i}_{j}', preset['processing_time'][j])
+
+    elif request.method == 'POST':
+        form_data = request.POST.copy()
+        submitted_num_jobs = int(form_data.get('num_jobs', preset_flow_shop_num_jobs))
+        submitted_num_machines = int(form_data.get('num_machines', preset_flow_shop_num_machines))
+
     context = {
         'active_model': 'Production & Scheduling',
-        'active_submenu_category': 'flow_shop',
-        'active_submenu': 'flow_shop_demo'
+        'active_submenu': 'flow_shop_demo',
+        'form_data': form_data,
+        'results': None, 'error_message': None, 'success_message': None,
+        'processing_time_seconds': "N/A",
+        'num_jobs_options': range(2, 11),
+        'num_machines_options': range(3, 6),
+        'submitted_num_jobs': submitted_num_jobs,
+        'submitted_num_machines': submitted_num_machines,
+        'plot_data': None
     }
-    logger.debug("Rendering Flow Shop Scheduling introduction page.")
+
+    if request.method == 'POST':
+        try:
+            # 1. 데이터 파일 새성 및 검증
+            input_data = create_flow_shop_json_data(form_data)
+
+            # 2. 파일 저장
+            saved_filename, save_error = save_production_json_data(input_data)
+            if save_error:
+                context['error_message'] = save_error
+            elif saved_filename:
+                context['info_message'] = f"입력 데이터가 '{saved_filename}'으로 서버에 저장되었습니다."
+
+            # 3. 최적화 실행
+            results_data, error_msg_opt, processing_time_ms = run_flow_shop_optimizer(input_data)
+            context[
+                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+
+            if error_msg_opt:
+                context['error_message'] = error_msg_opt
+            elif results_data:
+                context['results'] = results_data
+                context['success_message'] = f"최적 스케줄 계산 완료! Makespan: {results_data['makespan']:.2f}"
+
+                # 간트 차트용 데이터 준비
+                context['plot_data'] = json.dumps(results_data['schedule'])
+
+        except ValueError as ve:
+            context['error_message'] = f"입력값 오류: {str(ve)}"
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+
     return render(request, 'production_scheduling_app/flow_shop_demo.html', context)
 
 

@@ -77,6 +77,37 @@ def create_single_machine_json_data(jobs_list, form_data, num_jobs):
     return input_data
 
 
+def create_flow_shop_json_data(form_data):
+    logger.debug("Creating and validating flow shop input data from form.")
+    num_jobs = int(form_data.get('num_jobs', 3))
+    num_machines = int(form_data.get('num_machines', 3))
+
+    processing_times = []
+    job_ids = []
+    for i in range(num_jobs):
+        job_ids.append(form_data.get(f'job_{i}_id', f'Job {i+1}'))
+        job_times = []
+        for j in range(num_machines):
+            try:
+                time_val = int(form_data.get(f'p_{i}_{j}'))
+                if time_val < 0:
+                    raise ValueError(f"작업 {i+1}, 기계 {j+1}의 처리 시간은 음수가 될 수 없습니다.")
+                job_times.append(time_val)
+            except (ValueError, TypeError):
+                raise ValueError(f"작업 {i+1}, 기계 {j+1}의 처리 시간이 올바른 숫자가 아닙니다.")
+        processing_times.append(job_times)
+
+    input_data = {
+        "timestamp": datetime.datetime.now().isoformat(),
+        "problem_type": 'flow_shop',
+        "num_jobs": num_jobs,
+        "num_machines": num_machines,
+        "job_ids": job_ids,
+        "processing_times": processing_times,
+        # form_parameters는 필요 시 추가
+    }
+    return input_data
+
 def save_production_json_data(input_data):
     problem_type = input_data.get('problem_type')
     logger.info(f"Saving {problem_type} data.")
@@ -89,9 +120,9 @@ def save_production_json_data(input_data):
         num_jobs = input_data.get('num_jobs')
         filename_pattern = f"jobs{num_jobs}_{input_data.get('objective_choice')}"
     elif "flow_shop" == input_data.get('problem_type'):
-        num_resources = input_data.get('num_resources')
-        num_projects = input_data.get('num_projects')
-        filename_pattern = f"resource{num_resources}_project{num_projects}"
+        num_jobs = input_data.get('num_jobs')
+        num_machines = input_data.get('num_machines')
+        filename_pattern = f"jobs{num_jobs}_machine{num_machines}"
     elif "job_shop" == input_data.get('problem_type'):
         num_resources = input_data.get('num_jobs')
         num_projects = input_data.get('num_projects')

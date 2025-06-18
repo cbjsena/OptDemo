@@ -91,3 +91,18 @@ preset_single_machine_data =[
     {'id': 'Job_9', 'processing_time': 11, 'due_date': 45},
     {'id': 'Job_10', 'processing_time': 7, 'due_date': 70},
 ]
+
+preset_flow_shop_num_jobs = 4
+preset_flow_shop_num_machines = 3
+preset_flow_shop_data = [
+    {'id': 'Job_1', 'processing_time': [29,78,9,36,49]},
+    {'id': 'Job_2', 'processing_time': [43,92,8,45,68]},
+    {'id': 'Job_3', 'processing_time': [90,85,87,32,91]},
+    {'id': 'Job_4', 'processing_time': [77,39,55,64,82]},
+    {'id': 'Job_5', 'processing_time': [95,13,47,84,22]},
+    {'id': 'Job_6', 'processing_time': [20,88,70,69,74]},
+    {'id': 'Job_7', 'processing_time': [58,48,85,6,86]},
+    {'id': 'Job_8', 'processing_time': [73,10,29,76,4]},
+    {'id': 'Job_9', 'processing_time': [36,2,31,75,59]},
+    {'id': 'Job_10', 'processing_time': [12,88,58,99,9]}
+]
