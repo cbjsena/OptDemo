@@ -75,17 +75,17 @@
             </div>
         <h4 class="model-definition-content"><strong>제약 조건:</strong></h4>
         <ul>
-            <li><strong>재고 균형 제약:</strong> (이전 재고 + 현재 생산량 = 현재 수요 + 현재 재고)
+            <li><strong>재고 균형 제약:</strong> 이전 재고 + 현재 생산량 = 현재 수요 + 현재 재고
                 <div class="math-block">
                    $$I_{t-1} + x_t = D_t + I_t \quad \forall t$$
                 </div>
             </li>
-            <li><strong>생산 준비 제약:</strong> (생산을 해야만 생산량이 발생)
+            <li><strong>생산 준비 제약:</strong> 생산을 해야만 생산량이 발생
                 <div class="math-block">
                     $$x_t \le M \cdot y_t \quad \forall t$$
                 </div>
             </li>
-            <li><strong>생산 용량 제약:</strong> (생산량은 생산 능력을 초과할 수 없음)
+            <li><strong>생산 용량 제약:</strong> 생산량은 생산 능력을 초과할 수 없음
                 <div class="math-block">
                     $$x_t \le \text{Capacity}_t \cdot y_t \quad \forall t$$
                 </div>
