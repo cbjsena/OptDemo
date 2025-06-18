@@ -1,21 +1,15 @@
 from django.shortcuts import render
 
 from common_utils.default_data import (
-    preset_depot_location,
-    preset_customer_locations,
-    preset_num_customers,
-    preset_num_vehicles,
-    preset_vehicle_capacity,
-    preset_num_pairs,
     preset_pair_locations
 )
 from common_utils.run_routing_opt import *
-from .utils.data_utils import *
-import random
+from common_utils.data_utils_routing import *
 import json
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 def vrp_introduction_view(request):
     """

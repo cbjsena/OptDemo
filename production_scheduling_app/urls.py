@@ -19,13 +19,13 @@ urlpatterns = [
 
     # 3. Flow Shop Scheduling
     path('flow-shop/introduction/', views.flow_shop_introduction_view, name='flow_shop_introduction'),
-    # path('flow-shop/demo/', views.flow_shop_demo_view, name='flow_shop_demo'),
+    path('flow-shop/demo/', views.flow_shop_demo_view, name='flow_shop_demo'),
 
     # 4. Job Shop Scheduling Problem
     path('job-shop/introduction/', views.job_shop_introduction_view, name='job_shop_introduction'),
-    # path('job-shop/demo/', views.job_shop_demo_view, name='job_shop_demo'),
+    path('job-shop/demo/', views.job_shop_demo_view, name='job_shop_demo'),
 
     # 5. RCPSP
     path('rcpsp/introduction/', views.rcpsp_introduction_view, name='rcpsp_introduction'),
-    # path('rcpsp/demo/', views.rcpsp_demo_view, name='rcpsp_demo'),
+    path('rcpsp/demo/', views.rcpsp_demo_view, name='rcpsp_demo'),
 ]

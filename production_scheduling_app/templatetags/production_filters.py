@@ -84,3 +84,16 @@ def make_key1(prefix, index):
 @register.simple_tag(name='make_key2')
 def make_key2(prefix, i, j):
     return f"{prefix}_{i}_{j}"
+
+@register.filter(name='multiply_custom')
+def multiply_custom(value, arg):
+    """
+    템플릿에서 두 값을 곱하는 커스텀 필터.
+    예: {{ 3|multiply_custom:40 }} -> 120
+    """
+    try:
+        # 입력값들을 숫자로 변환하여 곱셈 시도
+        return float(value) * float(arg)
+    except (ValueError, TypeError):
+        # 변환 실패 시 0 또는 다른 기본값 반환
+        return 0

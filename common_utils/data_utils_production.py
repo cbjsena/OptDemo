@@ -53,33 +53,52 @@ def create_lot_sizing_json_data(form_data, num_periods):
     return input_data
 
 
+def create_single_machine_json_data(jobs_list, form_data, num_jobs):
+    """
+    폼 데이터로부터 Single Machine 문제 입력을 위한 딕셔너리를 생성하고 검증합니다.
+    """
+    logger.info("Creating and validating single machine input data from form.")
+
+    for job in jobs_list:
+        try:
+            job["processing_time"] = int(job["processing_time"])
+            job["due_date"] = int(job["due_date"])
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Job '{job.get('id', 'Unknown')}' has invalid processing_time or due_date: {e}")
+
+    input_data = {
+        "timestamp": datetime.datetime.now().isoformat(),
+        "problem_type": form_data.get('problem_type'),
+        "num_jobs": num_jobs,
+        'objective_choice': form_data.get('objective_choice'),
+        'jobs_list': jobs_list
+    }
+
+    return input_data
+
+
 def save_production_json_data(input_data):
-    logger.info(f"Saving {input_data.get('problem_type')} data.")
-    dir=''
+    problem_type = input_data.get('problem_type')
+    logger.info(f"Saving {problem_type} data.")
+    dir=f'production_{problem_type}_data'
     filename_pattern = ''
     if "lot_sizing" == input_data.get('problem_type'):
         num_periods = input_data.get('num_periods')
-        dir = 'production_lot_sizing_data'
         filename_pattern = f"periods{num_periods}"
     elif "single_machine" == input_data.get('problem_type'):
-        num_resources = input_data.get('num_resources')
-        num_projects = input_data.get('num_projects')
-        dir = 'production_single_machine_data'
-        filename_pattern = f"resource{num_resources}_project{num_projects}"
+        num_jobs = input_data.get('num_jobs')
+        filename_pattern = f"jobs{num_jobs}_{input_data.get('objective_choice')}"
     elif "flow_shop" == input_data.get('problem_type'):
         num_resources = input_data.get('num_resources')
         num_projects = input_data.get('num_projects')
-        dir = 'production_flow_shop_data'
         filename_pattern = f"resource{num_resources}_project{num_projects}"
     elif "job_shop" == input_data.get('problem_type'):
-        num_resources = input_data.get('num_resources')
+        num_resources = input_data.get('num_jobs')
         num_projects = input_data.get('num_projects')
-        dir = 'production_job_shop_data'
         filename_pattern = f"resource{num_resources}_project{num_projects}"
     elif "rcpsp" == input_data.get('problem_type'):
         num_resources = input_data.get('num_resources')
         num_projects = input_data.get('num_projects')
-        dir = 'production_rcpsp_data'
         filename_pattern = f"resource{num_resources}_project{num_projects}"
 
     return save_json_data(input_data, dir, filename_pattern)

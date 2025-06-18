@@ -3,6 +3,7 @@ import datetime  # 파일명 생성 등에 사용 가능
 from common_utils.common_data_utils import save_json_data
 logger = logging.getLogger(__name__)
 
+
 def parse_allocation_budjet_data(form_data_from_post, num_items, total_budget):
     items_data = []
     for i in range(1, num_items + 1):

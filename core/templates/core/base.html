@@ -37,73 +37,91 @@
 
                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">Transport Assignment</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'transport_assignment_introduction' %}active{% endif %}" href="{% url 'matching_assignment_app:transport_assignment_introduction' %}">Introduction</a>
+                                <a class="nav-link {% if active_submenu == 'transport_assignment_introduction' %}active{% endif %}"
+                                   href="{% url 'matching_assignment_app:transport_assignment_introduction' %}">Introduction</a>
                             </li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'transport_assignment_demo' %}active{% endif %}" href="{% url 'matching_assignment_app:transport_assignment_demo' %}">Demo</a>
+                                <a class="nav-link {% if active_submenu == 'transport_assignment_demo' %}active{% endif %}"
+                                   href="{% url 'matching_assignment_app:transport_assignment_demo' %}">Demo</a>
                             </li>
 
                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">Resource Skill Matching</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'resource_skill_matching_introduction' %}active{% endif %}" href="{% url 'matching_assignment_app:resource_skill_matching_introduction' %}">Introduction</a>
+                                <a class="nav-link {% if active_submenu == 'resource_skill_matching_introduction' %}active{% endif %}"
+                                   href="{% url 'matching_assignment_app:resource_skill_matching_introduction' %}">Introduction</a>
                             </li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'resource_skill_matching_demo' %}active{% endif %}" href="{% url 'matching_assignment_app:resource_skill_matching_demo' %}">Demo</a>
+                                <a class="nav-link {% if active_submenu == 'resource_skill_matching_demo' %}active{% endif %}"
+                                   href="{% url 'matching_assignment_app:resource_skill_matching_demo' %}">Demo</a>
                             </li>
 
                         {% elif active_model == 'Resource Allocation' %}
                             <li class="nav-item"><strong class="sidebar-subtitle">Budget Allocation</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'budget_allocation_introduction' %}active{% endif %}" href="{% url 'resource_allocation_app:budget_allocation_introduction' %}">Introduction</a>
+                                <a class="nav-link {% if active_submenu == 'budget_allocation_introduction' %}active{% endif %}"
+                                   href="{% url 'resource_allocation_app:budget_allocation_introduction' %}">Introduction</a>
                             </li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'budget_allocation_demo' %}active{% endif %}" href="{% url 'resource_allocation_app:budget_allocation_demo' %}">Demo</a>
+                                <a class="nav-link {% if active_submenu == 'budget_allocation_demo' %}active{% endif %}"
+                                   href="{% url 'resource_allocation_app:budget_allocation_demo' %}">Demo</a>
                             </li>
                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">Data Center Capacity</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'data_center_capacity_introduction' %}active{% endif %}" href="{% url 'resource_allocation_app:data_center_capacity_introduction' %}">Introduction</a>
+                                <a class="nav-link {% if active_submenu == 'data_center_capacity_introduction' %}active{% endif %}"
+                                   href="{% url 'resource_allocation_app:data_center_capacity_introduction' %}">Introduction</a>
                             </li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'data_center_capacity_demo' %}active{% endif %}" href="{% url 'resource_allocation_app:data_center_capacity_demo' %}">Demo</a>
+                                <a class="nav-link {% if active_submenu == 'data_center_capacity_demo' %}active{% endif %}"
+                                   href="{% url 'resource_allocation_app:data_center_capacity_demo' %}">Demo</a>
                             </li>
 
 <!--                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">financial Portfolio</strong></li>-->
 <!--                            <li class="nav-item nested">-->
-<!--                                <a class="nav-link {% if active_submenu == 'financial_portfolio_introduction' %}active{% endif %}" href="{% url 'resource_allocation_app:financial_portfolio_introduction' %}">Introduction</a>-->
+<!--                                <a class="nav-link {% if active_submenu == 'financial_portfolio_introduction' %}active{% endif %}"
+                                        href="{% url 'resource_allocation_app:financial_portfolio_introduction' %}">Introduction</a>-->
 <!--                            </li>-->
 <!--                            <li class="nav-item nested">-->
-<!--                                <a class="nav-link {% if active_submenu == 'financial_portfolio_demo' %}active{% endif %}" href="{% url 'resource_allocation_app:financial_portfolio_demo' %}">Demo(준비중)</a>-->
+<!--                                <a class="nav-link {% if active_submenu == 'financial_portfolio_demo' %}active{% endif %}"
+                                        href="{% url 'resource_allocation_app:financial_portfolio_demo' %}">Demo(준비중)</a>-->
 <!--                            </li>-->
                         {% elif active_model == 'Routing & Logistics' %}
                             <li class="nav-item"><strong class="sidebar-subtitle">Vehicle Routing Problem - VRP</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'vrp_introduction' %}active{% endif %}" href="{% url 'routing_logistics_app:vrp_introduction' %}">Introduction</a>
+                                <a class="nav-link {% if active_submenu == 'vrp_introduction' %}active{% endif %}"
+                                   href="{% url 'routing_logistics_app:vrp_introduction' %}">Introduction</a>
                             </li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'vrp_demo' %}active{% endif %}" href="{% url 'routing_logistics_app:vrp_demo' %}">Demo</a>
+                                <a class="nav-link {% if active_submenu == 'vrp_demo' %}active{% endif %}"
+                                   href="{% url 'routing_logistics_app:vrp_demo' %}">Demo</a>
                             </li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'vrp_advanced' %}active{% endif %}" href="{% url 'routing_logistics_app:vrp_advanced' %}">Advanced</a>
+                                <a class="nav-link {% if active_submenu == 'vrp_advanced' %}active{% endif %}"
+                                   href="{% url 'routing_logistics_app:vrp_advanced' %}">Advanced</a>
                             </li>
                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">Capacitated VRP - CVRP</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'cvrp_introduction' %}active{% endif %}" href="{% url 'routing_logistics_app:cvrp_introduction' %}">Introduction</a>
+                                <a class="nav-link {% if active_submenu == 'cvrp_introduction' %}active{% endif %}"
+                                   href="{% url 'routing_logistics_app:cvrp_introduction' %}">Introduction</a>
                             </li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'cvrp_demo' %}active{% endif %}" href="{% url 'routing_logistics_app:cvrp_demo' %}">Demo</a>
+                                <a class="nav-link {% if active_submenu == 'cvrp_demo' %}active{% endif %}"
+                                   href="{% url 'routing_logistics_app:cvrp_demo' %}">Demo</a>
                             </li>
                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">Pickup and Delivery Problem- PDP</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'pdp_introduction' %}active{% endif %}" href="{% url 'routing_logistics_app:pdp_introduction' %}">Introduction</a>
+                                <a class="nav-link {% if active_submenu == 'pdp_introduction' %}active{% endif %}"
+                                   href="{% url 'routing_logistics_app:pdp_introduction' %}">Introduction</a>
                             </li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'pdp_demo' %}active{% endif %}" href="{% url 'routing_logistics_app:pdp_demo' %}">Demo</a>
+                                <a class="nav-link {% if active_submenu == 'pdp_demo' %}active{% endif %}"
+                                   href="{% url 'routing_logistics_app:pdp_demo' %}">Demo</a>
                             </li>
 
                         {% elif active_model == 'Production & Scheduling' %}
                             <li class="nav-item"><strong class="sidebar-subtitle">Lot Sizing Problem</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'lot_sizing_introduction' %}active{% endif %}" href="{% url 'production_scheduling_app:lot_sizing_introduction' %}">Introduction</a>
+                                <a class="nav-link {% if active_submenu == 'lot_sizing_introduction' %}active{% endif %}"
+                                   href="{% url 'production_scheduling_app:lot_sizing_introduction' %}">Introduction</a>
                             </li>
                             <li class="nav-item nested">
                                 <a class="nav-link {% if active_submenu == 'lot_sizing_demo' %}active{% endif %}" href="{% url 'production_scheduling_app:lot_sizing_demo' %}">Demo</a>
@@ -111,28 +129,46 @@
 
                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">Single Machine Scheduling</strong></li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'single_machine_introduction' %}active{% endif %}" href="{% url 'production_scheduling_app:single_machine_introduction' %}">Introduction</a>
+                                <a class="nav-link {% if active_submenu == 'single_machine_introduction' %}active{% endif %}"
+                                   href="{% url 'production_scheduling_app:single_machine_introduction' %}">Introduction</a>
                             </li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'single_machine_demo' %}active{% endif %}" href="{% url 'production_scheduling_app:single_machine_demo' %}">Demo</a>
+                                <a class="nav-link {% if active_submenu == 'single_machine_demo' %}active{% endif %}"
+                                   href="{% url 'production_scheduling_app:single_machine_demo' %}">Demo</a>
                             </li>
                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'single_machine_advanced' %}active{% endif %}" href="{% url 'production_scheduling_app:single_machine_advanced' %}">Advanced</a>
+                                <a class="nav-link {% if active_submenu == 'single_machine_advanced' %}active{% endif %}"
+                                   href="{% url 'production_scheduling_app:single_machine_advanced' %}">Advanced</a>
                             </li>
 
                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">Flow Shop Scheduling</strong></li>
-                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'flow_shop_introduction' %}active{% endif %}" href="{% url 'production_scheduling_app:flow_shop_introduction' %}">Introduction</a>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'flow_shop_introduction' %}active{% endif %}"
+                                   href="{% url 'production_scheduling_app:flow_shop_introduction' %}">Introduction</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'flow_shop_demo' %}active{% endif %}"
+                                   href="{% url 'production_scheduling_app:flow_shop_demo' %}">Demo</a>
                             </li>
 
                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">Job Shop Scheduling</strong></li>
-                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'job_shop_introduction' %}active{% endif %}" href="{% url 'production_scheduling_app:job_shop_introduction' %}">Introduction</a>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'job_shop_introduction' %}active{% endif %}"
+                                   href="{% url 'production_scheduling_app:job_shop_introduction' %}">Introduction</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'job_shop_introduction' %}active{% endif %}"
+                                   href="{% url 'production_scheduling_app:job_shop_demo' %}">Demo</a>
                             </li>
 
                             <li class="nav-item mt-2"><strong class="sidebar-subtitle">RCPSP</strong></li>
-                             <li class="nav-item nested">
-                                <a class="nav-link {% if active_submenu == 'rcpsp_introduction' %}active{% endif %}" href="{% url 'production_scheduling_app:rcpsp_introduction' %}">Introduction</a>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'rcpsp_introduction' %}active{% endif %}"
+                                   href="{% url 'production_scheduling_app:rcpsp_introduction' %}">Introduction</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'rcpsp_demo' %}active{% endif %}"
+                                   href="{% url 'production_scheduling_app:rcpsp_demo' %}">Demo</a>
                             </li>
                         {% endif %}
                     </ul>
