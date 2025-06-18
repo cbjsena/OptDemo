@@ -1,9 +1,7 @@
 from django.shortcuts import render
-import numpy as np
-import logging
 import json
 
-from .utils import data_utils
+from common_utils.data_utils_allocation import *
 from common_utils.run_alloctaion_opt import *
 from common_utils.default_data import (
     preset_budjet_items,
@@ -23,8 +21,10 @@ def resource_allocation_introduction_view(request):
     logger.debug("Rendering general Resource & Allocation introduction page.")
     return render(request, 'resource_allocation_app/resource_allocation_introduction.html', context)
 
+
 def resource_allocation_view():
     return None
+
 
 def budget_allocation_introduction_view(request):
     context = {
@@ -40,7 +40,7 @@ def budget_allocation_demo_view(request):
     # This ensures the template's default_if_none has something to fall back on
     # or that the key exists.
     initial_form_data = {'total_budget': '1000'}  # Default value for initial page load
-    form_data = {}
+
     for i in range(len(preset_budjet_items)):
         preset = preset_budjet_items[i % len(preset_budjet_items)]
         for key, default_val in preset.items():
@@ -90,14 +90,12 @@ def budget_allocation_demo_view(request):
             total_budget = float(total_budget_str)
             if total_budget < 0:
                 raise ValueError("총 예산은 음수가 될 수 없습니다.")
-            # Keep total_budget as float for calculations
-            # context['form_data']['total_budget_float'] = total_budget # Not strictly needed if form_data['total_budget'] is used carefully
 
             num_items = context['submitted_num_items']
-            items_data, json_data = data_utils.parse_allocation_budjet_data(form_data_from_post, num_items, total_budget)
+            items_data, json_data = parse_allocation_budjet_data(form_data_from_post, num_items, total_budget)
             logger.debug(f"Parsed items_data for optimizer: {items_data}")
 
-            saved_filename, save_error = data_utils.save_allocation_budjet_json_data(json_data)
+            saved_filename, save_error = save_allocation_budjet_json_data(json_data)
             if save_error:
                 context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
             elif saved_filename:
@@ -107,8 +105,12 @@ def budget_allocation_demo_view(request):
             results, total_maximized_return, error_msg, processing_time_ms = run_budget_allocation_optimizer(
                 total_budget, items_data)
 
-            context[
-                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+            if processing_time_ms is not None:
+                context[
+                    'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}"
+            else:
+                context[
+                    'processing_time_seconds'] = "N/A"
 
             if error_msg:
                 context['error_message'] = error_msg
@@ -126,12 +128,18 @@ def budget_allocation_demo_view(request):
                     utilization_percent = (calculated_total_allocated / total_budget) * 100
                     context['budget_utilization_percent'] = round(utilization_percent, 1)
                 else:
-                    context[
-                        'budget_utilization_percent'] = 0.0 if calculated_total_allocated == 0 else "N/A (Total Budget is 0)"
-                current_success = context.get('info_message', "")  # 파일 저장 성공 메시지가 있다면 이어붙임
+                    if calculated_total_allocated == 0:
+                        context[
+                            'budget_utilization_percent'] = 0.0
+                    else:
+                        context[
+                            'budget_utilization_percent'] = "N/A (Total Budget is 0)"
+
                 context['success_message'] = f'최적 예산 분배 계산 완료!'.strip()
                 logger.info(
-                    f"Budget allocation successful. Max return: {total_maximized_return}, Total allocated: {calculated_total_allocated}, Utilization: {context['budget_utilization_percent']}%")
+                    f"Budget allocation successful. Max return: {total_maximized_return}, "
+                    f"Total allocated: {calculated_total_allocated}, "
+                    f"Utilization: {context['budget_utilization_percent']}%")
 
         except ValueError as ve:
             context['error_message'] = f"입력값 오류: {str(ve)}"
@@ -237,7 +245,8 @@ def financial_portfolio_demo_view(request):
             covariance_matrix = cov_matrix_np.tolist()
 
             logger.debug(
-                f"Data for portfolio optimizer: ER={expected_returns}, COV={covariance_matrix}, TargetRet={target_portfolio_return}")
+                f'Data for portfolio optimizer: ER={expected_returns}, COV={covariance_matrix}, '
+                f'TargetRet={target_portfolio_return}')
 
             results, calc_portfolio_return, calc_portfolio_variance, error_msg, processing_time_ms = \
                 run_portfolio_optimization_optimizer(submitted_num_assets_val, expected_returns, covariance_matrix,
@@ -349,12 +358,12 @@ def data_center_capacity_demo_view(request):
         logger.info("Data Center Capacity Demo POST processing.")
         try:
             # --- 1. 입력 데이터 파싱---
-            parsed_global_constraints, parsed_server_types_data, parsed_service_demands_data = data_utils.parse_allocation_data_center_data(
+            parsed_global_constraints, parsed_server_types_data, parsed_service_demands_data = parse_allocation_data_center_data(
                 form_data, submitted_num_server_types, submitted_num_services
             )
 
             # --- 2. 유효성 검사 ---
-            validation_error = data_utils.validate_data_center_data(
+            validation_error = validate_data_center_data(
                 parsed_global_constraints,  # 원본 수정을 피하기 위해 복사본 전달
                 parsed_server_types_data,
                 parsed_service_demands_data
@@ -363,12 +372,12 @@ def data_center_capacity_demo_view(request):
                 raise ValueError(validation_error)  # 유효성 검사 실패 시 ValueError 발생
 
             # --- 3. 입력 데이터 JSON 파일로 저장 ---
-            input_data = data_utils.create_allocation_data_center_json_data(
+            input_data = create_allocation_data_center_json_data(
                 parsed_global_constraints,
                 parsed_server_types_data,
                 parsed_service_demands_data
             )
-            saved_filename, save_error = data_utils.save_allocation_data_center_json_data(input_data)
+            saved_filename, save_error = save_allocation_data_center_json_data(input_data)
             if save_error:
                 context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
             elif saved_filename:
@@ -391,7 +400,7 @@ def data_center_capacity_demo_view(request):
                     f"Data center capacity optimization successful. Total Profit: {results_data.get('total_profit')}")
 
                 # --- 차트 데이터 준비 ---
-                chart_data_py_dict  = data_utils.set_chart_data(results_data, parsed_global_constraints)
+                chart_data_py_dict  = set_chart_data(results_data, parsed_global_constraints)
                 context['chart_data_py'] = chart_data_py_dict
                 context['chart_data_json'] = json.dumps(chart_data_py_dict )  # JSON 문자열로 템플릿에 전달
             else:

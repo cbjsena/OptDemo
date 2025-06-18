@@ -70,5 +70,24 @@ preset_projects = [
         {'id': 'P5', 'name': 'BI 대시보드 제작', 'required_skills': 'SQL,Tableau'},
     ]
 
+preset_lot_sizing_num_periods = 6
 
-preset_num_periods = 6
+preset_single_machine_num_jobs = 5
+preset_single_machine_objective_choice = 'total_flow_time'
+preset_single_machine_objective = [
+            {'value': 'total_flow_time', 'name': '총 흐름 시간 최소화 (SPT)'},
+            {'value': 'makespan', 'name': '총 완료 시간 최소화 (Makespan)'},
+            {'value': 'total_tardiness', 'name': '총 지연 시간 최소화'}
+        ]
+preset_single_machine_data =[
+    {'id': 'Job_1', 'processing_time': 5, 'due_date': 20},
+    {'id': 'Job_2', 'processing_time': 12, 'due_date': 30},
+    {'id': 'Job_3', 'processing_time': 8, 'due_date': 15},
+    {'id': 'Job_4', 'processing_time': 3, 'due_date': 40},
+    {'id': 'Job_5', 'processing_time': 15, 'due_date': 60},
+    {'id': 'Job_6', 'processing_time': 6, 'due_date': 35},
+    {'id': 'Job_7', 'processing_time': 9, 'due_date': 50},
+    {'id': 'Job_8', 'processing_time': 4, 'due_date': 25},
+    {'id': 'Job_9', 'processing_time': 11, 'due_date': 45},
+    {'id': 'Job_10', 'processing_time': 7, 'due_date': 70},
+]

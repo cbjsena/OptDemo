@@ -169,7 +169,7 @@
                                 value="{{ form_data|get_item_simple:key_name }}">
                     </div>
                     {% make_key 'service' i 'revenue_per_unit' as key_name %}
-                    <div class="form-group col-md-1">
+                    <div class="form-group col-md-2">
                         <label for="{{ key_name }}">단위당 수익:</label>
                         <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
                                value="{{ form_data|get_item_simple:key_name }}">

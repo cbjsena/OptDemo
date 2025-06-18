@@ -1,29 +1,28 @@
 from django.shortcuts import render
-import logging
-import random
 import json
 
-from .utils import data_utils
 from common_utils.run_production_opt import *
 from common_utils.default_data import (
-    preset_budjet_items,
-    preset_datacenter_servers,
-    preset_datacenter_services, preset_num_periods
+    preset_lot_sizing_num_periods,
+    preset_single_machine_objective,
+    preset_single_machine_objective_choice,
+    preset_single_machine_num_jobs,
+    preset_single_machine_data,
 )
-from .utils.data_utils import create_lot_sizing_json_data, save_production_json_data
+from common_utils.data_utils_production import *
 
-logger = logging.getLogger(__name__)  # settings.py에 정의된 'resource_allocation_app' 로거 사용
+logger = logging.getLogger(__name__)
 
 
 def production_scheduling_introduction_view(request):
     """General introduction page for the Production & Scheduling category."""
     context = {
         'active_model': 'Production & Scheduling',
-        # 이 페이지는 특정 소메뉴에 속하지 않으므로 active_submenu는 비워둠
         'active_submenu': 'main_introduction'
     }
     logger.debug("Rendering general Production & Scheduling introduction page.")
     return render(request, 'production_scheduling_app/production_scheduling_introduction.html', context)
+
 
 def lot_sizing_introduction_view(request):
     """Lot Sizing Problem Introduction Page."""
@@ -33,9 +32,7 @@ def lot_sizing_introduction_view(request):
         'active_submenu': 'lot_sizing_introduction'
     }
     logger.debug("Rendering Lot Sizing introduction page.")
-    # 실제 템플릿 파일을 생성해야 합니다.
-    # return render(request, 'production_scheduling_app/lot_sizing_introduction.html', context)
-    return render(request, 'production_scheduling_app/lot_sizing_introduction.html', context) # 임시 페이지
+    return render(request, 'production_scheduling_app/lot_sizing_introduction.html', context)  # 임시 페이지
 
 
 def lot_sizing_demo_view(request):
@@ -45,7 +42,7 @@ def lot_sizing_demo_view(request):
     form_data = {}
 
     if request.method == 'GET':
-        submitted_num_periods = int(request.GET.get('num_periods_to_show', preset_num_periods))
+        submitted_num_periods = int(request.GET.get('num_periods_to_show', preset_lot_sizing_num_periods))
         submitted_num_periods = max(3, min(12, submitted_num_periods))
 
         # GET 요청 시 랜덤 기본값으로 form_data 초기화
@@ -58,7 +55,7 @@ def lot_sizing_demo_view(request):
 
     elif request.method == 'POST':
         form_data = request.POST.copy()
-        submitted_num_periods = int(form_data.get('num_periods', preset_num_periods))
+        submitted_num_periods = int(form_data.get('num_periods', preset_lot_sizing_num_periods))
 
     context = {
         'active_model': 'Production & Scheduling',
@@ -78,7 +75,7 @@ def lot_sizing_demo_view(request):
             input_data = create_lot_sizing_json_data(form_data, submitted_num_periods)
 
             # 2. 파일 저장
-            saved_filename, save_error = save_production_json_data (input_data)
+            saved_filename, save_error = save_production_json_data(input_data)
             if save_error:
                 context['error_message'] = save_error
             elif saved_filename:
@@ -127,7 +124,90 @@ def single_machine_introduction_view(request):
 
 
 def single_machine_demo_view(request):
-    return None
+    jobs_list = []  # 템플릿에 전달할 작업 데이터 리스트
+    form_data_for_post = {}  # POST 데이터 처리를 위한 딕셔너리
+    if request.method == 'GET':
+        submitted_num_jobs = int(request.GET.get('num_jobs_to_show', preset_single_machine_num_jobs))
+        submitted_num_jobs = max(2, min(8, submitted_num_jobs))  # 2~8개 작업
+
+        for i in range(submitted_num_jobs):
+            preset = preset_single_machine_data[i]
+            jobs_list.append({
+                'id': request.GET.get(f'job_{i}_id', preset['id']),
+                'processing_time': request.GET.get(f'job_{i}_processing_time', preset['processing_time']),
+                'due_date': request.GET.get(f'job_{i}_due_date', preset['due_date']),
+            })
+
+    elif request.method == 'POST':
+        form_data_for_post = request.POST.copy()
+        submitted_num_jobs = int(form_data_for_post.get('num_jobs', preset_single_machine_num_jobs))
+        # POST 요청 시, 제출된 값으로 jobs_list를 채움 (입력값 유지)
+        for i in range(submitted_num_jobs):
+            jobs_list.append({
+                'id': form_data_for_post.get(f'job_{i}_id'),
+                'processing_time': form_data_for_post.get(f'job_{i}_processing_time'),
+                'due_date': form_data_for_post.get(f'job_{i}_due_date'),
+            })
+
+    objective_choice=request.GET.get(
+            'objective_choice') if request.method == 'GET' else form_data_for_post.get('objective_choice')
+    context = {
+        'active_model': 'Production & Scheduling',
+        'active_submenu': 'single_machine_demo',
+        'jobs_list': jobs_list,  # 가공된 리스트 전달
+        'results': None, 'error_message': None, 'success_message': None,
+        'processing_time_seconds': "N/A",
+        'num_jobs_options': range(2, 11),
+        'submitted_num_jobs': submitted_num_jobs,
+        'plot_data': None,
+        'objective_options': [
+            {'value': 'total_flow_time', 'name': '총 흐름 시간 최소화 (SPT)'},
+            {'value': 'makespan', 'name': '총 완료 시간 최소화 (Makespan)'},
+            {'value': 'total_tardiness', 'name': '총 지연 시간 최소화'}
+        ],
+        # objective_choice도 form_data 대신 직접 전달
+        'submitted_objective': objective_choice
+    }
+
+    if request.method == 'POST':
+        logger.info(f"Single Machine Demo POST received. Objective: {objective_choice}")
+        try:
+            # 1. 데이터 파일 새성 및 검증
+            input_data = create_single_machine_json_data(jobs_list, form_data_for_post, submitted_num_jobs)
+            
+            # 2. 파일 저장
+            saved_filename, save_error = save_production_json_data(input_data)
+            if save_error:
+                context['error_message'] = save_error
+            elif saved_filename:
+                context['info_message'] = f"입력 데이터가 '{saved_filename}'으로 서버에 저장되었습니다."
+
+            # 3. 최적화 실행
+            results_data, error_msg_opt, processing_time_ms = run_single_machine_optimizer(input_data)
+            context[
+                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+
+            if error_msg_opt:
+                context['error_message'] = (context.get('error_message', '') + " " + error_msg_opt).strip()
+            elif results_data:
+                context['results'] = results_data
+                context['success_message'] = f"최적 스케줄 계산 완료! 목표값: {results_data['objective_value']:.2f}"
+
+                # 간트 차트용 데이터 준비
+                plot_data = {'jobs': []}
+                for job in results_data['schedule']:
+                    plot_data['jobs'].append({
+                        'label': job['id'],
+                        'data': [job['start'], job['end']]  # [시작시간, 종료시간]
+                    })
+                context['plot_data'] = json.dumps(plot_data)
+
+        except (ValueError, TypeError) as ve:
+            context['error_message'] = f"입력값 오류: {str(ve)}"
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+
+    return render(request, 'production_scheduling_app/single_machine_demo.html', context)
 
 
 def single_machine_advanced_view(request):
@@ -140,6 +220,7 @@ def single_machine_advanced_view(request):
     logger.debug("Rendering Single Machine Scheduling advanced page.")
     return render(request, 'production_scheduling_app/single_machine_advanced.html', context)
 
+
 def flow_shop_introduction_view(request):
     """Flow Shop Scheduling Introduction Page."""
     context = {
@@ -150,6 +231,18 @@ def flow_shop_introduction_view(request):
     logger.debug("Rendering Flow Shop Scheduling introduction page.")
     return render(request, 'production_scheduling_app/flow_shop_introduction.html', context)
 
+
+def flow_shop_demo_view(request):
+    """Flow Shop Scheduling Introduction Page."""
+    context = {
+        'active_model': 'Production & Scheduling',
+        'active_submenu_category': 'flow_shop',
+        'active_submenu': 'flow_shop_demo'
+    }
+    logger.debug("Rendering Flow Shop Scheduling introduction page.")
+    return render(request, 'production_scheduling_app/flow_shop_demo.html', context)
+
+
 def job_shop_introduction_view(request):
     """Job Shop Scheduling Introduction Page."""
     context = {
@@ -159,6 +252,18 @@ def job_shop_introduction_view(request):
     }
     logger.debug("Rendering Job Shop Scheduling introduction page.")
     return render(request, 'production_scheduling_app/job_shop_introduction.html', context)
+
+
+def job_shop_demo_view(request):
+    """Flow Shop Scheduling Introduction Page."""
+    context = {
+        'active_model': 'Production & Scheduling',
+        'active_submenu_category': 'job_shop',
+        'active_submenu': 'job_shop_demo'
+    }
+    logger.debug("Rendering Flow Shop Scheduling introduction page.")
+    return render(request, 'production_scheduling_app/job_shop_demo.html', context)
+
 
 def rcpsp_introduction_view(request):
     """RCPSP Introduction Page."""
@@ -171,3 +276,12 @@ def rcpsp_introduction_view(request):
     return render(request, 'production_scheduling_app/rcpsp_introduction.html', context)
 
 
+def rcpsp_demo_view(request):
+    """Flow Shop Scheduling Introduction Page."""
+    context = {
+        'active_model': 'Production & Scheduling',
+        'active_submenu_category': 'rcpsp',
+        'active_submenu': 'rcpsp_demo'
+    }
+    logger.debug("Rendering Flow Shop Scheduling introduction page.")
+    return render(request, 'production_scheduling_app/rcpsp_demo.html', context)
