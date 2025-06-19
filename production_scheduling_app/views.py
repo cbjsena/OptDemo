@@ -267,31 +267,65 @@ def flow_shop_demo_view(request):
     }
 
     if request.method == 'POST':
+        action = request.POST.get('action')
         try:
-            # 1. 데이터 파일 새성 및 검증
-            input_data = create_flow_shop_json_data(form_data)
+            if action == "optimize":    # 최적화 실행 버튼
+                logger.info(f"Flow Shop Demo {action} POST request processing.")
+                # 1. 데이터 파일 새성 및 검증
+                input_data = create_flow_shop_json_data(form_data)
 
-            # 2. 파일 저장
-            saved_filename, save_error = save_production_json_data(input_data)
-            if save_error:
-                context['error_message'] = save_error
-            elif saved_filename:
-                context['info_message'] = f"입력 데이터가 '{saved_filename}'으로 서버에 저장되었습니다."
+                # 2. 파일 저장
+                saved_filename, save_error = save_production_json_data(input_data)
+                if save_error:
+                    context['error_message'] = save_error
+                elif saved_filename:
+                    context['info_message'] = f"입력 데이터가 '{saved_filename}'으로 서버에 저장되었습니다."
 
-            # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time_ms = run_flow_shop_optimizer(input_data)
-            context[
-                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+                # 3. 최적화 실행
+                results_data, error_msg_opt, processing_time_ms = run_flow_shop_optimizer(input_data)
+                context[
+                    'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
 
-            if error_msg_opt:
-                context['error_message'] = error_msg_opt
-            elif results_data:
-                context['results'] = results_data
-                context['success_message'] = f"최적 스케줄 계산 완료! Makespan: {results_data['makespan']:.2f}"
+                if error_msg_opt:
+                    context['error_message'] = error_msg_opt
+                elif results_data:
+                    context['results'] = results_data
+                    context['success_message'] = f"최적 스케줄 계산 완료! Makespan: {results_data['makespan']:.2f}"
+                    # 간트 차트용 데이터 준비
+                    context['plot_data'] = json.dumps(results_data['schedule'])
+                    # 중요한 부분: 다음 수동 조회를 위해 원본 데이터와 결과를 숨겨진 필드로 전달할 수 있도록 저장
+                    context['original_input_json'] = json.dumps(input_data)
+                    context['optimal_results_json'] = json.dumps(results_data)
+            elif action == 'manual_check':  # 수동 순서 조회 버튼
+                logger.info(f"Flow Shop Demo {action} POST request processing.")
 
-                # 간트 차트용 데이터 준비
-                context['plot_data'] = json.dumps(results_data['schedule'])
+                # 숨겨진 필드에서 원본 데이터와 최적화 결과 로드
+                original_input_str = form_data.get('original_input_json')
+                optimal_results_str = form_data.get('optimal_results_json')
+                if not original_input_str or not optimal_results_str:
+                    raise ValueError("비교를 위한 원본 데이터 또는 최적화 결과가 없습니다.")
 
+                original_input_data = json.loads(original_input_str)
+                optimal_results_data = json.loads(optimal_results_str)
+                context['results'] = optimal_results_data  # 최적 결과 다시 표시
+                context['plot_data'] = json.dumps(optimal_results_data['schedule'])
+                context['original_input_json'] = original_input_str
+                context['optimal_results_json'] = optimal_results_str
+
+                # 사용자가 입력한 수동 시퀀스 파싱
+                manual_sequence_str = form_data.get('manual_sequence', '')
+                manual_sequence = [s.strip() for s in manual_sequence_str.split(',') if s.strip()]
+
+                # 수동 시퀀스로 스케줄 계산
+                manual_results_data = calculate_flow_shop_schedule(
+                    original_input_data['processing_times'],
+                    original_input_data['job_ids'],
+                    manual_sequence
+                )
+                context['manual_results'] = manual_results_data
+                context['manual_plot_data'] = json.dumps(manual_results_data['schedule'])
+                context[
+                    'info_message'] = f"수동 입력 순서 '{', '.join(manual_sequence)}'의 Makespan은 {manual_results_data['makespan']:.2f} 입니다."
         except ValueError as ve:
             context['error_message'] = f"입력값 오류: {str(ve)}"
         except Exception as e:

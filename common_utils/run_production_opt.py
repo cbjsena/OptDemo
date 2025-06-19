@@ -259,31 +259,80 @@ def run_flow_shop_optimizer(input_data):
     error_msg = None
 
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-        results['makespan'] = solver.ObjectiveValue()
-
-        # 최적 순서 결정 (첫 번째 기계의 시작 시간 기준)
+        # 최적 순서 결정
         sequence_info = []
         for i in range(num_jobs):
-            start_time = solver.Value(completion_times[i][0]) - processing_times[i][0]
-            sequence_info.append({'job_index': i, 'start_time': start_time})
+            start_time_on_m0 = solver.Value(completion_times[i][0]) - processing_times[i][0]
+            sequence_info.append({'job_index': i, 'start_time': start_time_on_m0})
         sequence_info.sort(key=lambda item: item['start_time'])
-        results['sequence'] = [input_data['job_ids'][item['job_index']] for item in sequence_info]
 
-        # 간트 차트용 데이터
-        job_schedules = []
-        for i in range(num_jobs):
-            job_schedule = {'job_id': input_data['job_ids'][i], 'tasks': []}
-            for j in range(num_machines):
-                start_time = solver.Value(completion_times[i][j]) - processing_times[i][j]
-                job_schedule['tasks'].append({
-                    'machine': f'Machine {j + 1}',
-                    'start': start_time,
-                    'duration': processing_times[i][j],
-                    'end': solver.Value(completion_times[i][j])
-                })
-            job_schedules.append(job_schedule)
-        results['schedule'] = job_schedules
+        optimal_sequence_indices = [item['job_index'] for item in sequence_info]
+        optimal_sequence_ids = [input_data['job_ids'][i] for i in optimal_sequence_indices]
+
+        # 계산된 최적 순서로 스케줄 및 Makespan 재계산 (결과 일관성 및 재사용성)
+        results = calculate_flow_shop_schedule(
+            processing_times,
+            input_data['job_ids'],
+            optimal_sequence_ids
+        )
     else:
         error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
 
     return results, error_msg, processing_time_ms
+
+
+# --- 고정된 순서에 대한 Makespan 계산 함수 (새로 추가) ---
+def calculate_flow_shop_schedule(processing_times, job_ids, sequence):
+    """
+    주어진 작업 순서(sequence)에 따라 Flow Shop 스케줄과 Makespan을 계산합니다.
+    processing_times: [[p_ij, ...], ...]
+    job_ids: ['Job 1', 'Job 2', ...]
+    sequence: 순서를 나타내는 job_id 리스트. 예: ['Job 2', 'Job 1', 'Job 3']
+    """
+    num_jobs = len(processing_times)
+    num_machines = len(processing_times[0]) if num_jobs > 0 else 0
+
+    # job_id를 인덱스로 변환
+    job_id_to_index = {job_id: i for i, job_id in enumerate(job_ids)}
+    try:
+        sequence_indices = [job_id_to_index[job_id] for job_id in sequence]
+    except KeyError as e:
+        raise ValueError(f"잘못된 작업 ID가 수동 순서에 포함되어 있습니다: {e}")
+
+    if len(sequence_indices) != num_jobs or len(set(sequence_indices)) != num_jobs:
+        raise ValueError("수동 순서에는 모든 작업이 정확히 한 번씩 포함되어야 합니다.")
+
+    # 완료 시간 행렬 C_ij 초기화
+    completion_times = [[0] * num_machines for _ in range(num_jobs)]
+
+    # 재귀적 관계를 사용하여 완료 시간 계산
+    for k in range(num_jobs):  # 순서 k (0 to n-1)
+        job_idx = sequence_indices[k]
+        for j in range(num_machines):  # 기계 j (0 to m-1)
+            # 첫 번째 작업(k=0) 또는 첫 번째 기계(j=0)의 완료 시간
+            prev_job_completion_on_same_machine = completion_times[sequence_indices[k - 1]][j] if k > 0 else 0
+            prev_machine_completion_for_same_job = completion_times[job_idx][j - 1] if j > 0 else 0
+
+            completion_times[job_idx][j] = max(prev_job_completion_on_same_machine,
+                                               prev_machine_completion_for_same_job) + processing_times[job_idx][j]
+
+    # Makespan은 마지막 순서의 작업이 마지막 기계에서 끝나는 시간
+    makespan = completion_times[sequence_indices[-1]][num_machines - 1]
+
+    # 간트 차트용 데이터 생성
+    schedule = []
+    for i in range(num_jobs):
+        job_schedule = {'job_id': job_ids[i], 'tasks': []}
+        for j in range(num_machines):
+            end_time = completion_times[i][j]
+            start_time = end_time - processing_times[i][j]
+            job_schedule['tasks'].append({
+                'machine': f'Machine {j + 1}',
+                'start': start_time,
+                'duration': processing_times[i][j],
+                'end': end_time
+            })
+        schedule.append(job_schedule)
+    results = {'schedule': schedule, 'makespan': makespan, 'sequence': sequence}
+
+    return results

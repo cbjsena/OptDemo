@@ -29,6 +29,7 @@
     <form method="POST" id="schedulingForm">
         {% csrf_token %}
         <input type="hidden" name="problem_type" value="flow_shop" id="problem_type">
+        <input type="hidden" name="action" value="optimize">
         <input type="hidden" name="num_jobs" value="{{ submitted_num_jobs }}">
         <input type="hidden" name="num_machines" value="{{ submitted_num_machines }}">
 
@@ -64,6 +65,7 @@
         
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 스케줄 계산 실행</button>
     </form>
+    {# --- 최적화 입력 데이터 폼 종료 --- #}
 
     {% if results or error_message or success_message %}
         <hr class="my-4"><h3 class="mt-4">Optimization Results</h3>
@@ -72,6 +74,7 @@
     {% endif %}
 
     {% if results %}
+        {# --- 최적화 결과 표시 --- #}
         <div class="card mt-3">
             <div class="card-header"><strong>결과 요약</strong></div>
             <div class="card-body">
@@ -86,7 +89,7 @@
         </div>
         {% if plot_data %}
             <div class="card mt-3">
-                <div class="card-header"><strong>간트 차트 (Gantt Chart)</strong></div>
+                <div class="card-header"><strong>[최적화 결과] 간트 차트 (Gantt Chart)</strong></div>
                 <div class="card-body">
                     <div class="chart-container" style="height: {{ submitted_num_machines|add:1|multiply_custom:60 }}px;">
                         <canvas id="flowShopGanttChart"></canvas>
@@ -94,13 +97,73 @@
                 </div>
             </div>
         {% endif %}
-    {% endif %}
+
+        {# --- [NEW] 수동 순서 결과 표시 --- #}
+        {% if manual_results %}
+        <div class="card mt-4 border-secondary">
+            <div class="card-header bg-secondary text-white"><strong>[수동 입력 결과] 요약</strong></div>
+            <div class="card-body">
+                <p><strong>입력된 작업 순서:</strong>
+                    {% for job_id in manual_results.sequence %}
+                        <span class="badge badge-secondary" style="font-size: 1rem;">{{ job_id }}</span>{% if not forloop.last %} &rarr; {% endif %}
+                    {% endfor %}
+                </p>
+                <p><strong>계산된 Makespan:</strong>
+                    <span class="h4 {% if manual_results.makespan > results.makespan %}text-danger{% else %}text-success{% endif %}">
+                        {{ manual_results.makespan|floatformat:2 }}
+                    </span>
+                    <small>(최적 Makespan: {{ results.makespan|floatformat:2 }})</small>
+                </p>
+            </div>
+        </div>
+            {% if manual_plot_data %}
+            <div class="card mt-3">
+                <div class="card-header"><strong>[수동 입력 결과] 간트 차트</strong></div>
+                <div class="card-body">
+                    <div class="chart-container" style="...">
+                        <canvas id="manualGanttChart"></canvas> {# 새 ID 부여 #}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endif %} {# end if manual_results #}
+
+        {# --- [NEW] 수동 순서 입력 및 비교 폼 --- #}
+        <hr class="my-5">
+        <div class="manual-check-section mt-4">
+            <h3 class="mt-4">수동 순서 비교</h3>
+            <p>최적화 결과와 비교하고 싶은 다른 작업 순서를 직접 입력해 보세요. (예: {{ results.sequence|join:", " }})</p>
+            <form method="POST" id="manualCheckForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="manual_check">
+                <!-- 원본 데이터와 최적화 결과를 다음 요청으로 전달하기 위한 숨겨진 필드 -->
+                <input type="hidden" name="num_jobs" value="{{ submitted_num_jobs }}">
+                <input type="hidden" name="num_machines" value="{{ submitted_num_machines }}">
+                <input type="hidden" name="original_input_json" value="{{ original_input_json }}">
+                <input type="hidden" name="optimal_results_json" value="{{ optimal_results_json }}">
+                {# 사용자가 수정한 폼 값을 그대로 전달하기 위해 form_data도 함께 #}
+                {% for key, value in form_data.items %}
+                     {% if key != 'action' and key != 'csrfmiddlewaretoken' %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                    {% endif %}
+                {% endfor %}
+
+                <div class="form-group">
+                    <label for="manual_sequence"><strong>작업 순서 입력 (쉼표로 구분)</strong></label>
+                    <input type="text" class="form-control" id="manual_sequence" name="manual_sequence"
+                            value="{{ results.sequence|join:", " }}">
+                </div>
+                <button type="submit" class="btn btn-secondary mt-2">수동 스케줄 결과 조회</button>
+            </form>
+        </div>
+    {% endif %} {# end if results #}
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // 기존 최적화 차트 그리기
     const plotDataJson = '{{ plot_data|safe|default_if_none:"[]" }}';
     try {
         const plotData = JSON.parse(plotDataJson);
@@ -155,6 +218,65 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                 });
+            }
+        }
+    } catch(e) { console.error("Error creating Flow Shop Gantt chart:", e); }
+
+    // [NEW] 수동 결과 차트 그리기
+    const manualPlotDataJson = '{{ manual_plot_data|safe|default_if_none:"[]" }}';
+    try {
+        const manualPlotData = JSON.parse(manualPlotDataJson);
+        if (manualPlotData && manualPlotData.length > 0) {
+            const manualCtx = document.getElementById('manualGanttChart');
+            if (manualCtx) {
+                // 간트 차트 데이터 구성
+                const machineLabels = manualPlotData[0].tasks.map(t => t.machine);
+                const colors = ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)', 'rgba(255, 159, 64, 0.6)'];
+                const datasets = manualPlotData.map((job, index) => {
+                    return {
+                        label: job.job_id,
+                        data: job.tasks.map(task => [task.start, task.end]),
+                        backgroundColor: colors[index % colors.length],
+                        borderColor: colors[index % colors.length].replace('0.6', '1'),
+                        borderWidth: 1,
+                        borderSkipped: false
+                    }
+                });
+				new Chart(manualCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: machineLabels,
+                        datasets: datasets
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: false, // 스택하지 않음
+                                beginAtZero: true,
+                                title: { display: true, text: 'Time' }
+                            },
+                            y: {
+                                stacked: true // Y축은 스택하여 작업들이 겹쳐 보이지 않게 함
+                            }
+                        },
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const datasetLabel = context.dataset.label || '';
+                                        const value = context.raw;
+                                        return `${datasetLabel}: [${value[0]}, ${value[1]}] (Duration: ${value[1]-value[0]})`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
             }
         }
     } catch(e) { console.error("Error creating Flow Shop Gantt chart:", e); }
