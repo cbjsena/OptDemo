@@ -1,15 +1,8 @@
 from django.shortcuts import render
 import json
+import itertools
 
 from common_utils.run_production_opt import *
-from common_utils.default_data import (
-    preset_lot_sizing_num_periods,
-    preset_single_machine_num_jobs,
-    preset_single_machine_data,
-    preset_flow_shop_num_jobs,
-    preset_flow_shop_num_machines,
-    preset_flow_shop_data
-)
 from common_utils.data_utils_production import *
 
 logger = logging.getLogger(__name__)
@@ -346,13 +339,151 @@ def job_shop_introduction_view(request):
 
 
 def job_shop_demo_view(request):
-    """Flow Shop Scheduling Introduction Page."""
+    jobs_list = []
+    form_data_for_repopulate = {}
+    if request.method == 'GET':
+        submitted_num_jobs = int(request.GET.get('num_jobs_to_show', preset_job_shop_num_jobs))
+        submitted_num_machines = int(request.GET.get('num_machines_to_show', preset_job_shop_num_machines))
+        submitted_num_jobs = max(2, min(8, submitted_num_jobs))
+        submitted_num_machines = max(3, min(5, submitted_num_machines))
+
+        # 기본 데이터 풀
+        default_job_ids = [f'Job {i + 1}' for i in range(5)]
+
+        for i in range(submitted_num_jobs):
+            preset = preset_job_shop_data [i]
+            processing_times = []
+            for j in range(submitted_num_machines):
+                processing_time = preset['processing_times'][j]
+                processing_times.append(request.GET.get(f'p_{i}_{j}', processing_time))
+
+            jobs_list.append({
+                'id': request.GET.get(f'job_{i}_id', preset['id']),
+                'processing_times': request.GET.get(f'job_{i}_processing_time', processing_times),
+                'selected_routing': request.GET.get(f'job_{i}_due_date', preset['selected_routing']),
+            })
+        logger.info(jobs_list)
+    elif request.method == 'POST':
+        form_data_for_repopulate = request.POST.copy()
+        submitted_num_jobs = int(form_data_for_repopulate.get('num_jobs', preset_job_shop_num_jobs))
+        submitted_num_machines = int(form_data_for_repopulate.get('num_machines', preset_job_shop_num_machines))
+
+        # POST 후 입력값 유지를 위해 jobs_list 재생성
+        for i in range(submitted_num_jobs):
+            job_info = {
+                'id': form_data_for_repopulate.get(f'job_{i}_id'),
+                'processing_times': [],
+                'selected_routing': form_data_for_repopulate.get(f'job_{i}_routing')
+            }
+            for j in range(submitted_num_machines):
+                job_info['processing_times'].append(form_data_for_repopulate.get(f'p_{i}_{j}'))
+            jobs_list.append(job_info)
+
+    # 가능한 공정 순서(라우팅) 목록 생성
+    machine_indices = list(range(submitted_num_machines))
+    possible_routings = list(itertools.permutations(machine_indices))
+
     context = {
         'active_model': 'Production & Scheduling',
-        'active_submenu_category': 'job_shop',
-        'active_submenu': 'job_shop_demo'
+        'active_submenu': 'job_shop_demo',
+        'jobs_list': jobs_list,  # 평평한 form_data 대신 구조화된 리스트 전달
+        'results': None, 'error_message': None, 'success_message': None,
+        'processing_time_seconds': "N/A",
+        'num_jobs_options': range(2, 6),
+        'num_machines_options': range(3, 5),
+        'submitted_num_jobs': submitted_num_jobs,
+        'submitted_num_machines': submitted_num_machines,
+        'possible_routings': possible_routings,
+        'plot_data': None
     }
-    logger.debug("Rendering Flow Shop Scheduling introduction page.")
+
+    if request.method == 'POST':
+        try:
+            input_data = create_job_shop_json_data(form_data_for_repopulate)
+
+            # 2. 파일 저장
+            saved_filename, save_error = save_production_json_data(input_data)
+            if save_error:
+                context['error_message'] = save_error
+            elif saved_filename:
+                context['info_message'] = f"입력 데이터가 '{saved_filename}'으로 서버에 저장되었습니다."
+
+            # 3. 최적화 실행
+            results_data, error_msg_opt, processing_time_ms = run_job_shop_optimizer(input_data)
+
+            context[
+                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+            if error_msg_opt:
+                context['error_message'] = error_msg_opt
+            elif results_data:
+                context['results'] = results_data
+                context['success_message'] = f"최적 스케줄 계산 완료! Makespan: {results_data['makespan']:.2f}"
+                context['plot_data'] = json.dumps(results_data['schedule'])
+        except (ValueError, TypeError) as ve:
+            context['error_message'] = f"입력값 오류: {str(ve)}"
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+
+    return render(request, 'production_scheduling_app/job_shop_demo.html', context)
+
+
+def job_shop_demo_view_ori(request):
+    form_data = {}
+
+    if request.method == 'GET':
+        submitted_num_jobs = int(request.GET.get('num_jobs_to_show', preset_job_shop_num_jobs))
+        submitted_num_machines = int(request.GET.get('num_machines_to_show', preset_job_shop_num_machines))
+        submitted_num_jobs = max(2, min(5, submitted_num_jobs))
+        submitted_num_machines = max(3, min(4, submitted_num_machines))
+
+        # 기본값 생성: 각 작업이 모든 기계를 한 번씩만 방문하도록 순서를 섞음
+        for i in range(submitted_num_jobs):
+            machines_order = list(range(submitted_num_machines))
+            random.shuffle(machines_order)
+            for j in range(submitted_num_machines):
+                form_data[f'job_{i}_op_{j}_machine'] = request.GET.get(f'job_{i}_op_{j}_machine',
+                                                                       str(machines_order[j]))
+                form_data[f'job_{i}_op_{j}_time'] = request.GET.get(f'job_{i}_op_{j}_time', str(random.randint(5, 25)))
+
+    elif request.method == 'POST':
+        form_data = request.POST.copy()
+        submitted_num_jobs = int(form_data.get('num_jobs', preset_job_shop_num_jobs))
+        submitted_num_machines = int(form_data.get('num_machines', preset_job_shop_num_machines))
+
+    context = {
+        'active_model': 'Production & Scheduling',
+        'active_submenu': 'job_shop_demo',
+        'form_data': form_data,
+        'results': None, 'error_message': None, 'success_message': None,
+        'processing_time_seconds': "N/A",
+        'num_jobs_options': range(2, 6),
+        'num_machines_options': range(3, 5),
+        'submitted_num_jobs': submitted_num_jobs,
+        'submitted_num_machines': submitted_num_machines,
+        'plot_data': None
+    }
+
+    if request.method == 'POST':
+        try:
+            input_data = create_job_shop_json_data(form_data)
+            # save_production_json_data(input_data) # 파일 저장 (필요시)
+
+            results_data, error_msg_opt, processing_time_ms = run_job_shop_optimizer(input_data)
+            context[
+                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+
+            if error_msg_opt:
+                context['error_message'] = error_msg_opt
+            elif results_data:
+                context['results'] = results_data
+                context['success_message'] = f"최적 스케줄 계산 완료! Makespan: {results_data['makespan']:.2f}"
+                context['plot_data'] = json.dumps(results_data['schedule'])
+
+        except ValueError as ve:
+            context['error_message'] = f"입력값 오류: {str(ve)}"
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+
     return render(request, 'production_scheduling_app/job_shop_demo.html', context)
 
 

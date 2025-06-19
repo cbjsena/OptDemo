@@ -35,7 +35,7 @@ DEMO_DIR_MAP ={'matching_cf_tft_data':DEMO_DIR/'match_cf_tft_data',
                'production_lot_sizing_data':DEMO_DIR/'production_lot_sizing_data',
                'production_single_machine_data':DEMO_DIR/'production_single_machine_data',
                'production_flow_shop_data':DEMO_DIR/'production_flow_shop_data',
-               'production_jop_shop_data':DEMO_DIR/'production_jop_shop_data',
+               'production_job_shop_data':DEMO_DIR/'production_job_shop_data',
                'production_rcpsp_data':DEMO_DIR/'production_rcpsp_data'}
 
 # DEMO_DIR_MAP에 정의된 모든 디렉토리 생성 (없으면)

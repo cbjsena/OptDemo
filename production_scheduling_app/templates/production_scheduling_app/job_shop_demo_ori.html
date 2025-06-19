@@ -31,60 +31,52 @@
         <input type="hidden" name="num_machines" value="{{ submitted_num_machines }}">
 
         <div class="form-section">
-            <h4>작업별 정보 입력</h4>
+            <h4>작업별 공정 순서 및 처리 시간 입력</h4>
             <div class="table-responsive">
                 <table class="table table-bordered text-center">
                     <thead class="thead-light">
                         <tr>
                             <th rowspan="2" class="align-middle">작업 ID</th>
-                            <th colspan="{{ submitted_num_machines }}">기계별 처리 시간</th>
-                            <th rowspan="2" class="align-middle">공정 순서 (Routing)</th>
+                            {% for j in submitted_num_machines|get_range %}
+                            <th colspan="2">공정 {{ j|add:1 }}</th>
+                            {% endfor %}
                         </tr>
                         <tr>
                             {% for j in submitted_num_machines|get_range %}
-                            <th>기계 {{ j|add:1 }}</th>
+                            <th>기계</th>
+                            <th>시간</th>
                             {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
-                        {% for job in jobs_list %}
+                        {% for i in submitted_num_jobs|get_range %}
                         <tr>
-                            <td><input type="text" class="form-control form-control-sm" name="job_{{ forloop.counter0 }}_id" value="{{ job.id }}"></td>
-
-                            {% for processing_time in job.processing_times %}
+                            <td><strong>Job {{ i|add:1 }}</strong></td>
+                            {% for j in submitted_num_machines|get_range %}
                             <td>
-                                <input type="number" min="1" name="p_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}"
-                                       class="form-control form-control-sm" value="{{ processing_time }}">
-                            </td>
-                            {% endfor %}
-
-                            <td>
-                                <select class="form-control form-control-sm" name="job_{{ forloop.counter0 }}_routing">
-                                    {% for route_tuple in possible_routings %}
-                                        {% with route_str=route_tuple|join:"-" %}
-                                            <option value="{{ route_str }}" {% if job.selected_routing == route_str %}selected{% endif %}>
-                                                {% for machine_idx in route_tuple %}
-                                                    M{{ machine_idx|add:1 }}{% if not forloop.last %} &rarr; {% endif %}
-                                                {% endfor %}
-                                            </option>
-                                        {% endwith %}
+                                <select class="form-control form-control-sm" name="op_{{ i }}_{{ j }}_machine">
+                                    {% for m in submitted_num_machines|get_range %}
+                                    <option value="{{ m }}" {% with k='op_'|add:i|stringformat:'s'|add:'_'|add:j|stringformat:'s'|add:'_machine'%}{% if form_data|get_item_simple:k|stringformat:'s' == m|stringformat:'s' %}selected{% endif %}{%endwith%}>M{{m|add:1}}</option>
                                     {% endfor %}
                                 </select>
                             </td>
+                            <td>
+                                <input type="number" min="1" name="op_{{ i }}_{{ j }}_time" class="form-control form-control-sm" value="{% with k='op_'|add:i|stringformat:'s'|add:'_'|add:j|stringformat:'s'|add:'_time'%}{{form_data|get_item_simple:k}}{%endwith%}">
+                            </td>
+                            {% endfor %}
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
-
+        
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 스케줄 계산 실행</button>
     </form>
 
     {% if results or error_message or success_message %}
         <hr class="my-4"><h3 class="mt-4">Optimization Results</h3>
-        {% if success_message and not error_message %}<div class="alert alert-success">{{ success_message }}</div>{% endif %}
-        {% if error_message %}<div class="alert alert-danger">{{ error_message }}</div>{% endif %}
+        {# ... 메시지 표시 로직 ... #}
     {% endif %}
 
     {% if results %}

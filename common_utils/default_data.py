@@ -106,3 +106,6 @@ preset_flow_shop_data = [
     {'id': 'Job_9', 'processing_time': [36,2,31,75,59]},
     {'id': 'Job_10', 'processing_time': [12,88,58,99,9]}
 ]
+
+preset_job_shop_num_jobs = 4
+preset_job_shop_num_machines = 3

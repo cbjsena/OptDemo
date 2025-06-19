@@ -336,3 +336,77 @@ def calculate_flow_shop_schedule(processing_times, job_ids, sequence):
     results = {'schedule': schedule, 'makespan': makespan, 'sequence': sequence}
 
     return results
+
+
+# --- Job Shop 최적화 실행 함수 ---
+def run_job_shop_optimizer(input_data):
+    logger.info("Running Job Shop Optimizer.")
+    jobs_data = input_data['jobs']
+    num_jobs = input_data['num_jobs']
+    num_machines = input_data['num_machines']
+
+    model = cp_model.CpModel()
+    horizon = sum(task[1] for job in jobs_data for task in job)
+
+    # 변수 생성: task (job_id, op_id)의 start, end, interval
+    all_tasks = {}
+    for i, job in enumerate(jobs_data):
+        for j, task in enumerate(job):
+            start_var = model.NewIntVar(0, horizon, f'start_{i}_{j}')
+            end_var = model.NewIntVar(0, horizon, f'end_{i}_{j}')
+            interval_var = model.NewIntervalVar(start_var, task[1], end_var, f'interval_{i}_{j}')
+            all_tasks[(i, j)] = interval_var
+
+    # 제약 조건
+    # 1. 기계 독점 제약 (No Overlap)
+    for j in range(num_machines):
+        intervals_on_machine = []
+        for i in range(num_jobs):
+            for k in range(num_machines):
+                if jobs_data[i][k][0] == j:
+                    intervals_on_machine.append(all_tasks[(i, k)])
+        model.AddNoOverlap(intervals_on_machine)
+
+    # 2. 작업 내 공정 순서 제약 (Precedence)
+    for i in range(num_jobs):
+        for j in range(num_machines - 1):
+            model.Add(all_tasks[(i, j + 1)].StartExpr() >= all_tasks[(i, j)].EndExpr())
+
+    # 목표 함수: Makespan 최소화
+    makespan = model.NewIntVar(0, horizon, 'makespan')
+    all_end_times = [all_tasks[(i, num_machines - 1)].EndExpr() for i in range(num_jobs)]
+    model.AddMaxEquality(makespan, all_end_times)
+    model.Minimize(makespan)
+
+    # 해결
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = 10.0
+    status = solver.Solve(model)
+    processing_time_ms = solver.WallTime() * 1000
+
+    # 결과 추출
+    results = {'schedule': [], 'makespan': 0}
+    error_msg = None
+
+    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+        results['makespan'] = solver.ObjectiveValue()
+
+        job_schedules = []
+        for i in range(num_jobs):
+            job_schedule = {'job_id': f'Job {i + 1}', 'tasks': []}
+            for j in range(num_machines):
+                machine_id = jobs_data[i][j][0]
+                start_time = solver.Value(all_tasks[(i, j)].StartExpr())
+                end_time = solver.Value(all_tasks[(i, j)].EndExpr())
+                job_schedule['tasks'].append({
+                    'machine': f'Machine {machine_id + 1}',
+                    'start': start_time,
+                    'end': end_time,
+                    'duration': end_time - start_time
+                })
+            job_schedules.append(job_schedule)
+        results['schedule'] = job_schedules
+    else:
+        error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
+
+    return results, error_msg, processing_time_ms
