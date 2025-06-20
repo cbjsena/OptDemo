@@ -364,7 +364,7 @@ def job_shop_demo_view(request):
                 'processing_times': request.GET.get(f'job_{i}_processing_time', processing_times),
                 'selected_routing': request.GET.get(f'job_{i}_due_date', preset['selected_routing']),
             })
-        logger.info(jobs_list)
+
     elif request.method == 'POST':
         form_data_for_repopulate = request.POST.copy()
         submitted_num_jobs = int(form_data_for_repopulate.get('num_jobs', preset_job_shop_num_jobs))
