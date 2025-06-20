@@ -6,6 +6,22 @@
 {% block styles %}
     <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
     <link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+    <style>
+        .highlight-box {
+            background-color: #e9f7fd;
+            border-left: 5px solid #007bff;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .highlight-box h4 {
+            margin-top: 0;
+            color: #0056b3;
+            border-bottom: 1px dashed #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -16,16 +32,45 @@
 
     <h3>1. 문제 설명</h3>
     <p>
-        <strong>자원 제약 프로젝트 스케줄링 문제(Resource-Constrained Project Scheduling Problem, RCPSP)</strong>는 여러 개의 활동(Activity)으로 구성된 프로젝트의 일정을 계획하는 문제입니다. 이 문제는 각 활동의 소요 시간과 활동 간의 **선후 관계(Precedence Constraint)**뿐만 아니라, 프로젝트 수행에 필요한 **제한된 자원(Resource Constraint)**을 동시에 고려한다는 점에서 매우 현실적이고 복잡합니다.
+        <strong>자원 제약 프로젝트 스케줄링 문제(Resource-Constrained Project Scheduling Problem, RCPSP)</strong>는
+        한정된 자원(인력, 장비, 자본 등)을 사용하여 프로젝트를 구성하는 여러 활동(Activity)들을 언제 시작하고 완료할지 결정하는 문제입니다.
+        문제의 목표는 주어진 제약 조건들을 모두 만족시키면서 프로젝트의 <strong>전체 완료 시간(Makespan)</strong>을 최소화하는
+        최적의 활동 시작 시간을 찾는 것입니다.
     </p>
     <p>
-        문제의 목표는 주어진 제약 조건들을 모두 만족시키면서 프로젝트의 전체 완료 시간(Makespan)을 최소화하는 최적의 활동 시작 시간을 찾는 것입니다.
+        이전의 <strong>머신 스케줄링(Flow Shop, Job Shop)</strong>가 기계라는 특정 자원의 순서 배분에 초점을 맞췄다면,
+        <strong>RCPSP</strong>는 더욱 일반화된 문제로 각 활동의 소요 시간과 활동 간의 선후 관계뿐만 아니라, 프로젝트 수행에 필요한
+        제한된 자원을 동시에 고려한다는 점에서 매우 현실적이고 복잡합니다.
     </p>
     <figure>
         <img src="{% static 'production_scheduling_app/images/rcpsp_concept.png' %}"
              alt="RCPSP 문제 개념도" class="intro-image" style="max-width: 600px;">
         <figcaption class="image-caption">그림 1: 활동 간 선후 관계와 더불어, 제한된 자원(인력, 장비 등)으로 인해 동시에 수행할 수 있는 활동의 수가 제약을 받아 전체 프로젝트 기간이 늘어나는 것을 보여줍니다.</figcaption>
     </figure>
+
+    <h4>RCPSP의 핵심 구성 요소</h4>
+    <ul>
+        <li><strong>활동 (Activities):</strong> 프로젝트를 구성하는 개별 작업 단위로 각 활동은 고유한 처리 기간(Duration)이 존재</li>
+        <li><strong>선후 관계 (Precedence Relationships):</strong> 활동들 사이에 존재하는 기술적인 순서 제약으로
+        이는 보통 네트워크 다이어그램(Network Diagram) 또는 AON(Activity-On-Node) 차트로 표현 </li>
+        <li><strong>자원 (Resources):</strong> 활동을 수행하는 데 필요한 요소로
+            사람이나 기계처럼 시간이 지나도 총량이 변하지 않고 계속 사용할 수 있는 자원인 <strong>재생 가능 자원 (Renewable Resources)</strong>과
+            예산이나 원자재처럼 사용하면 소모되어 사라지는 자원인 <strong>비재생 가능 자원 (Non-renewable Resources)</strong>으로 구분</li>
+        <li><strong>자원 제약 (Resource Constraints):</strong> 각 기간에 사용할 수 있는 자원의 총량은 한정되므로,
+            동시 진행 가능한 활동도 순차적으로 진행 하는 경우 발생하여 프로젝트 기간이 증가</li>
+    </ul>
+
+    <p>RCPSP는 대표적인 NP-hard 문제로, 프로젝트의 규모가 커지면 최적해를 찾는 것이 매우 어렵습니다.
+        상황과 문제의 크기에 따라 아래 소개하는 간단한 우선 순위나 휴리스틱 접근법을 이용하기도 합니다.
+    <h4>해결 방법</h4>
+    <ul>
+        <li><strong>직렬 스케줄링 (Serial SGS):</strong> 활동 목록을 우선순위에 따라 정렬한 뒤, 순서대로 하나씩 가장 빨리 시작 가능한 시간을 찾아 배치</li>
+        <li><strong>병렬 스케줄링 (Parallel SGS):</strong> 시간의 흐름에 따라 매 시점마다, 시작 가능한 활동들 중 우선순위가 높은 활동을 자원이 허용하는 만큼 배치 </li>
+        <li><strong>MIN SLK (Minimum Slack):</strong> 여유 시간(Slack)이 가장 적은 활동을 우선 (긴급한 경로에 있는 활동)</li>
+        <li><strong>LFT (Latest Finish Time):</strong> 자원 제약이 없을 때의 최후 완료 시간이 가장 빠른 활동을 우선</li>
+        <li><strong>SPT (Shortest Processing Time):</strong> 처리 기간이 가장 짧은 활동을 우</li>
+        <li><strong>GRPW (Greatest Resource per Work):</strong> 단위 시간당 자원 요구량이 가장 큰 활동을 우선</li>
+    </ul>
 
     <h3>2. 산업 응용 분야</h3>
     <p>RCPSP는 자원과 시간의 제약이 중요한 모든 종류의 프로젝트 관리에 핵심적으로 사용됩니다.</p>
@@ -38,52 +83,180 @@
 
     <h3>3. 수학적 모델</h3>
     <div class="col-md-8 model-definition-content">
-        <strong>주요 파라미터:</strong>
-        <div class="math-block">
-            <p>$$ d_j = \text{The duration of activity } j $$</p>
-            <p>$$ Pred(j) = \text{The set of immediate predecessors of activity } j $$</p>
-            <p>$$ r_{jk} = \text{The amount of resource } k \text{ required by activity } j $$</p>
-            <p>$$ R_k = \text{The total availability of resource } k \text{ at any time} $$</p>
-        </div>
-        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
-         <div class="math-block">
-            <p>$$ S_j = \text{The start time of activity } j $$</p>
-        </div>
-        <strong>목표 함수:</strong>
-         <div class="math-block">
-            <p>$$ \min S_{n+1} $$</p>
-            <p>$$ \text{(Minimize the start time of the dummy 'end' activity, i.e., the project makespan)} $$</p>
-        </div>
-
+        <h4 class="model-definition-content"><strong>입력 데이터:</strong></h4>
+        <ul>
+            <li><strong>\( i, j \in \{0, 1, \dots, n+1 \} \)</strong>: 활동(Activity)의 인덱스. 0은 프로젝트의 시작을,
+                \( n + 1 \) 은 프로젝트의 종료를 나타내는 가상 활동(Dummy Activity) 입니다.</li>
+            <li><strong>\( k \in \{1, 2, \dots, K\} \)</strong>: 재생 가능 자원(Renewable Resource)의 종류</li>
+            <li><strong>\( t \in \{1, 2, \dots, T\} \)</strong>: 시간의 단위 (예: Day). \( T \) 는 프로젝트가 완료될 것으로 예상되는 충분히 긴 기간(Horizon)</li>
+            <li><strong>\( d_{i} \)</strong>: 활동 \( i \) 의 처리 기간(Duration). \( d_{0}  = d_{n+1} + 0\) </li>
+            <li><strong>\( r_{ik} \)</strong>: 활동 \( i \) 가 수행되는 동안 매 시간 단위마다 필요한 자원 \( k \) 의 양.
+                \( r_{0k}  = r_{n+1, k} = 0\)</li>
+            <li><strong>\( R_{k} \)</strong>: 매 시간 단위마다 사용 가능한 자원 \( k \) 의 최대 총량.</li>
+            <li><strong>\( P_{ij} \)</strong>: 선후 관계(Precedence)를 나타내는 활동 쌍 \( (i, j) \) 의 집합.
+                (\( i \) 는 \( j \) 보다 먼저 끝나야 함)</li>
+        </ul>
         <hr>
 
-        <strong>주요 제약 조건:</strong>
+        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
         <ul>
-            <li>
-                <strong>선후 관계 제약 (Precedence Constraint):</strong> 선행 활동($i$)이 완료되어야만 후행 활동($j$)을 시작할 수 있습니다.
+            <li><strong>\( x_{it} \)</strong>: 활동 \( i \) 가 시간 \( t \) 에 시작 하면 1, 아니면 0</li></li>
+            <li><strong>\( C_{max} \)</strong>: 모든 활동이 완료되는 최종 시간(Makespan)</li>
+    </ul>
+
+        <h4 class="model-definition-content"><strong> 목표 함수:</strong></h4>
+        <p>프로젝트의 총 완료 기간(Makespan)을 최소화하는 것을 목표로 합니다.
+            이는 모든 실제 활동이 완료된 이후에 시작하는 가상 종료 활동 \( n + 1 \) 의 시작 시간을 최소화하는 것과 같습니다. </p>
+        <div class="math-block">
+             $$ \min C_{max}  =  \min \sum_{t=1}^{T} t \cdot x_{n+1, t} $$
+        </div>
+
+        <h4 class="model-definition-content"><strong>제약 조건</strong></h4>
+        <ul>
+            <li><strong>활동 시작 제약 (Unique Start Time):</strong>
+                <p>모든 활동은 프로젝트 기간 내에 단 한 번만 시작</p>
                 <div class="math-block">
-                    <p>$$ S_i + d_i \le S_j \quad \forall i \in Pred(j) $$</p>
+                    $$ \sum_{t=1}^{T} x_{it} = 1 \quad (\forall i)$$
                 </div>
             </li>
-            <li>
-                <strong>자원 제약 (Resource Constraint):</strong> 임의의 시간($t$)에 동시에 진행 중인 모든 활동들이 사용하는 자원의 총합은 가용 자원의 양($R_k$)을 초과할 수 없습니다.
+            <li><strong>선후 관계 제약 (Precedence Constraints): </strong>
+                <p>선후 관계가 존재하는 모든 활동 쌍 \( (i, j) in P\) 에 대해, 후행 활동 \( j \) 는
+                    선행 활동 \( i \) 이 완료된 이후에 만 시작</p>
                 <div class="math-block">
-                     <p>$$ \sum_{j: S_j \le t < S_j+d_j} r_{jk} \le R_k \quad (\forall t, \forall k) $$</p>
+                    <p>$$ \sum_{t=1}^{T} t \cdot x_{jt} \ge \sum_{t=1}^{T} (t + d_{i}) \cdot x_{it}  \quad (\forall (i, j) \in P)$$</p>
+                    <p>좌변은 활동 \( j \) 의 시작 시간이고, 우변은 활동 \( i \) 의  완료 시간(시작 시간 + 처리 기간)</p>
+                </div>
+            </li>
+            <li><strong>자원 제약 (Resource Constraints):</strong>
+                <p>임의의 시간 \( t \) 에, 현재 수행 중인 모든 활동들이 사용하는 자원의 총합은 가용 자원의 총량에 제한 </p>
+                <div class="math-block">
+                    <p>$$ \sum_{i=1}^{n} r_{ik} ( \sum_{\tau = t - d_i + 1}^{t} x_{i\tau} ) \leq R_k \quad (\forall k = 1, \dots, K;\ \forall t = 1, \dots, T) $$</p>
+                    <p>괄호 안의 \( \sum x_{i\tau} \) 부분은 시간 \( t \) 에 활동 \( i \) 가 진행 중인지 나타냅니다. <br>
+                    활동 \( i \) 가 \( \tau \) 에 시작했다면 \( t \) 시점에는 진행 중이므로  \( x_{i\tau} =  1 \) 이 됩니다.
+                    </p>
                 </div>
             </li>
         </ul>
-
-        <strong>해법 (Solution Methods):</strong>
-        <p>
-            RCPSP는 Job Shop 스케줄링보다 더 일반화된 문제로, 대표적인 NP-hard 문제입니다. 이 문제는 다양한 우선순위 규칙(Priority rule)을 기반으로 한 휴리스틱 방법이나, 유전 알고리즘(Genetic Algorithm) 등의 메타휴리스틱으로 근사해를 찾을 수 있습니다. 최적해를 찾기 위해서는 제약 프로그래밍(Constraint Programming, CP)이 매우 효과적이며, OR-Tools의 CP-SAT 솔버는 RCPSP를 모델링하고 해결하는 데 강력한 기능을 제공합니다.
-        </p>
     </div>
+
     <h3>4. RCPSP Demo</h3>
     <p>
         <strong>RCPSP Demo</strong>에서는
         사용자가 ???을 입력하여
         ??? 최소화하는 생산 계획을 수립하는 과정을 체험할 수 있습니다.
     </p>
+
+    <div class="highlight-box">
+        <h4>💡 자원 제약 심층 분석: 웹사이트 제작 예시</h4>
+        <p> 자원 제약이 스케줄에 어떻게 영향을 미치는지 구체적인 예시를 통해 살펴보겠습니다.</p>
+
+        <h5>상황 설정</h5>
+        <p><strong>- 가용 자원 (Resources):</strong></p>
+        <ul>
+            <li>개발자 (k=1): 총 6명 (즉, \( R_{1} = 6 \) )</li>
+            <li>디자이너 (k=2): 총 4명 (즉, \( R_{2} = 4 \))</li>
+        </ul>
+        <p><strong>- 활동 목록 (Activities):</strong></p>
+        <table class="table table-sm table-bordered" style="background-color: #fff;">
+            <thead class="thead-light">
+                <tr>
+                    <th>활동 이름</th>
+                    <th>기간 ($d_i$)</th>
+                    <th>필요 개발자 수 ($r_{i,1}$)</th>
+                    <th>필요 디자이너 수 ($r_{i,2}$)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>A: 기획</td>
+                    <td>2일</td>
+                    <td>4명</td>
+                    <td>2명</td>
+                </tr>
+                <tr>
+                    <td>B: 디자인</td>
+                    <td>3일</td>
+                    <td>1명</td>
+                    <td>4명</td>
+                </tr>
+                 <tr>
+                    <td>C: 개발</td>
+                    <td>2일</td>
+                    <td>3명</td>
+                    <td>0명</td>
+                </tr>
+            </tbody>
+        </table>
+        <p><strong>- 프로젝트 최대 기간 (Resources):</strong></p>
+        <p> 프로젝트 완료 예상 기간:  \( t \in \{1, 2, \dots, 7\} \) </p>
+        <hr>
+
+        <h5>전체 자원 제약식 (1일차 ~ 7일차)</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <h6><strong>개발자 제약 (총 6명 이하)</strong></h6>
+                <div class="math-block" style="font-size: 0.9em; padding: 8px;">
+                    <p><strong>t=1:</strong> &nbsp; \( 4x_{A,1} + 1x_{B,1} + 3x_{C,1} \le 6\)</p>
+                    <p><strong>t=2:</strong> &nbsp; \( 4(x_{A,1}+x_{A,2}) + 1(x_{B,1}+x_{B,2}) + 3(x_{C,1}+x_{C,2}) \le 6\)</p>
+                    <p><strong>t=3:</strong> &nbsp; \( 4(x_{A,2}+x_{A,3}) + 1(x_{B,1}+x_{B,2}+x_{B,3}) + 3(x_{C,2}+x_{C,3}) \le 6\)</p>
+                    <p><strong>t=4:</strong> &nbsp; \( 4(x_{A,3}+x_{A,4}) + 1(x_{B,2}+x_{B,3}+x_{B,4}) + 3(x_{C,3}+x_{C,4}) \le 6\)</p>
+                    <p><strong>t=5:</strong> &nbsp; \( 4(x_{A,4}+x_{A,5}) + 1(x_{B,3}+x_{B,4}+x_{B,5}) + 3(x_{C,4}+x_{C,5}) \le 6\)</p>
+                    <p><strong>t=6:</strong> &nbsp; \( 4(x_{A,5}+x_{A,6}) + 1(x_{B,4}+x_{B,5}+x_{B,6}) + 3(x_{C,5}+x_{C,6}) \le 6\)</p>
+                    <p><strong>t=7:</strong> &nbsp; \( 4(x_{A,6}+x_{A,7}) + 1(x_{B,5}+x_{B,6}+x_{B,7}) + 3(x_{C,6}+x_{C,7}) \le 6\)</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6><strong>디자이너 제약 (총 4명 이하)</strong></h6>
+                <div class="math-block" style="font-size: 0.9em; padding: 8px;">
+                    <p><strong>t=1:</strong> &nbsp; \( 2x_{A,1} + 4x_{B,1} + 0x_{C,1} \le 4\)</p>
+                    <p><strong>t=2:</strong> &nbsp; \( 2(x_{A,1}+x_{A,2}) + 4(x_{B,1}+x_{B,2}) + 0 \le 4\)</p>
+                    <p><strong>t=3:</strong> &nbsp; \( 2(x_{A,2}+x_{A,3}) + 4(x_{B,1}+x_{B,2}+x_{B,3}) + 0 \le 4\)</p>
+                    <p><strong>t=4:</strong> &nbsp; \( 2(x_{A,3}+x_{A,4}) + 4(x_{B,2}+x_{B,3}+x_{B,4}) + 0 \le 4\)</p>
+                    <p><strong>t=5:</strong> &nbsp; \( 2(x_{A,4}+x_{A,5}) + 4(x_{B,3}+x_{B,4}+x_{B,5}) + 0 \le 4\)</p>
+                    <p><strong>t=6:</strong> &nbsp; \( 2(x_{A,5}+x_{A,6}) + 4(x_{B,4}+x_{B,5}+x_{B,6}) + 0 \le 4\)</p>
+                    <p><strong>t=7:</strong> &nbsp; \( 2(x_{A,6}+x_{A,7}) + 4(x_{B,5}+x_{B,6}+x_{B,7}) + 0 \le 4\)</p>
+                </div>
+            </div>
+        </div>
+
+        <h5>자원 제약식의 작동 원리</h5>
+        <p>
+            자원 제약식의 핵심은 어떤 날(시간 t)을 보더라도, 그날 동시에 진행 중인 모든 활동이 사용하는 자원의 합은
+            전체 가용 자원을 넘을 수 없다는 것입니다.
+        </p>
+        <p>
+            예를 들어, 프로젝트 3일차 (t=3) 시점을 기준으로 이 제약이 어떻게 적용되는지 보겠습니다.
+        </p>
+
+        <p><strong>1. 3일차 (t=3) 개발자(k=1) 자원 제약:</strong> (총 6명 사용 가능)</p>
+        <div class="math-block">
+            $$ 4 \cdot (\text{A가 진행중?}) + 1 \cdot (\text{B가 진행중?}) + 3 \cdot (\text{C가 진행중?}) \le 6 $$
+        </div>
+        <ul>
+            <li>A가 진행중 인지 판단하는 수학적 표현은
+                \( \sum_{\tau=t-(d_{A})+1}^{3} x_{A\tau}
+                = \sum_{\tau=3-2+1}^{3} x_{A\tau}
+                = \sum_{\tau=2}^{3} x_{A\tau} \) 입니다.<br>
+                (활동 A는 기간이 2일 이므로, 3일차에 진행 중 이려면 2일차 또는 3일차에 시작 해야 함)</li>
+        </ul>
+
+        <p><strong>2. 3일차 (t=3) 디자이너(k=2) 자원 제약:</strong> (총 4명 사용 가능)</p>
+        <div class="math-block">
+            $$ 2 \cdot (\text{A가 진행중?}) + 4 \cdot (\text{B가 진행중?}) + 0 \cdot (\text{C가 진행중?}) \le 4 $$
+        </div>
+
+        <h5>왜 이 제약이 중요한가? (실행 불가능한 스케줄 예시)</h5>
+        <p>
+            만약 우리가 자원 제약을 무시하고, 선후 관계만 없다면 활동 A와 B를 프로젝트 1일차에 **동시에 시작**하고 싶을 수 있습니다. 이 경우 어떤 일이 발생하는지 보겠습니다.
+        </p>
+        <ul>
+            <li><strong>개발자 사용량:</strong> (A에 필요한 4명) + (B에 필요한 1명) = **5명**.  (가용 자원 6명 이하이므로 **OK** ✅)</li>
+            <li><strong>디자이너 사용량:</strong> (A에 필요한 2명) + (B에 필요한 4명) = **6명**. (가용 자원 4명 이하가 아니므로 **VIOLATED** ❌)</li>
+        </ul>
+        <p>
+            결과적으로, 디자이너 자원이 부족하기 때문에 활동 A와 B는 동시에 시작할 수 없습니다.
+        </p>
+    </div>
 </div>
 {% endblock %}
 
