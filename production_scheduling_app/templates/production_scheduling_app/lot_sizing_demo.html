@@ -115,6 +115,13 @@
     {% if results %}
         {# ... 결과 요약 및 비용 분석 테이블 ... #}
         <div class="card mt-3">
+            <div class="card-header"><strong>결과 요약</strong></div>
+            <div class="card-body">
+                 <p><strong>최소 총 비용:</strong> {{ results.total_cost|floatformat:2 }}</p>
+                 <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
+            </div>
+        </div>
+        <div class="card mt-3">
              <div class="card-header"><strong>최적 생산 및 재고 계획</strong></div>
              <div class="table-responsive">
                 <table class="table table-sm table-striped text-center mb-0">

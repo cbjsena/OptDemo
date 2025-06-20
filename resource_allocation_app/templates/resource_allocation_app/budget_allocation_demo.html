@@ -26,14 +26,6 @@
     .results-table th:first-child, .results-table td:first-child {
         text-align: left;
     }
-    .error-message, .success-message, .info-message { /* info-message 추가 */
-        padding: .75rem 1.25rem; margin-bottom: 1rem;
-        border: 1px solid transparent; border-radius: .25rem;
-    }
-    .error-message { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
-    .success-message { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
-    .info-message { color: #004085; background-color: #cce5ff; border-color: #b8daff; } /* 정보 메시지용 스타일 */
-
     fieldset {
         background-color: #fcfdff; /* 약간 다른 배경색 */
     }
@@ -55,7 +47,7 @@
 
     <form method="GET" class="mb-3 form-inline">
         <div class="form-group mr-2">
-            <label for="num_items_to_show" class="mr-2">투자 항목 수 (1-10):</label>
+            <label for="num_items_to_show" class="mr-2">투자 항목 수 (2-10):</label>
             <select name="num_items_to_show" id="num_items_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
                 {% for i in num_items_options %}
                     <option value="{{ i }}" {% if i == submitted_num_items %}selected{% endif %}>{{ i }}개</option>
@@ -67,6 +59,7 @@
 
     <form method="POST">
         {% csrf_token %}
+        <input type="hidden" name="problem_type" value="budjet" id="problem_type">
         <input type="hidden" name="num_items" value="{{ submitted_num_items }}">
 
         <div class="card mb-4">
@@ -126,34 +119,22 @@
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 예산 분배 실행</button>
     </form>
 
+    {# 1. 결과 메세지 #}
     {% if success_save_message%}
-        <div class="success-message" role="alert">{{ success_save_message }}</div>
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
     {% endif %}
-
-    {% if results is not None or error_message or success_message %} {# 메시지 또는 결과가 있을 때만 구분선과 제목 표시 #}
+    {% if opt_results is not None or error_message or success_message %}
     <hr class="my-4">
-    <h3 class="mt-4">Optimization Results</h3>
+    <h3 class="mt-4">Optimization Results ({{ form_data.problem_type }})</h3>
     {% endif %}
-
     {% if error_message %}
-        <div class="error-message" role="alert">
-            <strong>오류:</strong> {{ error_message }}
-        </div>
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
     {% endif %}
 
-    {% if success_message and not error_message %} {# 에러 없을 때만 성공/정보 메시지 #}
-        <div class="success-message" role="alert">
-            {{ success_message }}
-        </div>
-    {% endif %}
-
-    {% if info_message and not error_message and not success_message %} {# 기타 정보 메시지 #}
-        <div class="info-message" role="alert">
-            {{ info_message }}
-        </div>
-    {% endif %}
-
-
+    {# 2. 결과 요약 및 시각화 #}
     {% if results %}
     <div class="card mt-4">
         <div class="card-header">
@@ -166,9 +147,9 @@
                 {# 여기서는 POST 후의 form_data.total_budget을 사용한다고 가정 #}
                 {{ form_data.total_budget|default_if_none:"N/A" }}
             </p>
-            <p><strong>계산된 최대 기대 수익:</strong> {{ total_maximized_return|floatformat:2 }}</p>
-            <p><strong>실제 할당된 총 예산:</strong> {{ total_allocated_budget|floatformat:2 }}
-               (활용률: {{ budget_utilization_percent }}{% if budget_utilization_percent != "N/A" %}%{% endif %})
+            <p><strong>계산된 최대 기대 수익:</strong> {{ results.total_maximized_return|floatformat:2 }}</p>
+            <p><strong>실제 할당된 총 예산:</strong> {{ results.total_allocated_budget|floatformat:2 }}
+               (활용률: {{ results.budget_utilization_percent }}{% if results.budget_utilization_percent != "N/A" %}%{% endif %})
             </p>
             <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
         </div>
@@ -185,7 +166,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in results %}
+                    {% for item in results.allocations %}
                     <tr>
                         <td>{{ item.name }}</td>
                         <td>{{ item.return_coefficient|floatformat:3 }}</td>

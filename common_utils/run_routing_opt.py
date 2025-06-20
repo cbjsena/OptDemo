@@ -136,7 +136,7 @@ def run_vrp_optimizer(input_data):
     if error_msg:
         logger.error(f"VRP optimization failed or no solution: {error_msg}")
 
-    return vrp_results, error_msg, processing_time_ms
+    return vrp_results, error_msg, get_solving_time_sec(processing_time_ms)
 
 
 def run_cvrp_optimizer(input_data):
@@ -311,7 +311,7 @@ def run_cvrp_optimizer(input_data):
             error_msg = f"최적 경로를 찾지 못했습니다. (솔버 상태: {status_str})"
         logger.error(f"CVRP optimization failed or no solution: {error_msg}")
 
-    return cvrp_results, error_msg, processing_time_ms
+    return cvrp_results, error_msg, get_solving_time_sec(processing_time_ms)
 
 
 def run_pdp_optimizer(input_data):
@@ -469,5 +469,9 @@ def run_pdp_optimizer(input_data):
         error_msg = f"PDP 최적 경로를 찾지 못했습니다. (솔버 상태: {routing.status()})"
         logger.error(f"PDP optimization failed: {error_msg}")
 
-    return pdp_results, error_msg, processing_time_ms
+    return pdp_results, error_msg, get_solving_time_sec(processing_time_ms)
 
+def get_solving_time_sec(processing_time):
+    # solver.WallTime(): if solver is CP-SAT then, sec else ms
+    processing_time = processing_time / 1000
+    return f"{processing_time:.3f}" if processing_time is not None else "N/A"

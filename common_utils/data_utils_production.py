@@ -1,6 +1,5 @@
 from common_utils.common_data_utils import save_json_data
 import logging
-import random
 import datetime
 
 logger = logging.getLogger(__name__)
@@ -44,6 +43,7 @@ preset_flow_shop_data = [
 
 preset_job_shop_num_jobs = 4
 preset_job_shop_num_machines = 3
+
 preset_job_shop_data = [
     {'id': 'Job_1', 'processing_times': [29,78,9,36,49], 'selected_routing': '0-1-2'},
     {'id': 'Job_2', 'processing_times': [43,92,8,45,68], 'selected_routing': '2-0-1'},

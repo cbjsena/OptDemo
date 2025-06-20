@@ -1,5 +1,4 @@
 from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 LP 솔버 사용)
-from ortools.graph.python import linear_sum_assignment # 할당 문제 전용 솔버
 import datetime
 import logging
 
@@ -217,11 +216,8 @@ def run_matching_transport_optimizer(input_data):
     solver.Minimize(solver.Sum(objective_terms))
 
     logger.info("Solving the assignment model...")
-    solve_start_time = datetime.datetime.now()
     status = solver.Solve()
-    solve_end_time = datetime.datetime.now()
-    processing_time_ms = (solve_end_time - solve_start_time).total_seconds() * 1000
-    logger.info(f"Solver finished. Status: {status}, Time: {processing_time_ms:.2f} ms")
+    logger.info(f"Solver finished. Status: {status}, Time: {solver.WallTime():.2f} ms")
 
     results = {'assignments':[], 'total_cost':0}
     error_msg = None
@@ -248,7 +244,7 @@ def run_matching_transport_optimizer(input_data):
     if error_msg:
         logger.error(f"Assignment optimization failed: {error_msg}")
 
-    return results, error_msg, processing_time_ms
+    return results, error_msg, get_solving_time_sec(solver.WallTime())
 
 
 # --- 자원-기술 매칭 최적화 실행 함수 ---
@@ -449,11 +445,8 @@ def run_skill_matching_optimizer(input_data):
 
     # --- 4. 문제 해결 ---
     logger.info("Solving the skill matching model...")
-    solve_start_time = datetime.datetime.now()
     status = solver.Solve()
-    solve_end_time = datetime.datetime.now()
-    processing_time_ms = (solve_end_time - solve_start_time).total_seconds() * 1000
-    logger.info(f"Solver finished. Status: {status}, Time: {processing_time_ms:.2f} ms")
+    logger.info(f"Solver finished. Status: {status}, Time: {solver.WallTime():.2f} ms")
 
     # --- 5. 결과 추출 ---
     results = {'assignments': {}, 'total_cost': 0, 'unassigned_resources': []}
@@ -467,12 +460,12 @@ def run_skill_matching_optimizer(input_data):
         assigned_resource_indices = set()
 
         for j in range(num_projects):
-            project_id = projects_data[j].get('id', f'P{j + 1}')
-            results['assignments'][project_id] = []
+            project_name = projects_data[j].get('name')
+            results['assignments'][project_name] = []
             for i in range(num_resources):
                 if x[i, j].solution_value() > 0.5:
                     resource = resources_data[i]
-                    results['assignments'][project_id].append({
+                    results['assignments'][project_name].append({
                         'resource_id': resource.get('id', f'R{i + 1}'),
                         'name': resource.get('name', f'인력{i + 1}'),
                         'cost': resource.get('cost', 0),
@@ -490,5 +483,10 @@ def run_skill_matching_optimizer(input_data):
         else:
             error_msg = f"최적 할당을 찾지 못했습니다. (솔버 상태: {status})"
         logger.error(f"Skill matching optimization failed: {error_msg}")
+    logger.info(results)
+    return results, error_msg, get_solving_time_sec(solver.WallTime())
 
-    return results, error_msg, processing_time_ms
+def get_solving_time_sec(processing_time):
+    # solver.WallTime(): if solver is CP-SAT then, sec else ms
+    processing_time = processing_time/1000
+    return f"{processing_time:.3f}" if processing_time is not None else "N/A"

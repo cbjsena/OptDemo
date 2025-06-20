@@ -1,10 +1,9 @@
+from django.conf import settings
 from django.shortcuts import render
 
-from common_utils.default_data import (
-    preset_pair_locations
-)
 from common_utils.run_routing_opt import *
 from common_utils.data_utils_routing import *
+
 import json
 import logging
 
@@ -67,7 +66,7 @@ def vrp_demo_view(request):
         'active_submenu': 'vrp_demo',
         'form_data': form_data,
         'opt_results': None,
-        'error_message': None, 'success_message': None, 'info_message': None,
+        'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
         'num_customers_options': range(1, 11),
         'num_vehicles_options': range(1, 6),
@@ -82,16 +81,20 @@ def vrp_demo_view(request):
         logger.info(f'{model_name} Demo POST request processing.')
 
         try:
+            # 1. 데이터 파일 새성 및 검증
             input_data = create_vrp_json_data(form_data)
-            saved_filename, save_error = save_vrp_json_data(input_data)
-            if save_error:
-                context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
-            elif saved_filename:
-                context['success_save_message'] = f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.".strip()
 
-            results_data, error_msg_opt, processing_time_ms = run_vrp_optimizer(input_data)
-            context[
-                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+            # 2. 파일 저장
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_vrp_json_data(input_data)
+                if save_error:
+                    context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
+
+            # 3. 최적화 실행
+            results_data, error_msg_opt, processing_time = run_vrp_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
                 context['error_message'] = error_msg_opt
@@ -180,7 +183,7 @@ def cvrp_demo_view(request):
         'active_submenu': 'cvrp_demo',
         'form_data': form_data,
         'opt_results': None,
-        'error_message': None, 'success_message': None, 'info_message': None,
+        'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
         'num_customers_options': range(1, 11),
         'num_vehicles_options': range(1, 6),
@@ -195,16 +198,20 @@ def cvrp_demo_view(request):
         logger.info(f'{model_name} Demo POST request processing.')
 
         try:
+            # 1. 데이터 파일 새성 및 검증
             input_data = create_vrp_json_data(form_data)
-            saved_filename, save_error = save_vrp_json_data(input_data)
-            if save_error:
-                context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
-            elif saved_filename:
-                context['success_save_message'] = f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.".strip()
 
-            results_data, error_msg_opt, processing_time_ms = run_cvrp_optimizer(input_data)  # 수정된 함수 호출
-            context[
-                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+            # 2. 파일 저장
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_vrp_json_data(input_data)
+                if save_error:
+                    context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
+
+            # 3. 최적화 실행
+            results_data, error_msg_opt, processing_time = run_cvrp_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
                 context['error_message'] = (context.get('error_message', '') + " " + error_msg_opt).strip()
@@ -298,7 +305,7 @@ def pdp_demo_view(request):
         'active_submenu': 'pdp_demo',
         'form_data': form_data,
         'opt_results': None,
-        'error_message': None, 'success_message': None, 'info_message': None,
+        'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
         'num_pairs_options': range(1, 6),  # 1~5개 작업 쌍
         'num_vehicles_options': range(1, 6),
@@ -312,17 +319,20 @@ def pdp_demo_view(request):
     if request.method == 'POST':
         logger.info("PDP Demo POST request processing.")
         try:
+            # 1. 데이터 파일 새성 및 검증
             input_data = create_pdp_json_data(form_data)
-            saved_filename, save_error = save_vrp_json_data(input_data)
-            if save_error:
-                context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
-            elif saved_filename:
-                context['success_save_message'] = f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.".strip()
 
-            # 최적화 실행
-            results_data, error_msg_opt, processing_time_ms = run_pdp_optimizer(input_data)
-            context[
-                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+            # 2. 파일 저장
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_vrp_json_data(input_data)
+                if save_error:
+                    context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
+
+            # 3. 최적화 실행
+            results_data, error_msg_opt, processing_time = run_pdp_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
                 context['error_message'] = error_msg_opt

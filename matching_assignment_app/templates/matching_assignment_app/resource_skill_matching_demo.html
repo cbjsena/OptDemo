@@ -5,30 +5,29 @@
 {% block title %}Resource-Skill Matching Demo{% endblock %}
 
 {% block styles %}
-<style>
-    .form-section { margin-bottom: 2rem; }
-    .item-card { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: .3rem; padding: 1rem; margin-bottom: 1rem; }
-    .results-card { margin-top: 1rem; }
-    .team-members { list-style-type: none; padding-left: 0; }
-    .team-members li { background-color: #e9ecef; border-radius: 4px; padding: 5px 10px; margin-bottom: 5px; }
-    .skill-tag {
-        display: inline-block;
-        padding: .25em .6em;
-        font-size: 85%;
-        font-weight: 700;
-        line-height: 1;
-        text-align: center;
-        white-space: nowrap;
-        vertical-align: baseline;
-        border-radius: .25rem;
-        color: #fff;
-        background-color: #007bff;
-        margin-right: 5px;
-        margin-bottom: 5px;
-    }
-    .unassigned-list { color: #6c757d; }
-    .success-message { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
-</style>
+    <style>
+        .form-section { margin-bottom: 2rem; }
+        .item-card { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: .3rem; padding: 1rem; margin-bottom: 1rem; }
+        .results-card { margin-top: 1rem; }
+        .team-members { list-style-type: none; padding-left: 0; }
+        .team-members li { background-color: #e9ecef; border-radius: 4px; padding: 5px 10px; margin-bottom: 5px; }
+        .skill-tag {
+            display: inline-block;
+            padding: .25em .6em;
+            font-size: 85%;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: .25rem;
+            color: #fff;
+            background-color: #007bff;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        .unassigned-list { color: #6c757d; }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -60,7 +59,7 @@
 
     <form method="POST" id="skillMatchingForm">
         {% csrf_token %}
-        <input type="hidden" name="problem_type" value="RESK" id="problem_type">
+        <input type="hidden" name="problem_type" value="Resource Skill Matching" id="problem_type">
         <input type="hidden" name="num_resources" value="{{ submitted_num_resources }}">
         <input type="hidden" name="num_projects" value="{{ submitted_num_projects }}">
 
@@ -129,18 +128,22 @@
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 팀 구성 실행</button>
     </form>
 
+    {# 1. 결과 메세지 #}
     {% if success_save_message%}
-        <div class="success-message" role="alert">{{ success_save_message }}</div>
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
     {% endif %}
-
-    {% if results or error_message or success_message %}
+    {% if opt_results is not None or error_message or success_message %}
     <hr class="my-4">
-    <h3 class="mt-4">Optimization Results</h3>
+    <h3 class="mt-4">Optimization Results ({{ form_data.problem_type }})</h3>
+    {% endif %}
+    {% if error_message %}
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
     {% endif %}
 
-    {% if error_message %}<div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>{% endif %}
-    {% if success_message and not error_message %}<div class="alert alert-success" role="alert">{{ success_message }}</div>{% endif %}
-
+    {# 2. 결과 요약 및 시각화 #}
     {% if results %}
     <div class="card mt-4">
         <div class="card-header"><strong>결과 요약</strong></div>
@@ -149,10 +152,9 @@
             <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
         </div>
     </div>
-    
+
     <div class="row mt-3">
-        {% for project_id, members in results.assignments.items %}
-            {% with project_name=form_data|get_item_simple:'proj_'|add:forloop.counter0|stringformat:'s'|add:'_name' %}
+        {% for project_name, members in results.assignments.items %}
             <div class="col-md-6">
                 <div class="card results-card">
                     <div class="card-header"><strong>{{ project_name }} 팀 구성</strong></div>
@@ -176,7 +178,6 @@
                     </div>
                 </div>
             </div>
-            {% endwith %}
         {% endfor %}
     </div>
 

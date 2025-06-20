@@ -24,12 +24,6 @@
     .results-table th:first-child, .results-table td:first-child {
         text-align: left;
     }
-    .error-message, .success-message {
-        padding: .75rem 1.25rem; margin-bottom: 1rem;
-        border: 1px solid transparent; border-radius: .25rem;
-    }
-    .error-message { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
-    .success-message { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
 </style>
 {% endblock %}
 
@@ -55,6 +49,7 @@
 
     <form method="POST">
         {% csrf_token %}
+        <input type="hidden" name="problem_type" value="Financial portfolio Allocation" id="problem_type">
         <input type="hidden" name="num_assets" value="{{ submitted_num_assets }}">
 
         <div class="card mb-4">
@@ -104,23 +99,22 @@
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">포트폴리오 최적화 실행</button>
     </form>
 
-    {% if results is not None or error_message or success_message %}
+    {# 1. 결과 메세지 #}
+    {% if success_save_message%}
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
+    {% endif %}
+    {% if opt_results is not None or error_message or success_message %}
     <hr class="my-4">
-    <h3 class="mt-4">Optimization Results</h3>
+    <h3 class="mt-4">Optimization Results ({{ form_data.problem_type }})</h3>
     {% endif %}
-
     {% if error_message %}
-        <div class="error-message" role="alert">
-            <strong>오류:</strong> {{ error_message }}
-        </div>
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
     {% endif %}
-
     {% if success_message and not error_message %}
-        <div class="success-message" role="alert">
-            {{ success_message }}
-        </div>
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
     {% endif %}
 
+    {# 2. 결과 요약 및 시각화 #}
     {% if results and portfolio_metrics %}
     <div class="card mt-4">
         <div class="card-header">

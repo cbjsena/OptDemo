@@ -53,11 +53,8 @@ def run_lot_sizing_optimizer(input_data):
     objective.SetMinimization()
 
     logger.info("Solving the Lot Sizing model...")
-    solve_start_time = datetime.datetime.now()
     status = solver.Solve()
-    solve_end_time = datetime.datetime.now()
-    processing_time_ms = (solve_end_time - solve_start_time).total_seconds() * 1000
-    logger.info(f"Solver finished. Status: {status}, Time: {processing_time_ms:.2f} ms")
+    logger.info(f"Solver finished. Status: {status}, Time: {solver.WallTime():.2f} ms")
 
     # 결과 추출
     results = {'schedule': [], 'total_cost': 0}
@@ -95,7 +92,7 @@ def run_lot_sizing_optimizer(input_data):
             error_msg = f"최적해를 찾지 못했습니다. (솔버 상태: {status})"
         logger.error(f"Lot Sizing optimization failed: {error_msg}")
 
-    return results, error_msg, processing_time_ms
+    return results, error_msg, get_solving_time_sec(solver.WallTime())
 
 
 def run_single_machine_optimizer(input_data):
@@ -162,11 +159,8 @@ def run_single_machine_optimizer(input_data):
     # --- 5. 문제 해결 ---
     solver = cp_model.CpSolver()
     logger.info("Solving the Single Machine Scheduling model...")
-    solve_start_time = datetime.datetime.now()
     status = solver.Solve(model)
-    solve_end_time = datetime.datetime.now()
-    processing_time_ms = (solve_end_time - solve_start_time).total_seconds() * 1000
-    logger.info(f"Solver finished. Status: {solver.StatusName(status)}, Time: {processing_time_ms:.2f} ms")
+    logger.info(f"Solver finished. Status: {status}, Time: {solver.WallTime():.2f} sec")
 
     # --- 6. 결과 추출 ---
     results = {'schedule': [], 'objective_value': 0}
@@ -191,7 +185,7 @@ def run_single_machine_optimizer(input_data):
         error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
         logger.error(f"Single Machine Scheduling failed: {error_msg}")
 
-    return results, error_msg, processing_time_ms
+    return results, error_msg, get_solving_time_cp_sec(solver.WallTime())
 
 
 def run_flow_shop_optimizer(input_data):
@@ -249,10 +243,8 @@ def run_flow_shop_optimizer(input_data):
     # 해결
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 10.0  # 시간 제한
-    solve_start_time = datetime.datetime.now()
     status = solver.Solve(model)
-    solve_end_time = datetime.datetime.now()
-    processing_time_ms = (solve_end_time - solve_start_time).total_seconds() * 1000
+    logger.info(f"Solver finished. Status: {status}, Time: {solver.WallTime():.2f} serc")
 
     # 결과 추출
     results = {'schedule': [], 'makespan': 0, 'sequence': []}
@@ -278,7 +270,7 @@ def run_flow_shop_optimizer(input_data):
     else:
         error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
 
-    return results, error_msg, processing_time_ms
+    return results, error_msg, get_solving_time_cp_sec(solver.WallTime())
 
 
 # --- 고정된 순서에 대한 Makespan 계산 함수 (새로 추가) ---
@@ -382,7 +374,7 @@ def run_job_shop_optimizer(input_data):
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 10.0
     status = solver.Solve(model)
-    processing_time_ms = solver.WallTime() * 1000
+    logger.info(f"Solver status: {status}, Time: {solver.WallTime():.2f} ms")
 
     # 결과 추출
     results = {'schedule': [], 'makespan': 0}
@@ -409,4 +401,14 @@ def run_job_shop_optimizer(input_data):
     else:
         error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
 
-    return results, error_msg, processing_time_ms
+    return results, error_msg, get_solving_time_cp_sec(solver.WallTime())
+
+def get_solving_time_sec(processing_time):
+    # solver.WallTime(): if solver is CP-SAT then, sec else ms
+    processing_time = processing_time / 1000
+    return f"{processing_time:.3f}" if processing_time is not None else "N/A"
+
+def get_solving_time_cp_sec(processing_time):
+    # solver.WallTime(): if solver is CP-SAT then, sec else ms
+    processing_time = processing_time
+    return f"{processing_time:.3f}" if processing_time is not None else "N/A"

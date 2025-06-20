@@ -1,10 +1,13 @@
 from django.shortcuts import render
+from django.conf import  settings
 
-from common_utils.default_data import *
 from common_utils.run_matching_opt import *
 from common_utils.data_utils_matching import *
 
+import os
+import json
 import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +87,7 @@ def lcd_cf_tft_data_generation_view(request):
             panel_cols = int(request.POST.get('panel_cols', 3))
             defect_rate = int(request.POST.get('defect_rate', 10))
 
-            generated_data = create_matching_cf_tft_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defect_rate)
+            generated_data = create_cf_tft_matching_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defect_rate)
             context['generated_data'] = generated_data
             generated_data_json_pretty = json.dumps(generated_data, indent=4)
             context['generated_data_json_pretty'] = generated_data_json_pretty
@@ -225,7 +228,7 @@ def lcd_cf_tft_large_scale_demo_view(request):
                 panel_c = int(panel_c)
                 defect_rate_percent  = int(defect_rate_str)
 
-                generated_data = create_matching_cf_tft_json_data(num_cf, num_tft, panel_r, panel_c, defect_rate_percent )
+                generated_data = create_cf_tft_matching_json_data(num_cf, num_tft, panel_r, panel_c, defect_rate_percent)
                 if data_dir_path_str:
                     # 중복 방지를 위해 시퀀스 번호 또는 타임스탬프 사용
                     seq = 0
@@ -433,17 +436,20 @@ def transport_assignment_demo_view(request):
     if request.method == 'POST':
         logger.info("Transportation Assignment Demo POST request processing.")
         try:
-            input_data =create_matching_transport_json_data(form_data, submitted_num_items)
-            saved_filename, save_error = save_matching_assignment_json_data(input_data)
-            if save_error:
-                context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
-            elif saved_filename:
-                context['success_save_message'] = f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.".strip()
+            # 1. 데이터 파일 새성 및 검증
+            input_data =create_transport_assignment_json_data(form_data, submitted_num_items)
 
-            # 최적화 실행
-            results_data, error_msg_opt, processing_time_ms = run_matching_transport_optimizer(input_data)
-            context[
-                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+            # 2. 파일 저장
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_matching_assignment_json_data(input_data)
+                if save_error:
+                    context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
+
+            # 3. 최적화 실행
+            results_data, error_msg_opt, processing_time = run_matching_transport_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
                 context['error_message'] = error_msg_opt
@@ -520,12 +526,16 @@ def resource_skill_matching_demo_view(request):
     if request.method == 'POST':
         logger.info("Resource-Skill Matching Demo POST request processing.")
         try:
-            input_data = create_matching_resource_skill_json_data(form_data, submitted_num_resources, submitted_num_projects)
-            saved_filename, save_error = save_matching_assignment_json_data(input_data)
-            if save_error:
-                context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
-            elif saved_filename:
-                context['success_save_message'] = f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.".strip()
+            # 1. 데이터 파일 새성 및 검증
+            input_data = create_resource_skill_matching_json_data(form_data, submitted_num_resources, submitted_num_projects)
+
+            # 2. 파일 저장
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_matching_assignment_json_data(input_data)
+                if save_error:
+                    context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
             # solving 단계에서 다양한 케이스 탐색 가능하여 주석 처리
             # unmatched, formatted_html = validate_required_skills(input_data)
             # if unmatched:
@@ -536,16 +546,15 @@ def resource_skill_matching_demo_view(request):
             #     logger.error(f"Validation error in resource-skill matching demo. Raw data: {unmatched}")
             #     return render(request, 'matching_assignment_app/resource_skill_matching_demo.html', context)
 
-            # --- 2. 최적화 실행 ---
-            results_data, error_msg_opt, processing_time_ms = run_skill_matching_optimizer(input_data)
-            context[
-                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+            # 3. 최적화 실행
+            results_data, error_msg_opt, processing_time = run_skill_matching_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
                 context['error_message'] = error_msg_opt
             elif results_data:
                 context['results'] = results_data
-                context['success_message'] = f"최적 팀 구성 완료! 예상 총 비용: {results_data.get('total_cost', 0)}"
+                context['success_message'] = f"최적 팀 구성 완료! 최소 총 투입 비용: {results_data.get('total_cost', 0)}"
                 logger.info(f"Skill matching successful. Total cost: {results_data.get('total_cost')}")
             else:
                 context['error_message'] = "최적 할당 결과를 가져오지 못했습니다."

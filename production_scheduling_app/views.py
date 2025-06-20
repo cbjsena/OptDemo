@@ -1,6 +1,8 @@
+from django.conf import settings
 from django.shortcuts import render
 import json
 import itertools
+import random
 
 from common_utils.run_production_opt import *
 from common_utils.data_utils_production import *
@@ -69,16 +71,16 @@ def lot_sizing_demo_view(request):
             input_data = create_lot_sizing_json_data(form_data, submitted_num_periods)
 
             # 2. 파일 저장
-            saved_filename, save_error = save_production_json_data(input_data)
-            if save_error:
-                context['error_message'] = save_error
-            elif saved_filename:
-                context['info_message'] = f"입력 데이터가 '{saved_filename}'으로 서버에 저장되었습니다."
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_production_json_data(input_data)
+                if save_error:
+                    context['error_message'] = save_error
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time_ms = run_lot_sizing_optimizer(input_data)
-            context[
-                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+            results_data, error_msg_opt, processing_time = run_lot_sizing_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
                 context['error_message'] = (context.get('error_message', '') + " " + error_msg_opt).strip()
@@ -170,16 +172,16 @@ def single_machine_demo_view(request):
             input_data = create_single_machine_json_data(jobs_list, form_data_for_post, submitted_num_jobs)
             
             # 2. 파일 저장
-            saved_filename, save_error = save_production_json_data(input_data)
-            if save_error:
-                context['error_message'] = save_error
-            elif saved_filename:
-                context['info_message'] = f"입력 데이터가 '{saved_filename}'으로 서버에 저장되었습니다."
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_production_json_data(input_data)
+                if save_error:
+                    context['error_message'] = save_error
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time_ms = run_single_machine_optimizer(input_data)
-            context[
-                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+            results_data, error_msg_opt, processing_time = run_single_machine_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
                 context['error_message'] = (context.get('error_message', '') + " " + error_msg_opt).strip()
@@ -268,16 +270,16 @@ def flow_shop_demo_view(request):
                 input_data = create_flow_shop_json_data(form_data)
 
                 # 2. 파일 저장
-                saved_filename, save_error = save_production_json_data(input_data)
-                if save_error:
-                    context['error_message'] = save_error
-                elif saved_filename:
-                    context['info_message'] = f"입력 데이터가 '{saved_filename}'으로 서버에 저장되었습니다."
+                if settings.SAVE_DATA_FILE:
+                    success_save_message, save_error = save_production_json_data(input_data)
+                    if save_error:
+                        context['error_message'] = save_error
+                    elif success_save_message:
+                        context['success_save_message'] = success_save_message
 
                 # 3. 최적화 실행
-                results_data, error_msg_opt, processing_time_ms = run_flow_shop_optimizer(input_data)
-                context[
-                    'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+                results_data, error_msg_opt, processing_time = run_flow_shop_optimizer(input_data)
+                context['processing_time_seconds'] = processing_time
 
                 if error_msg_opt:
                     context['error_message'] = error_msg_opt
@@ -317,8 +319,8 @@ def flow_shop_demo_view(request):
                 )
                 context['manual_results'] = manual_results_data
                 context['manual_plot_data'] = json.dumps(manual_results_data['schedule'])
-                context[
-                    'info_message'] = f"수동 입력 순서 '{', '.join(manual_sequence)}'의 Makespan은 {manual_results_data['makespan']:.2f} 입니다."
+                context['info_message'] \
+                    = f"수동 입력 순서 '{', '.join(manual_sequence)}'의 Makespan은 {manual_results_data['makespan']:.2f} 입니다."
         except ValueError as ve:
             context['error_message'] = f"입력값 오류: {str(ve)}"
         except Exception as e:
@@ -399,20 +401,20 @@ def job_shop_demo_view(request):
 
     if request.method == 'POST':
         try:
+            # 1. 데이터 파일 새성 및 검증
             input_data = create_job_shop_json_data(form_data_for_repopulate)
 
             # 2. 파일 저장
-            saved_filename, save_error = save_production_json_data(input_data)
-            if save_error:
-                context['error_message'] = save_error
-            elif saved_filename:
-                context['info_message'] = f"입력 데이터가 '{saved_filename}'으로 서버에 저장되었습니다."
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_production_json_data(input_data)
+                if save_error:
+                    context['error_message'] = save_error
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time_ms = run_job_shop_optimizer(input_data)
-
-            context[
-                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+            results_data, error_msg_opt, processing_time = run_job_shop_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
             if error_msg_opt:
                 context['error_message'] = error_msg_opt
             elif results_data:
@@ -468,9 +470,8 @@ def job_shop_demo_view_ori(request):
             input_data = create_job_shop_json_data(form_data)
             # save_production_json_data(input_data) # 파일 저장 (필요시)
 
-            results_data, error_msg_opt, processing_time_ms = run_job_shop_optimizer(input_data)
-            context[
-                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
+            results_data, error_msg_opt, processing_time = run_job_shop_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
                 context['error_message'] = error_msg_opt

@@ -5,25 +5,25 @@
 {% block title %}Transportation Assignment Demo{% endblock %}
 
 {% block styles %}
-<style>
-    .cost-matrix-table {
-        margin-top: 1rem;
-        table-layout: fixed; /* 테이블 너비 고정 */
-    }
-    .cost-matrix-table th, .cost-matrix-table td {
-        text-align: center;
-        vertical-align: middle;
-    }
-    .cost-matrix-table input {
-        width: 80px;
-        text-align: center;
-    }
-    .results-table th, .results-table td {
-        text-align: center;
-        vertical-align: middle;
-    }
-    /* ... (기존 error/success 메시지 등 공통 스타일) ... */
-</style>
+    <link rel="stylesheet" href="{% static 'core/css/demo.css' %}">
+    <style>
+        .cost-matrix-table {
+            margin-top: 1rem;
+            table-layout: fixed; /* 테이블 너비 고정 */
+        }
+        .cost-matrix-table th, .cost-matrix-table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .cost-matrix-table input {
+            width: 80px;
+            text-align: center;
+        }
+        .results-table th, .results-table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -47,7 +47,7 @@
 
     <form method="POST" id="assignmentForm">
         {% csrf_token %}
-        <input type="hidden" name="problem_type" value="TRAS" id="problem_type">
+        <input type="hidden" name="problem_type" value="Transport Assignment" id="problem_type">
         <input type="hidden" name="num_items" value="{{ submitted_num_items }}">
 
         <div class="form-section">
@@ -89,14 +89,22 @@
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 할당 계산 실행</button>
     </form>
 
-    {% if assignment_results or error_message or success_message %}
+    {# 1. 결과 메세지 #}
+    {% if success_save_message%}
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
+    {% endif %}
+    {% if opt_results is not None or error_message or success_message %}
     <hr class="my-4">
-    <h3 class="mt-4">Optimization Results</h3>
+    <h3 class="mt-4">Optimization Results ({{ form_data.problem_type }})</h3>
+    {% endif %}
+    {% if error_message %}
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
     {% endif %}
 
-    {% if error_message %}<div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>{% endif %}
-    {% if success_message and not error_message %}<div class="alert alert-success" role="alert">{{ success_message }}</div>{% endif %}
-
+    {# 2. 결과 요약 및 시각화 #}
     {% if assignment_results %}
     <div class="card mt-4">
         <div class="card-header"><strong>결과 요약</strong></div>

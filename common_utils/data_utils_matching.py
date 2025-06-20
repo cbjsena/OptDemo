@@ -1,13 +1,36 @@
-from django.conf import settings
-
-import os
-import json
 from common_utils.common_data_utils import save_json_data
 import logging
 import random
-import datetime  # 파일명 생성 등에 사용 가능
+import datetime
 
 logger = logging.getLogger(__name__)
+
+
+preset_trans_assign_items=3
+preset_trans_assign_drivers=["김기사", "이배달", "박운송", "최신속", "정안전"]
+preset_trans_assign_zones = ["강남구", "서초구", "송파구", "마포구", "영등포구"]
+
+preset_num_resources=7
+preset_num_projects=3
+preset_resources = [
+        {'id': 'R1', 'name': '김개발', 'cost': '100', 'skills': 'Python,ML'},
+        {'id': 'R2', 'name': '이엔지', 'cost': '120', 'skills': 'Java,SQL,Cloud'},
+        {'id': 'R3', 'name': '박기획', 'cost': '90', 'skills': 'SQL,Tableau'},
+        {'id': 'R4', 'name': '최신입', 'cost': '70', 'skills': 'Python'},
+        {'id': 'R5', 'name': '정고급', 'cost': '150', 'skills': 'Cloud,Python,K8s'},
+        {'id': 'R6', 'name': '한디자', 'cost': '105', 'skills': 'UI,AWS,UX,React'},
+        {'id': 'R7', 'name': '백엔드', 'cost': '110', 'skills': 'Java,Spring,SQL'},
+        {'id': 'R8', 'name': '프론트', 'cost': '90', 'skills': 'React,JavaScript'},
+        {'id': 'R9', 'name': '데브옵', 'cost': '140', 'skills': 'K8s,AWS,Cloud'},
+        {'id': 'R10', 'name': '데이터', 'cost': '130', 'skills': 'SQL,Python,Tableau'},
+    ]
+preset_projects = [
+        {'id': 'P1', 'name': 'AI 모델 개발', 'required_skills': 'Python,ML,SQL'},
+        {'id': 'P2', 'name': '데이터베이스 마이그레이션', 'required_skills': 'AWS,SQL,Cloud'},
+        {'id': 'P3', 'name': '웹 서비스 프론트엔드', 'required_skills': 'React,JavaScript'},
+        {'id': 'P4', 'name': '클라우드 인프라 구축', 'required_skills': 'AWS,K8s'},
+        {'id': 'P5', 'name': 'BI 대시보드 제작', 'required_skills': 'SQL,Tableau'},
+    ]
 
 def create_panel_data(panel_id_prefix, num_panels, rows, cols, rate):
     panels = []
@@ -30,7 +53,7 @@ def create_panel_data(panel_id_prefix, num_panels, rows, cols, rate):
     return panels
 
 
-def create_matching_cf_tft_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defect_rate):
+def create_cf_tft_matching_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defect_rate):
     generated_cf_panels = create_panel_data("CF", num_cf_panels, panel_rows, panel_cols, defect_rate)
     generated_tft_panels = create_panel_data("TFT", num_tft_panels, panel_rows, panel_cols, defect_rate)
 
@@ -48,7 +71,8 @@ def create_matching_cf_tft_json_data(num_cf_panels, num_tft_panels, panel_rows, 
     }
     return generated_data
 
-def create_matching_transport_json_data(form_data, submitted_num_items):
+
+def create_transport_assignment_json_data(form_data, submitted_num_items):
     num_items = submitted_num_items
     cost_matrix = [[0] * num_items for _ in range(num_items)]
     driver_names = []
@@ -76,7 +100,7 @@ def create_matching_transport_json_data(form_data, submitted_num_items):
     return input_data
 
 
-def create_matching_resource_skill_json_data(form_data, num_resources, num_projects):
+def create_resource_skill_matching_json_data(form_data, num_resources, num_projects):
     resources_data = []
     for i in range(num_resources):
         skills_str = form_data.get(f'res_{i}_skills', '')
@@ -109,6 +133,7 @@ def create_matching_resource_skill_json_data(form_data, num_resources, num_proje
         }
     }
     return input_data
+
 
 def validate_required_skills(input_data):
     """
@@ -152,15 +177,16 @@ def validate_required_skills(input_data):
     formatted_html = formatted_html.replace("'", "")
     return unmatched, formatted_html
 
+
 def save_matching_assignment_json_data(input_data):
     dir=''
     filename_pattern = ''
-    if "TRAS" == input_data.get('problem_type'):
+    if "Transport Assignment" == input_data.get('problem_type'):
         num_driver = len(input_data.get('driver_names'))
         num_zone = len(input_data.get('zone_names'))
         dir = 'matching_transport_data'
         filename_pattern = f"driver{num_driver}_zone{num_zone}"
-    elif "RESK" == input_data.get('problem_type'):
+    elif "Resource Skill Matching" == input_data.get('problem_type'):
         num_resources = input_data.get('num_resources')
         num_projects = input_data.get('num_projects')
         dir = 'matching_resource_data'

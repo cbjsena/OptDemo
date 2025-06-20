@@ -6,7 +6,6 @@
 
 {% block styles %}
 <style>
-    /* ... (이전 VRP/CVRP 데모와 유사한 스타일) ... */
     #pdpCanvasInput {
         border: 1px solid #007bff;
         cursor: crosshair;
@@ -17,7 +16,7 @@
         font-weight: bold;
         color: #0056b3;
         margin-bottom: 10px;
-        min-height: 24px; /* 높이 고정으로 깜박임 방지 */
+        min-height: 24px;
     }
     .location-list {
         font-size: 0.9em;
@@ -27,14 +26,15 @@
         padding: 5px;
         background-color: #fff;
     }
-    .chart-container { width: 100%; max-width: 700px; margin: 20px auto; height: 450px; border: 1px solid #ddd; padding:10px; }
-    .error-message, .success-message, .info-message {
-        padding: .75rem 1.25rem; margin-bottom: 1rem;
-        border: 1px solid transparent; border-radius: .25rem;
+    .chart-container {
+        width: 100%;
+        max-width: 700px;
+        margin: 20px auto;
+        height: 450px;
+        border: 1px
+        solid #ddd;
+        padding:10px;
     }
-    .error-message { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
-    .success-message { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
-    .info-message { color: #0c5460; background-color: #d1ecf1; border-color: #bee5eb;}
 </style>
 {% endblock %}
 
@@ -137,89 +137,83 @@
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">PDP 최적 경로 계산 실행</button>
     </form>
 
-    {% if request.method == 'POST' %} {# POST 요청이 있었을 때만 결과 영역 표시 #}
+    {# 1. 결과 메세지 #}
+    {% if success_save_message%}
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
+    {% endif %}
+    {% if opt_results is not None or error_message or success_message %}
     <hr class="my-4">
-    <h3 class="mt-4">Optimization Results (PDP)</h3>
-
-        {# 1. 메시지 표시 영역 #}
-        {% if error_message %}
-            <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
-        {% elif success_message %}
-            {% if info_message %}
-            <div class="alert alert-info" role="alert">{{ info_message }}</div>
-            {% endif %}
-            <div class="alert alert-success" role="alert">{{ success_message }}</div>
-        {% elif info_message %} {# 성공은 아니지만 정보 메시지가 있는 경우 #}
-            <div class="alert alert-info" role="alert">{{ info_message }}</div>
-        {% else %} {# 결과가 없는 경우 #}
-            <p class="text-muted mt-3"><em>최적화 결과가 없습니다. 입력값을 확인하거나, 솔버가 해를 찾지 못했을 수 있습니다.</em></p>
-        {% endif %}
-
-        {# 2. 결과 요약 및 시각화 #}
-        {% if opt_results %}
-        <div class="card mt-4">
-            <div class="card-header"><strong>결과 요약</strong></div>
-            <div class="card-body">
-                <p><strong>총 운행 거리:</strong> {{ opt_results.total_distance|floatformat:2 }}</p>
-                <p><strong>사용된 차량 수:</strong> {{ opt_results.routes|length }} / {{ submitted_num_vehicles }}</p>
-                <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if opt_results.routes %}
-        <div class="card mt-3">
-            <div class="card-header"><strong>차량별 최적 경로 및 적재량 변화</strong></div>
-            <div class="table-responsive">
-                <table class="table table-sm table-hover results-table mb-0">
-                    <thead class="thead-light">
-                        <tr>
-                            <th>차량 ID</th>
-                            <th>경로 (노드 순서)</th>
-                            <th>경로별 이동 거리</th>
-                            <th>경로별 적재량 변화</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for route in opt_results.routes %}
-                        <tr>
-                            <td>차량 {{ route.vehicle_id|add:1 }}</td>
-                            <td class="route-path">
-                                {% for node_index in route.route_nodes %}
-                                    {# 뷰의 plot_data 생성 로직과 유사하게 노드 ID 찾기 #}
-                                    {% with loc=locations_dict|get_item_simple:node_index %}
-                                        {{ loc.id|default:"?" }}{% if not forloop.last %} &rarr; {% endif %}
-                                    {% endwith %}
-                                {% endfor %}
-                            </td>
-                            <td>{{ route.distance|floatformat:2 }}</td>
-                            <td class="route-path">
-                                {% for load in route.route_loads %}
-                                    {{ load }}{% if not forloop.last %} &rarr; {% endif %}
-                                {% endfor %}
-                                <br><small class="text-muted">(차량 용량: {{ route.capacity }})</small>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if plot_data %}
-        <div class="card mt-3">
-            <div class="card-header"><strong>경로 시각화 (PDP)</strong></div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="pdpRouteChart"></canvas>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
+    <h3 class="mt-4">Optimization Results ({{ form_data.problem_type }})</h3>
+    {% endif %}
+    {% if error_message %}
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
     {% endif %}
 
+    {# 2. 결과 요약 및 시각화 #}
+    {% if opt_results %}
+    <div class="card mt-4">
+        <div class="card-header"><strong>결과 요약</strong></div>
+        <div class="card-body">
+            <p><strong>총 운행 거리:</strong> {{ opt_results.total_distance|floatformat:2 }}</p>
+            <p><strong>사용된 차량 수:</strong> {{ opt_results.routes|length }} / {{ submitted_num_vehicles }}</p>
+            <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if opt_results.routes %}
+    <div class="card mt-3">
+        <div class="card-header"><strong>차량별 최적 경로 및 적재량 변화</strong></div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover results-table mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th>차량 ID</th>
+                        <th>경로 (노드 순서)</th>
+                        <th>경로별 이동 거리</th>
+                        <th>경로별 적재량 변화</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for route in opt_results.routes %}
+                    <tr>
+                        <td>차량 {{ route.vehicle_id|add:1 }}</td>
+                        <td class="route-path">
+                            {% for node_index in route.route_nodes %}
+                                {# 뷰의 plot_data 생성 로직과 유사하게 노드 ID 찾기 #}
+                                {% with loc=locations_dict|get_item_simple:node_index %}
+                                    {{ loc.id|default:"?" }}{% if not forloop.last %} &rarr; {% endif %}
+                                {% endwith %}
+                            {% endfor %}
+                        </td>
+                        <td>{{ route.distance|floatformat:2 }}</td>
+                        <td class="route-path">
+                            {% for load in route.route_loads %}
+                                {{ load }}{% if not forloop.last %} &rarr; {% endif %}
+                            {% endfor %}
+                            <br><small class="text-muted">(차량 용량: {{ route.capacity }})</small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if plot_data %}
+    <div class="card mt-3">
+        <div class="card-header"><strong>경로 시각화 (PDP)</strong></div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas id="pdpRouteChart"></canvas>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 {% block scripts %}

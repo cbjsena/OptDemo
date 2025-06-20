@@ -1,15 +1,30 @@
 from common_utils.common_data_utils import save_json_data
 import logging
-import datetime  # 파일명 생성 등에 사용 가능
-from common_utils.default_data import (
-    preset_depot_location,
-    preset_customer_locations,
-    preset_num_customers,
-    preset_num_vehicles,
-    preset_vehicle_capacity,
-    preset_num_pairs
-)
+import datetime
+
 logger = logging.getLogger(__name__)
+
+preset_depot_location = {"id": "D1","x": 300.0,"y": 250.0}
+preset_customer_locations = [
+        {"id": "C1","x": 103.0,"y": 120.0, "demand": 30},    {"id": "C2","x": 510.0,"y": 150.0, "demand": 30},
+        {"id": "C3","x": 171.0,"y": 317.0, "demand": 40},    {"id": "C4","x": 486.0,"y": 283.0, "demand": 40},
+        {"id": "C5","x": 384.0,"y": 45.0, "demand": 30},     {"id": "C6","x": 302.0,"y": 145.0, "demand": 20},
+        {"id": "C7","x": 129.0,"y": 221.0, "demand": 30},   {"id": "C8","x": 398.0,"y": 231.0, "demand": 30},
+        {"id": "C9","x": 341.0,"y": 329.0, "demand": 20},    {"id": "C10","x": 537.0,"y": 365.0, "demand": 20}
+    ]
+preset_num_customers=5
+preset_num_vehicles=3
+preset_num_depots=1
+preset_vehicle_capacity=100
+
+preset_num_pairs=3
+preset_pair_locations = [
+        {"id": "Pair1","px": 103.0,"py": 120.0, "dx": 510.0,"dy": 150.0, "demand": 30},
+        {"id": "Pair2","px": 171.0,"py": 317.0, "dx": 486.0,"dy": 283.0, "demand": 40},
+        {"id": "Pair3","px": 384.0,"py": 45.0, "dx": 302.0,"dy": 145.0, "demand": 30},
+        {"id": "Pair4","px": 129.0,"py": 221.0, "dx": 398.0,"dy": 231.0, "demand": 30},
+        {"id": "Pair5","px": 341.0,"py": 329.0, "dx": 537.0,"dy": 365.0, "demand": 20},
+    ]
 
 def create_vrp_json_data(form_data):
     # --- 1. 입력 데이터 파싱 및 기본 유효성 검사 ---

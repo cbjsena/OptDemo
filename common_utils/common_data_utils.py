@@ -42,10 +42,13 @@ def save_json_data(generated_data, model_data_type, filename_pattern):
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(generated_data, f, indent=4, ensure_ascii=False)
         logger.info(f"Input data saved to: {filepath}")
-        return filepath, None # 성공 시 파일명과 None (오류 없음) 반환
+        return get_save_info(filepath), None
     except IOError as e:
         logger.error(f"Failed to save input data to {filepath}: {e}", exc_info=True)
         return None, f"입력 데이터를 파일로 저장하는 데 실패했습니다: {e}"
     except Exception as e:
         logger.error(f"Unexpected error during data saving: {e}", exc_info=True)
         return None, f"입력 데이터 저장 중 예상치 못한 오류 발생: {e}"
+
+def get_save_info(filepath):
+    return f"입력 데이터가 '{filepath}'으로 서버에 저장되었습니다."

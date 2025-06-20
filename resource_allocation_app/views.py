@@ -1,13 +1,10 @@
 from django.shortcuts import render
+from django.conf import settings
 import json
 
 from common_utils.data_utils_allocation import *
 from common_utils.run_alloctaion_opt import *
-from common_utils.default_data import (
-    preset_budjet_items,
-    preset_datacenter_servers,
-    preset_datacenter_services
-)
+
 logger = logging.getLogger(__name__)  # settings.py에 정의된 'resource_allocation_app' 로거 사용
 
 
@@ -34,112 +31,57 @@ def budget_allocation_introduction_view(request):
     logger.debug("Rendering budget allocation introduction page.")
     return render(request, 'resource_allocation_app/budget_allocation_introduction.html', context)
 
-
 def budget_allocation_demo_view(request):
-    # Initialize form_data with a default total_budget for GET requests
-    # This ensures the template's default_if_none has something to fall back on
-    # or that the key exists.
-    initial_form_data = {'total_budget': '1000'}  # Default value for initial page load
+    form_data = {}
+    if request.method == 'GET':
+        form_data['total_budget'] = preset_total_budget
+        submitted_num_item = int(request.GET.get('num_items_to_show', preset_budjet_num_item))
+        submitted_num_item = max(2, min(10, submitted_num_item))
 
-    for i in range(len(preset_budjet_items)):
-        preset = preset_budjet_items[i % len(preset_budjet_items)]
-        for key, default_val in preset.items():
-            initial_form_data[key] = default_val
+        for i in range(submitted_num_item):
+            preset = preset_budjet_items[i]
+            for key, default_val in preset.items():
+                form_data[key] = default_val
+
+    elif request.method == 'POST':
+        form_data = request.POST.copy()
+        submitted_num_item = int(form_data.get('num_items', preset_budjet_num_item))
 
     context = {
         'active_model': 'Resource Allocation',
         'active_submenu': 'budget_allocation_demo',
         'num_items_options': range(1, 11),
-        'form_data': initial_form_data.copy(),  # Use a copy for GET
+        'form_data': form_data,
         'results': None,
-        'total_maximized_return': None,
-        'total_allocated_budget': 0,
-        'budget_utilization_percent': "N/A",
         'processing_time_seconds': "N/A",
         'error_message': None,
         'success_message': None,
-        'submitted_num_items': 3
+        'submitted_num_items': submitted_num_item
     }
-
-    if request.method == 'GET':
-        if 'num_items_to_show' in request.GET:
-            try:
-                num_to_show = int(request.GET.get('num_items_to_show', 3))
-                if not (1 <= num_to_show <= 10):
-                    num_to_show = 3
-                context['submitted_num_items'] = num_to_show
-                logger.debug(f"Number of items to show set to: {num_to_show} via GET param.")
-            except ValueError:
-                logger.warning("Invalid num_items_to_show in GET param, using default.")
-                context['submitted_num_items'] = 3
-        # For GET, context['form_data'] will retain initial_form_data
-        # If you want to persist form values across GET requests (e.g., after num_items change),
-        # you'd need to pass them in the GET params and repopulate form_data here.
-        # For now, initial_form_data provides a default.
 
     if request.method == 'POST':
         logger.info("Budget allocation demo POST request received.")
-        form_data_from_post = request.POST.copy()
-        context['form_data'] = form_data_from_post  # Overwrite with POST data
-        context['submitted_num_items'] = int(form_data_from_post.get('num_items', 3))
-
         try:
-            total_budget_str = form_data_from_post.get('total_budget')
-            if not total_budget_str:
-                raise ValueError("총 예산이 입력되지 않았습니다.")
-            total_budget = float(total_budget_str)
-            if total_budget < 0:
-                raise ValueError("총 예산은 음수가 될 수 없습니다.")
+            input_data = create_budjet_allocation_json_data(form_data, submitted_num_item)
 
-            num_items = context['submitted_num_items']
-            items_data, json_data = parse_allocation_budjet_data(form_data_from_post, num_items, total_budget)
-            logger.debug(f"Parsed items_data for optimizer: {items_data}")
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_allocation_json_data(input_data)
+                if save_error:
+                    context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
 
-            saved_filename, save_error = save_allocation_budjet_json_data(json_data)
-            if save_error:
-                context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
-            elif saved_filename:
-                context['success_save_message'] = (
-                            context.get('info_message', '') + f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.").strip()
-
-            results, total_maximized_return, error_msg, processing_time_ms = run_budget_allocation_optimizer(
-                total_budget, items_data)
-
-            if processing_time_ms is not None:
-                context[
-                    'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}"
-            else:
-                context[
-                    'processing_time_seconds'] = "N/A"
-
+            results, error_msg, processing_time = run_budget_allocation_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
             if error_msg:
                 context['error_message'] = error_msg
             else:
                 context['results'] = results
-                context['total_maximized_return'] = round(total_maximized_return, 2)
-
-                calculated_total_allocated = 0
-                if results:
-                    for item_result in results:
-                        calculated_total_allocated += item_result.get('allocated_budget', 0)
-                context['total_allocated_budget'] = round(calculated_total_allocated, 2)
-
-                if total_budget > 0:
-                    utilization_percent = (calculated_total_allocated / total_budget) * 100
-                    context['budget_utilization_percent'] = round(utilization_percent, 1)
-                else:
-                    if calculated_total_allocated == 0:
-                        context[
-                            'budget_utilization_percent'] = 0.0
-                    else:
-                        context[
-                            'budget_utilization_percent'] = "N/A (Total Budget is 0)"
-
-                context['success_message'] = f'최적 예산 분배 계산 완료!'.strip()
+                context['success_message'] = f"최적 예산 분배 수립 완료! 최대 기대 수익: {results['total_maximized_return']:.2f}"
                 logger.info(
-                    f"Budget allocation successful. Max return: {total_maximized_return}, "
-                    f"Total allocated: {calculated_total_allocated}, "
-                    f"Utilization: {context['budget_utilization_percent']}%")
+                    f"Budget allocation successful. Max return: {results['total_maximized_return']}, "
+                    f"Total allocated: {results['total_allocated_budget']}, "
+                    f"Utilization: {results['budget_utilization_percent']}%")
 
         except ValueError as ve:
             context['error_message'] = f"입력값 오류: {str(ve)}"
@@ -248,13 +190,10 @@ def financial_portfolio_demo_view(request):
                 f'Data for portfolio optimizer: ER={expected_returns}, COV={covariance_matrix}, '
                 f'TargetRet={target_portfolio_return}')
 
-            results, calc_portfolio_return, calc_portfolio_variance, error_msg, processing_time_ms = \
+            results, calc_portfolio_return, calc_portfolio_variance, error_msg, processing_time = \
                 run_portfolio_optimization_optimizer(submitted_num_assets_val, expected_returns, covariance_matrix,
                                                      target_portfolio_return)
-
-            context[
-                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
-
+            context['processing_time_seconds'] = processing_time
             if error_msg:
                 context['error_message'] = error_msg
             elif results is not None:
@@ -357,40 +296,22 @@ def data_center_capacity_demo_view(request):
     if request.method == 'POST':
         logger.info("Data Center Capacity Demo POST processing.")
         try:
-            # --- 1. 입력 데이터 파싱---
-            parsed_global_constraints, parsed_server_types_data, parsed_service_demands_data = parse_allocation_data_center_data(
+            # 1. 데이터 파일 새성 및 검증
+            input_data = create_datacenter_allocation_json_data(
                 form_data, submitted_num_server_types, submitted_num_services
             )
 
-            # --- 2. 유효성 검사 ---
-            validation_error = validate_data_center_data(
-                parsed_global_constraints,  # 원본 수정을 피하기 위해 복사본 전달
-                parsed_server_types_data,
-                parsed_service_demands_data
-            )
-            if validation_error:
-                raise ValueError(validation_error)  # 유효성 검사 실패 시 ValueError 발생
+            # 2. 파일 저장
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_allocation_json_data(input_data)
+                if save_error:
+                    context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
 
-            # --- 3. 입력 데이터 JSON 파일로 저장 ---
-            input_data = create_allocation_data_center_json_data(
-                parsed_global_constraints,
-                parsed_server_types_data,
-                parsed_service_demands_data
-            )
-            saved_filename, save_error = save_allocation_data_center_json_data(input_data)
-            if save_error:
-                context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
-            elif saved_filename:
-                context['success_save_message'] = (
-                            context.get('info_message', '') + f" 입력 데이터가 '{saved_filename}'으로 서버에 저장.").strip()
-
-            # --- 4. 최적화 실행 ---
-            results_data, error_msg_opt, processing_time_ms = run_data_center_capacity_optimizer(
-                parsed_global_constraints, parsed_server_types_data, parsed_service_demands_data
-            )
-            context[
-                'processing_time_seconds'] = f"{(processing_time_ms / 1000.0):.3f}" if processing_time_ms is not None else "N/A"
-
+            # 3. 최적화 실행
+            results_data, error_msg_opt, processing_time = run_datacenter_capacity_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
             if error_msg_opt:
                 context['error_message'] = (context.get('error_message', '') + " " + error_msg_opt).strip()
             elif results_data:
@@ -400,7 +321,7 @@ def data_center_capacity_demo_view(request):
                     f"Data center capacity optimization successful. Total Profit: {results_data.get('total_profit')}")
 
                 # --- 차트 데이터 준비 ---
-                chart_data_py_dict  = set_chart_data(results_data, parsed_global_constraints)
+                chart_data_py_dict  = set_datacenter_chart_data(results_data, input_data.get('global_constraints'))
                 context['chart_data_py'] = chart_data_py_dict
                 context['chart_data_json'] = json.dumps(chart_data_py_dict )  # JSON 문자열로 템플릿에 전달
             else:

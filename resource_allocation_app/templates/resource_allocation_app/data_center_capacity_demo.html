@@ -6,7 +6,6 @@
 
 {% block styles %}
 <style>
-    /* ... (이전 데모 페이지의 error/success 메시지 스타일 등 공통 스타일 유지) ... */
     .form-section {
         margin-bottom: 2rem;
         padding: 1.5rem;
@@ -30,12 +29,6 @@
     .results-table th:first-child, .results-table td:first-child {
         text-align: left;
     }
-    .error-message, .success-message {
-        padding: .75rem 1.25rem; margin-bottom: 1rem;
-        border: 1px solid transparent; border-radius: .25rem;
-    }
-    .error-message { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
-    .success-message { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
     .chart-container {
         width: 100%;
         max-width: 450px;
@@ -84,6 +77,7 @@
 
     <form method="POST">
         {% csrf_token %}
+        <input type="hidden" name="problem_type" value="datacenter" id="problem_type">
         <input type="hidden" name="num_server_types" value="{{ submitted_num_server_types }}">
         <input type="hidden" name="num_services" value="{{ submitted_num_services }}">
 
@@ -205,22 +199,22 @@
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">데이터 센터 용량 계획 최적화 실행</button>
     </form>
 
+        {# 1. 결과 메세지 #}
     {% if success_save_message%}
-        <div class="success-message" role="alert">{{ success_save_message }}</div>
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
     {% endif %}
-
-    {% if results is not None or error_message or success_message %}
+    {% if opt_results is not None or error_message or success_message %}
     <hr class="my-4">
-    <h3 class="mt-4">Optimization Results</h3>
+    <h3 class="mt-4">Optimization Results ({{ form_data.problem_type }})</h3>
     {% endif %}
-
     {% if error_message %}
-        <div class="error-message" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
     {% endif %}
     {% if success_message and not error_message %}
-        <div class="success-message" role="alert">{{ success_message }}</div>
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
     {% endif %}
 
+    {# 2. 결과 요약 및 시각화 #}
     {% if results %}
     <div class="card mt-4">
         <div class="card-header"><strong>최적화 결과 요약</strong></div>

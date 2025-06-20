@@ -50,6 +50,7 @@ load_dotenv(dotenv_path=dotenv_path)
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY=os.environ.get('SECRET_KEY', 'django-insecure-5)=z06nprnb$ua_#)c**%n01&+*0%+d33lfqnl1l0n3qolcurx')
 DEBUG=os.environ.get('DEBUG', 'False').upper()=='TRUE'
+SAVE_DATA_FILE=os.environ.get('SAVE_DATA_FILE', 'False').upper()=='TRUE'
 allowed_hosts_str=os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
 # ALLOWED_HOSTS = ['opt-demo-462706.an.r.appspot.com']
