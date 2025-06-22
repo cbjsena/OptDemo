@@ -1,10 +1,275 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "core/base.html" %}
+{% load static %}
+{% load production_filters %}
 
-</body>
-</html>
+{% block title %}RCPSP Demo{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Resource-Constrained Project Scheduling (RCPSP) Demo</h1>
+    </div>
+    <p>활동별 처리 기간, 선후 관계, 자원 요구량을 입력하여 프로젝트 완료 시간(Makespan)을 최소화하는 최적의 일정을 계산합니다.</p>
+
+    <form method="GET" class="mb-3 form-inline">
+        <div class="form-group mr-2">
+            <label for="num_activities_to_show" class="mr-2">활동 수 (3-8):</label>
+            <select name="num_activities_to_show" id="num_activities_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in num_activities_options %}<option value="{{ i }}" {% if i == submitted_num_activities %}selected{% endif %}>{{ i }}개</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-group mr-2">
+            <label for="num_resources_to_show" class="mr-2">자원 종류 수 (1-3):</label>
+            <select name="num_resources_to_show" id="num_resources_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+                {% for i in num_resources_options %}<option value="{{ i }}" {% if i == submitted_num_resources %}selected{% endif %}>{{ i }}개</option>{% endfor %}
+            </select>
+        </div>
+    </form>
+
+    <form method="POST" id="rcpspForm">
+        {% csrf_token %}
+        <input type="hidden" name="problem_type" value="rcpsp" id="problem_type">
+        <input type="hidden" name="num_activities" value="{{ submitted_num_activities }}">
+        <input type="hidden" name="num_resources" value="{{ submitted_num_resources }}">
+
+        <div class="form-section">
+            <h4>1. 가용 자원 (Available Resources)</h4>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>자원 이름</th>
+                            <th>총 가용량</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for resource in resources_list %}
+                        <tr>
+                            <td>
+                                <input type="text" class="form-control form-control-sm" name="resource_{{ forloop.counter0 }}_name" value="{{ resource.name }}" required>
+                            </td>
+                            <td>
+                                <input type="number" min="1" class="form-control form-control-sm" name="resource_{{ forloop.counter0 }}_availability" value="{{ resource.availability }}" required>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>2. 활동 정보 (Activities)</h4>
+            <div class="table-responsive">
+                <table class="table table-bordered text-center">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>활동 ID</th>
+                            <th>처리 기간(일)</th>
+                            <th>선행 활동 (ID 번호, 쉼표 구분)</th>
+                            {% for resource in resources_list %}
+                            <th>필요 자원 {{ forloop.counter }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {# --- 수정된 부분 --- #}
+                        {% for activity in activities_list %}
+                        <tr>
+                            <td><input type="text" name="activity_{{ forloop.counter0 }}_id" class="form-control form-control-sm" value="{{ activity.id }}"></td>
+                            <td><input type="number" min="1" name="activity_{{ forloop.counter0 }}_duration" class="form-control form-control-sm" value="{{ activity.duration }}" required></td>
+                            <td><input type="text" name="activity_{{ forloop.counter0 }}_predecessors" class="form-control form-control-sm" value="{{ activity.predecessors }}" placeholder="예: 1,2"></td>
+                            {% for req in activity.res_reqs %}
+                            <td><input type="number" min="0" name="activity_{{ forloop.parentloop.counter0 }}_res_{{ forloop.counter0 }}_req" class="form-control form-control-sm" value="{{ req }}" required></td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 프로젝트 스케줄 실행</button>
+    </form>
+
+    {# 1. 결과 메세지 #}
+    {% if success_save_message%}
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
+    {% endif %}
+    {% if opt_results is not None or error_message or success_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Results ({{ form_data.problem_type }})</h3>
+    {% endif %}
+    {% if error_message %}
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
+    {% endif %}
+
+    {% if results %}
+        <div class="card mt-3">
+            <div class="card-header"><strong>결과 요약</strong></div>
+            <div class="card-body">
+                 <p><strong>최소 프로젝트 완료 기간 (Makespan):</strong> <span class="h4 text-primary">{{ results.makespan|floatformat:0 }}</span> 일</p>
+                 <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
+            </div>
+        </div>
+        {% if plot_data %}
+            <div class="card mt-3">
+                <div class="card-header"><strong>간트 차트 (Gantt Chart)</strong></div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: {{ submitted_num_activities|add:2|multiply_custom:40 }}px;">
+                        <canvas id="rcpspGanttChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header"><strong>자원 사용량 프로필 (Resource Profile)</strong></div>
+                <div class="card-body">
+                     {% for k in submitted_num_resources|get_range %}
+                     <div class="chart-container mb-3" style="height: 250px;">
+                         <canvas id="resourceChart{{ k }}"></canvas>
+                     </div>
+                     {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Chart.js 인스턴스 관리는 이전과 동일
+    var chartInstances = window.chartInstances || {};
+    function destroyChartIfExists(chartId) {
+        if (chartInstances[chartId]) {
+            chartInstances[chartId].destroy();
+            delete chartInstances[chartId];
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("RCPSP Demo page script loaded.");
+        const plotDataJson = '{{ plot_data|safe|default_if_none:"{}" }}';
+        try {
+            const plotData = JSON.parse(plotDataJson);
+            console.log("Parsed plot_data for RCPSP charts:", plotData);
+
+            if (plotData && plotData.schedule && plotData.schedule.length > 0) {
+                // --- 1. 간트 차트 생성 ---
+                const ganttCtx = document.getElementById('rcpspGanttChart');
+                if (ganttCtx) {
+                    destroyChartIfExists('rcpspGanttChart');
+
+                    const ganttData = {
+                        labels: plotData.schedule.map(j => j.id),
+                        datasets: [{
+                            label: 'Activity Schedule',
+                            data: plotData.schedule.map(j => [j.start, j.end]),
+                            backgroundColor: plotData.schedule.map((_, index) => {
+                                const colors = ['rgba(54, 162, 235, 0.7)', 'rgba(255, 99, 132, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(255, 206, 86, 0.7)', 'rgba(153, 102, 255, 0.7)'];
+                                return colors[index % colors.length];
+                            }),
+                            borderColor: 'rgba(0, 0, 0, 0.1)',
+                            borderWidth: 1,
+                            borderSkipped: false
+                        }]
+                    };
+
+                    chartInstances['rcpspGanttChart'] = new Chart(ganttCtx, {
+                        type: 'bar',
+                        data: ganttData,
+                        options: {
+                            indexAxis: 'y', // Y축 기반의 가로 막대 차트
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    title: { display: true, text: 'Time (Days)' }
+                                }
+                            },
+                            plugins: {
+                                legend: { display: false }, // 범례 숨기기
+                                title: { display: true, text: '활동별 간트 차트' },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const job = plotData.schedule[context.dataIndex];
+                                            return `${job.id}: [${job.start} - ${job.end}] (Duration: ${job.duration})`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // --- 2. 자원 프로필 차트 생성 ---
+                if (plotData.resource_usage) {
+                    const resourceColors = ['rgba(255, 99, 132, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(255, 206, 86, 0.7)'];
+                    Object.keys(plotData.resource_usage).forEach((res_key, index) => {
+                        const resCanvasId = `resourceChart${index}`;
+                        const resCtx = document.getElementById(resCanvasId);
+                        const usageData = plotData.resource_usage[res_key];
+                        const availability = plotData.resource_availabilities[index];
+
+                        if (resCtx) {
+                            destroyChartIfExists(resCanvasId);
+
+                            chartInstances[resCanvasId] = new Chart(resCtx, {
+                                type: 'line',
+                                data: {
+                                    labels: Array.from({length: usageData.length}, (_, i) => i), // Time 0, 1, 2...
+                                    datasets: [{
+                                        label: `사용량`,
+                                        data: usageData,
+                                        borderColor: resourceColors[index % resourceColors.length],
+                                        backgroundColor: resourceColors[index % resourceColors.length].replace('0.7', '0.2'),
+                                        stepped: true, // 계단 형태로 표시
+                                        fill: true
+                                    }, {
+                                        label: `가용량`,
+                                        data: Array(usageData.length).fill(availability),
+                                        borderColor: 'rgba(0, 0, 0, 0.8)',
+                                        borderDash: [5, 5], // 점선
+                                        borderWidth: 2,
+                                        pointRadius: 0,
+                                        fill: false
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            suggestedMax: availability + 1, // 가용량 라인이 잘 보이도록 Y축 최대값 조정
+                                            title: { display: true, text: '사용된 자원 수' }
+                                        },
+                                        x: {
+                                            title: { display: true, text: 'Time (Days)' }
+                                        }
+                                    },
+                                    plugins: {
+                                        title: { display: true, text: `${res_key} 사용량 프로필` }
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Error creating RCPSP charts:", e);
+        }
+    });
+</script>
+{% endblock %}

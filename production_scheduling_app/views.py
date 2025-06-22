@@ -429,65 +429,6 @@ def job_shop_demo_view(request):
     return render(request, 'production_scheduling_app/job_shop_demo.html', context)
 
 
-def job_shop_demo_view_ori(request):
-    form_data = {}
-
-    if request.method == 'GET':
-        submitted_num_jobs = int(request.GET.get('num_jobs_to_show', preset_job_shop_num_jobs))
-        submitted_num_machines = int(request.GET.get('num_machines_to_show', preset_job_shop_num_machines))
-        submitted_num_jobs = max(2, min(5, submitted_num_jobs))
-        submitted_num_machines = max(3, min(4, submitted_num_machines))
-
-        # 기본값 생성: 각 작업이 모든 기계를 한 번씩만 방문하도록 순서를 섞음
-        for i in range(submitted_num_jobs):
-            machines_order = list(range(submitted_num_machines))
-            random.shuffle(machines_order)
-            for j in range(submitted_num_machines):
-                form_data[f'job_{i}_op_{j}_machine'] = request.GET.get(f'job_{i}_op_{j}_machine',
-                                                                       str(machines_order[j]))
-                form_data[f'job_{i}_op_{j}_time'] = request.GET.get(f'job_{i}_op_{j}_time', str(random.randint(5, 25)))
-
-    elif request.method == 'POST':
-        form_data = request.POST.copy()
-        submitted_num_jobs = int(form_data.get('num_jobs', preset_job_shop_num_jobs))
-        submitted_num_machines = int(form_data.get('num_machines', preset_job_shop_num_machines))
-
-    context = {
-        'active_model': 'Production & Scheduling',
-        'active_submenu': 'job_shop_demo',
-        'form_data': form_data,
-        'results': None, 'error_message': None, 'success_message': None,
-        'processing_time_seconds': "N/A",
-        'num_jobs_options': range(2, 6),
-        'num_machines_options': range(3, 5),
-        'submitted_num_jobs': submitted_num_jobs,
-        'submitted_num_machines': submitted_num_machines,
-        'plot_data': None
-    }
-
-    if request.method == 'POST':
-        try:
-            input_data = create_job_shop_json_data(form_data)
-            # save_production_json_data(input_data) # 파일 저장 (필요시)
-
-            results_data, error_msg_opt, processing_time = run_job_shop_optimizer(input_data)
-            context['processing_time_seconds'] = processing_time
-
-            if error_msg_opt:
-                context['error_message'] = error_msg_opt
-            elif results_data:
-                context['results'] = results_data
-                context['success_message'] = f"최적 스케줄 계산 완료! Makespan: {results_data['makespan']:.2f}"
-                context['plot_data'] = json.dumps(results_data['schedule'])
-
-        except ValueError as ve:
-            context['error_message'] = f"입력값 오류: {str(ve)}"
-        except Exception as e:
-            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
-
-    return render(request, 'production_scheduling_app/job_shop_demo.html', context)
-
-
 def rcpsp_introduction_view(request):
     """RCPSP Introduction Page."""
     context = {
@@ -500,11 +441,112 @@ def rcpsp_introduction_view(request):
 
 
 def rcpsp_demo_view(request):
-    """Flow Shop Scheduling Introduction Page."""
+    """
+    Resource-Constrained Project Scheduling Problem (RCPSP) 데모 뷰.
+    """
+    activities_list = []
+    resources_list=[]
+
+    # GET 요청 시: URL 파라미터 또는 기본값으로 form_data 초기화
+    if request.method == 'GET':
+        submitted_num_activities = int(request.GET.get('num_activities_to_show', preset_rcpsp_num_activities))
+        submitted_num_resources = int(request.GET.get('num_resources_to_show', preset_rcpsp_num_resources))
+        submitted_num_activities = max(3, min(8, submitted_num_activities))
+        submitted_num_resources = max(1, min(3, submitted_num_resources))
+
+        # 가용 자원 기본값
+        for k in range(submitted_num_resources):
+            preset = preset_rcpsp_resource_data[k]
+            resources_list.append({
+                'name': request.GET.get(f'resource_{k}_name', preset['name']),
+                'availability': request.GET.get(f'resource_{k}_availability', preset['availability'])
+            })
+
+        for i in range(submitted_num_activities):
+            preset = preset_rcpsp_activities_data[i]
+            activity_info = {
+                'id': request.GET.get(f'activity_{i}_id', preset['id']),
+                'duration': request.GET.get(f'activity_{i}_duration', preset['duration']),
+                'predecessors': request.GET.get(f'activity_{i}_predecessors', preset['predecessors']),
+                'res_reqs': []
+            }
+            for k in range(submitted_num_resources):
+                req = request.GET.get(f'activity_{i}_res_{k}_req',
+                                      str(preset['res_reqs'][k] if k < len(preset['res_reqs']) else 0))
+                activity_info['res_reqs'].append(req)
+            activities_list.append(activity_info)
+
+    elif request.method == 'POST':
+        form_data = request.POST.copy()
+        submitted_num_activities = int(form_data.get('num_activities', preset_rcpsp_num_activities))
+        submitted_num_resources = int(form_data.get('num_resources', preset_rcpsp_num_resources))
+
+        # POST 후 입력값 유지를 위해 리스트 재생성
+        for k in range(submitted_num_resources):
+            resources_list.append({
+                'name': form_data.get(f'resource_{k}_name'),
+                'availability': form_data.get(f'resource_{k}_availability')
+            })
+
+        for i in range(submitted_num_activities):
+            activity_info = {
+                'id': form_data.get(f'activity_{i}_id'),
+                'duration': form_data.get(f'activity_{i}_duration'),
+                'predecessors': form_data.get(f'activity_{i}_predecessors'),
+                'res_reqs': []
+            }
+            for k in range(submitted_num_resources):
+                activity_info['res_reqs'].append(form_data.get(f'activity_{i}_res_{k}_req'))
+            activities_list.append(activity_info)
+
     context = {
         'active_model': 'Production & Scheduling',
-        'active_submenu_category': 'rcpsp',
-        'active_submenu': 'rcpsp_demo'
+        'active_submenu': 'rcpsp_demo',
+        'resources_list': resources_list,
+        'activities_list': activities_list,
+        'results': None, 'error_message': None, 'success_message': None, 'info_message': None,
+        'processing_time_seconds': "N/A",
+        'num_activities_options': range(3, 9),
+        'num_resources_options': range(1, 4),
+        'submitted_num_activities': submitted_num_activities,
+        'submitted_num_resources': submitted_num_resources,
+        'plot_data': None
     }
-    logger.debug("Rendering Flow Shop Scheduling introduction page.")
+
+    if request.method == 'POST':
+        logger.info("RCPSP Demo POST request processing.")
+        try:
+            input_data = create_rcpsp_json_data(form_data)
+
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_production_json_data(input_data)
+                if save_error:
+                    context['error_message'] = save_error
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
+
+            # 3. 최적화 실행
+            results_data, error_msg_opt, processing_time = run_rcpsp_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
+
+            if error_msg_opt:
+                context['error_message'] = error_msg_opt
+            elif results_data:
+                context['results'] = results_data
+                context['success_message'] = f"최적 프로젝트 스케줄 수립 완료! 최소 프로젝트 기간(Makespan): {results_data['makespan']:.0f}일"
+                # 차트용 데이터 준비
+                chart_data = {
+                    'schedule': results_data['schedule'],
+                    'resource_usage': results_data['resource_usage'],
+                    'resource_availabilities': input_data['resource_availabilities']
+                }
+                context['plot_data'] = json.dumps(chart_data)
+            else:
+                context['error_message'] = "최적화 결과를 가져오지 못했습니다."
+
+        except ValueError as ve:
+            context['error_message'] = f"입력값 오류: {str(ve)}"
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+
     return render(request, 'production_scheduling_app/rcpsp_demo.html', context)

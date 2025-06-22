@@ -83,6 +83,7 @@ def make_key1(prefix, index):
 
 @register.simple_tag(name='make_key2')
 def make_key2(prefix, i, j):
+    logger.info(f"---------make_key2: {prefix}_{i}_{j}")
     return f"{prefix}_{i}_{j}"
 
 @register.filter(name='multiply_custom')

@@ -57,6 +57,31 @@ preset_job_shop_data = [
     {'id': 'Job_10', 'processing_times': [12,88,58,99,9], 'selected_routing': '2-0-1'}
 ]
 
+preset_rcpsp_num_activities = 8
+preset_rcpsp_num_resources = 3
+
+# --- 기본 데이터 풀 정의 ---
+preset_rcpsp_activities_data = [
+    # id, duration, predecessors, [res1, res2, res3]
+    {'id': 'A.기획/설계', 'duration': '5', 'predecessors': '', 'res_reqs': [1, 1, 1]},
+    {'id': 'B.UI/UX디자인', 'duration': '4', 'predecessors': '1', 'res_reqs': [2, 0, 1]},
+    {'id': 'C.DB설계', 'duration': '3', 'predecessors': '1', 'res_reqs': [0, 2, 0]},
+    {'id': 'D.FE개발', 'duration': '8', 'predecessors': '2', 'res_reqs': [3, 0, 0]},
+    {'id': 'E.BE개발', 'duration': '7', 'predecessors': '3', 'res_reqs': [0, 4, 0]},
+    {'id': 'F.통합테스트', 'duration': '4', 'predecessors': '4,5', 'res_reqs': [1, 1, 3]},
+    {'id': 'G.피드백반영', 'duration': '3', 'predecessors': '6', 'res_reqs': [2, 2, 1]},
+    {'id': 'H.최종배포', 'duration': '2', 'predecessors': '7', 'res_reqs': [1, 1, 2]},
+    # 9, 10번째 활동 데이터 (필요시 추가)
+    {'id': 'I.문서화', 'duration': '5', 'predecessors': '8', 'res_reqs': [1, 1, 0]},
+    {'id': 'J.마케팅준비', 'duration': '6', 'predecessors': '1', 'res_reqs': [0, 0, 1]},
+]
+preset_rcpsp_resource_data = [
+        {'name': 'Front-End 개발자', 'availability': '4'},
+        {'name': 'Back-End 개발자', 'availability': '5'},
+        {'name': 'QA 엔지니어', 'availability': '3'},
+    ]
+
+
 def create_lot_sizing_json_data(form_data, num_periods):
     """
     폼 데이터로부터 Lot Sizing 문제 입력을 위한 딕셔너리를 생성하고 검증합니다.
@@ -243,6 +268,61 @@ def create_job_shop_json_data_ori(form_data):
     }
     return input_data
 
+
+def create_rcpsp_json_data(form_data):
+    logger.debug("Creating and validating RCPSP input data from form.")
+    num_activities = int(form_data.get('num_activities', 3))
+    num_resources = int(form_data.get('num_resources', 2))
+
+    input_data = {
+        'problem_type': 'rcpsp',
+        'num_activities': num_activities,
+        'num_resources': num_resources,
+        'resource_availabilities': [],
+        'activities': []
+    }
+
+    # 1. 가용 자원량 파싱
+    for k in range(num_resources):
+        try:
+            avail = int(form_data.get(f'resource_{k}_availability'))
+            if avail < 0: raise ValueError("가용 자원량은 음수가 될 수 없습니다.")
+            input_data['resource_availabilities'].append(avail)
+        except (ValueError, TypeError):
+            raise ValueError(f"자원 {k + 1}의 가용량이 올바른 숫자가 아닙니다.")
+
+    # 2. 활동 데이터 파싱
+    for i in range(num_activities):
+        activity_data = {}
+        try:
+            activity_data['id'] = form_data.get(f'activity_{i}_id', f'Task {i + 1}')
+            activity_data['duration'] = int(form_data.get(f'activity_{i}_duration'))
+
+            # 선후 관계 파싱 (예: "1,2" -> [0,1])
+            preds_str = form_data.get(f'activity_{i}_predecessors', '')
+            if preds_str:
+                # 1-based index to 0-based index
+                activity_data['predecessors'] = [int(p.strip()) - 1 for p in preds_str.split(',') if p.strip()]
+            else:
+                activity_data['predecessors'] = []
+
+            # 자원 요구량 파싱
+            activity_data['resource_reqs'] = []
+            for k in range(num_resources):
+                req = int(form_data.get(f'activity_{i}_res_{k}_req'))
+                activity_data['resource_reqs'].append(req)
+
+            # 유효성 검사
+            if activity_data['duration'] <= 0: raise ValueError("처리 기간은 0보다 커야 합니다.")
+            if any(r < 0 for r in activity_data['resource_reqs']): raise ValueError("자원 요구량은 음수가 될 수 없습니다.")
+
+        except (ValueError, TypeError):
+            raise ValueError(f"활동 '{activity_data.get('id')}'의 입력값이 올바르지 않습니다.")
+
+        input_data['activities'].append(activity_data)
+
+    return input_data
+
 def save_production_json_data(input_data):
     problem_type = input_data.get('problem_type')
     dir=f'production_{problem_type}_data'
@@ -263,7 +343,6 @@ def save_production_json_data(input_data):
         filename_pattern = f"jobs{num_jobs}_machine{num_machines}"
     elif "rcpsp" == input_data.get('problem_type'):
         num_resources = input_data.get('num_resources')
-        num_projects = input_data.get('num_projects')
-        filename_pattern = f"resource{num_resources}_project{num_projects}"
-
+        num_activities = input_data.get('num_activities')
+        filename_pattern = f"resource{num_resources}_activities{num_activities}"
     return save_json_data(input_data, dir, filename_pattern)

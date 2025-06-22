@@ -403,10 +403,82 @@ def run_job_shop_optimizer(input_data):
 
     return results, error_msg, get_solving_time_cp_sec(solver.WallTime())
 
+
+def run_rcpsp_optimizer(input_data):
+    logger.info("Running RCPSP Optimizer.")
+
+    activities_data = input_data['activities']
+    resource_availabilities = input_data['resource_availabilities']
+    num_activities = input_data['num_activities']
+    num_resources = input_data['num_resources']
+
+    model = cp_model.CpModel()
+    horizon = sum(act['duration'] for act in activities_data)  # 전체 기간
+
+    # 변수 생성
+    start_vars = [model.NewIntVar(0, horizon, f'start_{i}') for i in range(num_activities)]
+    end_vars = [model.NewIntVar(0, horizon, f'end_{i}') for i in range(num_activities)]
+    interval_vars = [model.NewIntervalVar(start_vars[i], activities_data[i]['duration'], end_vars[i], f'interval_{i}')
+                     for i in range(num_activities)]
+
+    # 제약 조건
+    # 1. 선후 관계 제약
+    for i in range(num_activities):
+        for pred_idx in activities_data[i]['predecessors']:
+            model.Add(start_vars[i] >= end_vars[pred_idx])
+
+    # 2. 자원 제약 (Cumulative)
+    for k in range(num_resources):
+        demands = [act['resource_reqs'][k] for act in activities_data]
+        model.AddCumulative(interval_vars, demands, resource_availabilities[k])
+
+    # 목표 함수: Makespan 최소화
+    makespan = model.NewIntVar(0, horizon, 'makespan')
+    model.AddMaxEquality(makespan, end_vars)
+    model.Minimize(makespan)
+
+    # 해결
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = 10.0
+    status = solver.Solve(model)
+
+    # 결과 추출
+    results = {'schedule': [], 'makespan': 0, 'resource_usage': {}}
+    error_msg = None
+
+    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+        results['makespan'] = int(solver.ObjectiveValue())
+
+        for i in range(num_activities):
+            results['schedule'].append({
+                'id': activities_data[i]['id'],
+                'start': solver.Value(start_vars[i]),
+                'end': solver.Value(end_vars[i]),
+                'duration': activities_data[i]['duration'],
+                'resource_reqs': activities_data[i]['resource_reqs']
+            })
+        results['schedule'].sort(key=lambda item: item['start'])
+
+        # 자원 사용량 프로필 계산
+        for k in range(num_resources):
+            usage = [0] * (results['makespan'] + 1)
+            for t in range(results['makespan']):
+                for i in range(num_activities):
+                    if solver.Value(start_vars[i]) <= t < solver.Value(end_vars[i]):
+                        usage[t] += activities_data[i]['resource_reqs'][k]
+            results['resource_usage'][f'Resource {k + 1}'] = usage
+
+    else:
+        error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
+
+    return results, error_msg, get_solving_time_sec(solver.WallTime())
+
+
 def get_solving_time_sec(processing_time):
     # solver.WallTime(): if solver is CP-SAT then, sec else ms
     processing_time = processing_time / 1000
     return f"{processing_time:.3f}" if processing_time is not None else "N/A"
+
 
 def get_solving_time_cp_sec(processing_time):
     # solver.WallTime(): if solver is CP-SAT then, sec else ms
