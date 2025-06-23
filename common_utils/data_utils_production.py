@@ -14,16 +14,16 @@ preset_single_machine_objective = [
             {'value': 'total_tardiness', 'name': '총 지연 시간 최소화'}
         ]
 preset_single_machine_data =[
-    {'id': 'Job_1', 'processing_time': 5, 'due_date': 20},
-    {'id': 'Job_2', 'processing_time': 12, 'due_date': 30},
-    {'id': 'Job_3', 'processing_time': 8, 'due_date': 15},
-    {'id': 'Job_4', 'processing_time': 3, 'due_date': 40},
-    {'id': 'Job_5', 'processing_time': 15, 'due_date': 60},
-    {'id': 'Job_6', 'processing_time': 6, 'due_date': 35},
-    {'id': 'Job_7', 'processing_time': 9, 'due_date': 50},
-    {'id': 'Job_8', 'processing_time': 4, 'due_date': 25},
-    {'id': 'Job_9', 'processing_time': 11, 'due_date': 45},
-    {'id': 'Job_10', 'processing_time': 7, 'due_date': 70},
+    {'id': 'Job 1(긴급)', 'processing_time': '8', 'due_date': '10', 'release_time': '0'},
+    {'id': 'Job 2(지연)', 'processing_time': '4', 'due_date': '30', 'release_time': '9'},
+    {'id': 'Job 3', 'processing_time': '2', 'due_date': '25', 'release_time': '0'},
+    {'id': 'Job 4', 'processing_time': '4', 'due_date': '20', 'release_time': '10'},
+    {'id': 'Job 5', 'processing_time': '4', 'due_date': '25', 'release_time': '12'},
+    {'id': 'Job 6', 'processing_time': '14', 'due_date': '60', 'release_time': '2'},
+    {'id': 'Job 7', 'processing_time': '7', 'due_date': '45', 'release_time': '22'},
+    {'id': 'Job 8', 'processing_time': '5', 'due_date': '28', 'release_time': '12'},
+    {'id': 'Job_9', 'processing_time': '11', 'due_date': '45', 'release_time': '18'},
+    {'id': 'Job_10', 'processing_time': '7', 'due_date': '70', 'release_time': '3'},
 ]
 
 preset_flow_shop_num_jobs = 4
@@ -139,6 +139,7 @@ def create_single_machine_json_data(jobs_list, form_data, num_jobs):
         try:
             job["processing_time"] = int(job["processing_time"])
             job["due_date"] = int(job["due_date"])
+            job["release_time"] = int(job["release_time"])
         except (ValueError, TypeError) as e:
             raise ValueError(f"Job '{job.get('id', 'Unknown')}' has invalid processing_time or due_date: {e}")
 

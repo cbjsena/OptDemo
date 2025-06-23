@@ -15,10 +15,10 @@
     </div>
     <p>여러 작업의 처리 시간과 납기일을 입력하고 최적화 목표를 선택하여, 최적의 작업 순서를 계산하고 간트 차트로 확인합니다.</p>
 
-    <form method="GET" class="mb-3 form-inline">
+        <div class="mb-3 form-inline">
         <div class="form-group mr-2">
-            <label for="num_jobs_to_show" class="mr-2">작업 수 (3-8):</label>
-            <select name="num_jobs_to_show" id="num_jobs_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+            <label for="num_jobs_to_show" class="mr-2">작업 수 (2-10):</label>
+            <select name="num_jobs_to_show" id="num_jobs_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
                 {% for i in num_jobs_options %}
                     <option value="{{ i }}" {% if i == submitted_num_jobs %}selected{% endif %}>{{ i }}개</option>
                 {% endfor %}
@@ -26,20 +26,22 @@
         </div>
         <div class="form-group mr-2">
             <label for="objective_choice_get" class="mr-2">최적화 목표:</label>
-            <select name="objective_choice" id="objective_choice_get" class="form-control form-control-sm" onchange="this.form.submit()">
+            <select name="objective_choice" id="objective_choice_get" class="form-control form-control-sm" onchange="submitSettingsForm()">
                 {% for obj in objective_options %}
-                    <option value="{{ obj.value }}" {% if obj.value == form_data.objective_choice %}selected{% endif %}>{{ obj.name }}</option>
+                    <option value="{{ obj.value }}" {% if obj.value == submitted_objective %}selected{% endif %}>{{ obj.name }}</option>
                 {% endfor %}
             </select>
         </div>
-        <noscript><button type="submit" class="btn btn-sm btn-secondary">설정 적용</button></noscript>
-    </form>
+    </div>
+
+    <form method="GET" id="settingsForm">
+        </form>
 
     <form method="POST" id="schedulingForm">
         {% csrf_token %}
         <input type="hidden" name="problem_type" value="single_machine" id="problem_type">
         <input type="hidden" name="num_jobs" value="{{ submitted_num_jobs }}">
-        <input type="hidden" name="objective_choice" value="{{ submitted_objective }}">
+        <input type="hidden" name="objective_choice" value="{{ submitted_objective  }}">
 
         <div class="form-section">
             <h4>작업 정보 입력</h4>
@@ -50,17 +52,24 @@
                             <th>작업 ID</th>
                             <th>처리 시간 (Processing Time)</th>
                             <th>납기일 (Due Date)</th>
+                            <th>준비 시간 (Release Time)</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for job in jobs_list %}
                         <tr>
                             <td><input type="text" class="form-control form-control-sm"
-                                       name="job_{{ forloop.counter0 }}_id" value="{{ job.id }}"></td>
+                            id="job_{{ forloop.counter0 }}_id" name="job_{{ forloop.counter0 }}_id"
+                                       value="{{ job.id }}"></td>
                             <td><input type="number" min="1" class="form-control form-control-sm"
-                                       name="job_{{ forloop.counter0 }}_processing_time" value="{{ job.processing_time }}" required></td>
+                            id="job_{{ forloop.counter0 }}_processing_time" name="job_{{ forloop.counter0 }}_processing_time"
+                                       value="{{ job.processing_time }}" required></td>
                             <td><input type="number" min="0" class="form-control form-control-sm"
-                                       name="job_{{ forloop.counter0 }}_due_date" value="{{ job.due_date }}" required></td>
+                            id="job_{{ forloop.counter0 }}_due_date" name="job_{{ forloop.counter0 }}_due_date"
+                                       value="{{ job.due_date }}" required></td>
+                            <td><input type="number" min="0" class="form-control form-control-sm"
+                            id="job_{{ forloop.counter0 }}_release_time" name="job_{{ forloop.counter0 }}_release_time"
+                                       value="{{ job.release_time|default_if_none:0 }}" required></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -71,12 +80,22 @@
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 스케줄 계산 실행</button>
     </form>
 
-    {% if results or error_message or success_message %}
-        <hr class="my-4"><h3 class="mt-4">Optimization Results</h3>
-        {# ... 메시지 표시 로직 ... #}
-        {% if success_message and not error_message %}<div class="alert alert-success">{{ success_message }}</div>{% endif %}
-        {% if error_message %}<div class="alert alert-danger">{{ error_message }}</div>{% endif %}
+    {# 1. 결과 메세지 #}
+    {% if success_save_message%}
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
     {% endif %}
+    {% if opt_results is not None or error_message or success_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Results ({{ form_data.problem_type }})</h3>
+    {% endif %}
+    {% if error_message %}
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
+    {% endif %}
+
+    {# 2. 결과 요약 및 시각화 #}
 
     {% if results %}
         <div class="card mt-3">
@@ -87,7 +106,7 @@
                         <span class="badge badge-primary" style="font-size: 1rem;">{{ job.id }}</span>{% if not forloop.last %} &rarr; {% endif %}
                     {% endfor %}
                  </p>
-                 <p><strong>최적 목표값:</strong> {{ results.objective_value|floatformat:2 }}</p>
+                 <p><strong>최적 목표값:</strong> {{ results.objective_value}}</p>
                  <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
             </div>
         </div>
@@ -107,6 +126,51 @@
 
 {% block scripts %}
 <script>
+function submitSettingsForm() {
+    console.log("Settings changed, submitting form with current values.");
+
+    // 1. 설정 폼 가져오기
+    const settingsForm = document.getElementById('settingsForm');
+    // 폼 내용 비우기 (중복 방지)
+    settingsForm.innerHTML = '';
+
+    // 2. 드롭다운 메뉴의 현재 값들을 폼에 추가
+    const numJobsSelect = document.getElementById('num_jobs_to_show');
+    const objectiveSelect = document.getElementById('objective_choice_get');
+
+    let inputNumJobs = document.createElement('input');
+    inputNumJobs.type = 'hidden';
+    inputNumJobs.name = 'num_jobs_to_show';
+    inputNumJobs.value = numJobsSelect.value;
+    settingsForm.appendChild(inputNumJobs);
+
+    let inputObjective = document.createElement('input');
+    inputObjective.type = 'hidden';
+    inputObjective.name = 'objective_choice';
+    inputObjective.value = objectiveSelect.value;
+    settingsForm.appendChild(inputObjective);
+
+    // 3. 현재 작업 정보 테이블의 모든 입력 값을 폼에 추가
+    const numJobs = {{ submitted_num_jobs }}; // 현재 렌더링된 작업 수
+    const fields = ['id', 'processing_time', 'due_date', 'release_time'];
+
+    for (let i = 0; i < numJobs; i++) {
+        fields.forEach(field => {
+            const inputElement = document.getElementById(`job_${i}_${field}`);
+            if (inputElement) {
+                let hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = `job_${i}_${field}`;
+                hiddenInput.value = inputElement.value;
+                settingsForm.appendChild(hiddenInput);
+            }
+        });
+    }
+
+    // 4. 설정 폼 제출
+    settingsForm.submit();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const plotDataJson = '{{ plot_data|safe|default_if_none:"{}" }}';
     try {

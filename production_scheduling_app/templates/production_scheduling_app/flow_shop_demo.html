@@ -67,12 +67,22 @@
     </form>
     {# --- 최적화 입력 데이터 폼 종료 --- #}
 
-    {% if results or error_message or success_message %}
-        <hr class="my-4"><h3 class="mt-4">Optimization Results</h3>
-        {% if success_message and not error_message %}<div class="alert alert-success">{{ success_message }}</div>{% endif %}
-        {% if error_message %}<div class="alert alert-danger">{{ error_message }}</div>{% endif %}
+    {# 1. 결과 메세지 #}
+    {% if success_save_message%}
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
+    {% endif %}
+    {% if opt_results is not None or error_message or success_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Results ({{ form_data.problem_type }})</h3>
+    {% endif %}
+    {% if error_message %}
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
     {% endif %}
 
+    {# 2. 결과 요약 및 시각화 #}
     {% if results %}
         {# --- 최적화 결과 표시 --- #}
         <div class="card mt-3">
@@ -83,7 +93,7 @@
                         <span class="badge badge-primary" style="font-size: 1rem;">{{ job_id }}</span>{% if not forloop.last %} &rarr; {% endif %}
                     {% endfor %}
                  </p>
-                 <p><strong>최소 Makespan:</strong> {{ results.makespan|floatformat:2 }}</p>
+                 <p><strong>최소 Makespan:</strong> {{ results.makespan }}</p>
                  <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
             </div>
         </div>

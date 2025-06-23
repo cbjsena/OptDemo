@@ -67,3 +67,24 @@
         font-size: 0.95rem;
         color: #555;
     }
+    .highlight-box {
+        background-color: #e9f7fd;
+        border-left: 5px solid #007bff;
+        padding: 20px;
+        margin: 25px 0;
+        border-radius: 4px;
+    }
+    .highlight-box h4 {
+        margin-top: 0;
+        color: #0056b3;
+        border-bottom: 1px dashed #007bff;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    .highlight-box table {
+        font-size: 0.9em;
+        margin-top: 10px;
+    }
+    .comparison-table {
+        font-size: 0.95rem;
+    }

@@ -1,3 +1,5 @@
+import collections
+
 from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 LP 솔버 사용)
 from ortools.sat.python import cp_model # CP-SAT 솔버 사용
 import datetime
@@ -97,70 +99,74 @@ def run_lot_sizing_optimizer(input_data):
 
 def run_single_machine_optimizer(input_data):
     """
-    OR-Tools CP-SAT를 사용하여 단일 기계 스케줄링 문제를 해결합니다.
-    input_data: [{'id': 'A', 'processing_time': 10, 'due_date': 20}, ...]
-    objective_choice: 최소화할 목표 (예: 'total_flow_time', 'total_tardiness')
+    OR-Tools CP-SAT와 namedtuple을 사용하여 단일 기계 스케줄링 문제를 해결합니다.
     """
-    objective_choice=input_data.get('objective_choice')
-    logger.info(f"Running Single Machine Scheduler for objective: {objective_choice}")
-    logger.debug(f"Jobs Data: {input_data}")
+    objective_choice = input_data.get('objective_choice')
+    jobs_list = input_data.get('jobs_list', [])  # jobs_list를 직접 받도록 수정
+    num_jobs = len(jobs_list)
 
-    num_jobs = input_data.get('num_jobs')
+    logger.info(f"Running Single Machine Scheduler for objective: {objective_choice}")
+    logger.debug(f"Jobs Data: {jobs_list}")
+
     if num_jobs == 0:
         return None, "오류: 작업 데이터가 없습니다.", 0.0
 
     model = cp_model.CpModel()
 
-    jobs_list = input_data.get('jobs_list')
     # --- 1. 데이터 및 모델 범위(Horizon) 설정 ---
     all_processing_times = [j['processing_time'] for j in jobs_list]
-    horizon = sum(all_processing_times)  # 모든 작업이 순차적으로 끝나는 시간
+    horizon = sum(all_processing_times) + sum(j['release_time'] for j in jobs_list)
 
-    # --- 2. 결정 변수 생성 ---
-    # 각 작업의 시작 시간, 종료 시간, 기간(Interval) 변수
-    start_vars = [model.NewIntVar(0, horizon, f'start_{i}') for i in range(num_jobs)]
-    end_vars = [model.NewIntVar(0, horizon, f'end_{i}') for i in range(num_jobs)]
-    interval_vars = [
-        model.NewIntervalVar(start_vars[i], jobs_list[i]['processing_time'], end_vars[i], f'interval_{i}')
-        for i in range(num_jobs)
-    ]
-    logger.debug(f"Created {num_jobs * 3} variables (start, end, interval). Horizon: {horizon}")
+    # --- 2. 결정 변수 생성 (namedtuple 사용) ---
+    task_type = collections.namedtuple("task_type", "start end interval")
+    all_tasks = {}
+    for i, job in enumerate(jobs_list):
+        job_id = job.get('id', f'Job_{i}')  # ID가 없는 경우를 대비
+        suffix = f'_{job_id}'
+        start_var = model.NewIntVar(job['release_time'], horizon, f'start{suffix}')
+        end_var = model.NewIntVar(0, horizon, f'end{suffix}')
+        interval_var = model.NewIntervalVar(start_var, job['processing_time'], end_var, f'interval{suffix}')
+        all_tasks[i] = task_type(start=start_var, end=end_var, interval=interval_var)
+    logger.debug(f"Created {num_jobs} task tuples. Horizon: {horizon}")
 
     # --- 3. 제약 조건 설정 ---
     # 3.1. No Overlap 제약: 단일 기계는 한 번에 하나의 작업만 처리
-    model.AddNoOverlap(interval_vars)
+    model.AddNoOverlap([task.interval for task in all_tasks.values()])
     logger.debug("Added NoOverlap constraint.")
 
     # --- 4. 목표 함수 설정 ---
+    # 목표 계산에 사용할 end_vars 리스트
+    end_vars = [task.end for task in all_tasks.values()]
+
     if objective_choice == 'total_flow_time':
-        # 총 흐름 시간(Total Completion Time) 최소화
         model.Minimize(sum(end_vars))
         logger.debug("Objective set to: Minimize Total Flow Time.")
+
     elif objective_choice == 'makespan':
-        # 총 완료 시간(Makespan) 최소화
         makespan = model.NewIntVar(0, horizon, 'makespan')
         model.AddMaxEquality(makespan, end_vars)
         model.Minimize(makespan)
         logger.debug("Objective set to: Minimize Makespan.")
+
     elif objective_choice == 'total_tardiness':
-        # 총 지연 시간(Total Tardiness) 최소화
         tardiness_vars = [model.NewIntVar(0, horizon, f'tardiness_{i}') for i in range(num_jobs)]
         for i in range(num_jobs):
-            due_date = input_data[i]['due_date']
-            # T_i >= C_i - d_i
-            model.Add(tardiness_vars[i] >= end_vars[i] - due_date)
+            due_date = jobs_list[i]['due_date']
+            # T_i >= C_i - d_i (여기서 C_i는 i번째 작업의 end_var)
+            model.Add(tardiness_vars[i] >= all_tasks[i].end - due_date)
         model.Minimize(sum(tardiness_vars))
         logger.debug("Objective set to: Minimize Total Tardiness.")
+
     else:
-        # 기본 목표 또는 오류 처리
         logger.warning(f"Unknown objective '{objective_choice}'. Defaulting to total_flow_time.")
         model.Minimize(sum(end_vars))
 
     # --- 5. 문제 해결 ---
     solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = 5.0  # 시간 제한
     logger.info("Solving the Single Machine Scheduling model...")
     status = solver.Solve(model)
-    logger.info(f"Solver finished. Status: {status}, Time: {solver.WallTime():.2f} sec")
+    logger.info(f"Solver finished. Status: {solver.StatusName(status)}, Time: {solver.WallTime():.2f} sec")
 
     # --- 6. 결과 추출 ---
     results = {'schedule': [], 'objective_value': 0}
@@ -172,15 +178,15 @@ def run_single_machine_optimizer(input_data):
         for i in range(num_jobs):
             results['schedule'].append({
                 'id': jobs_list[i].get('id', f'Job {i + 1}'),
-                'start': solver.Value(start_vars[i]),
-                'end': solver.Value(end_vars[i]),
+                'start': solver.Value(all_tasks[i].start),
+                'end': solver.Value(all_tasks[i].end),
                 'processing_time': jobs_list[i]['processing_time'],
                 'due_date': jobs_list[i]['due_date']
             })
 
-        # 시작 시간 순서로 결과 정렬
         results['schedule'].sort(key=lambda item: item['start'])
-
+        last_end = max(item['end'] for item in results['schedule'])
+        results['last_end'] = last_end
     else:
         error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
         logger.error(f"Single Machine Scheduling failed: {error_msg}")

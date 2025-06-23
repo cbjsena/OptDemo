@@ -120,37 +120,38 @@ def single_machine_introduction_view(request):
 
 
 def single_machine_demo_view(request):
+    form_data  = {}
     jobs_list = []  # 템플릿에 전달할 작업 데이터 리스트
-    form_data_for_post = {}  # POST 데이터 처리를 위한 딕셔너리
+
     if request.method == 'GET':
         submitted_num_jobs = int(request.GET.get('num_jobs_to_show', preset_single_machine_num_jobs))
         submitted_num_jobs = max(2, min(8, submitted_num_jobs))  # 2~8개 작업
 
+        form_data['objective_choice'] = request.GET.get('objective_choice', preset_single_machine_objective_choice)
         for i in range(submitted_num_jobs):
             preset = preset_single_machine_data[i]
-            jobs_list.append({
-                'id': request.GET.get(f'job_{i}_id', preset['id']),
-                'processing_time': request.GET.get(f'job_{i}_processing_time', preset['processing_time']),
-                'due_date': request.GET.get(f'job_{i}_due_date', preset['due_date']),
-            })
+            form_data[f'job_{i}_id'] = request.GET.get(f'job_{i}_id', preset['id'])
+            form_data[f'job_{i}_processing_time'] = request.GET.get(f'job_{i}_processing_time', preset['processing_time'])
+            form_data[f'job_{i}_due_date'] = request.GET.get(f'job_{i}_due_date', preset['due_date'])
+            form_data[f'job_{i}_release_time'] = request.GET.get(f'job_{i}_release_time', preset['release_time'])
 
     elif request.method == 'POST':
-        form_data_for_post = request.POST.copy()
-        submitted_num_jobs = int(form_data_for_post.get('num_jobs', preset_single_machine_num_jobs))
-        # POST 요청 시, 제출된 값으로 jobs_list를 채움 (입력값 유지)
-        for i in range(submitted_num_jobs):
-            jobs_list.append({
-                'id': form_data_for_post.get(f'job_{i}_id'),
-                'processing_time': form_data_for_post.get(f'job_{i}_processing_time'),
-                'due_date': form_data_for_post.get(f'job_{i}_due_date'),
-            })
+        form_data  = request.POST.copy()
+        submitted_num_jobs = int(form_data .get('num_jobs', preset_single_machine_num_jobs))
 
-    objective_choice=request.GET.get(
-            'objective_choice') if request.method == 'GET' else form_data_for_post.get('objective_choice')
+    for i in range(submitted_num_jobs):
+        jobs_list.append({
+            'id': form_data .get(f'job_{i}_id'),
+            'processing_time': form_data .get(f'job_{i}_processing_time'),
+            'due_date': form_data.get(f'job_{i}_due_date'),
+            'release_time': form_data.get(f'job_{i}_release_time'),
+        })
+
     context = {
         'active_model': 'Production & Scheduling',
         'active_submenu': 'single_machine_demo',
         'jobs_list': jobs_list,  # 가공된 리스트 전달
+        'form_data': form_data,
         'results': None, 'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
         'num_jobs_options': range(2, 11),
@@ -160,16 +161,14 @@ def single_machine_demo_view(request):
             {'value': 'total_flow_time', 'name': '총 흐름 시간 최소화 (SPT)'},
             {'value': 'makespan', 'name': '총 완료 시간 최소화 (Makespan)'},
             {'value': 'total_tardiness', 'name': '총 지연 시간 최소화'}
-        ],
-        # objective_choice도 form_data 대신 직접 전달
-        'submitted_objective': objective_choice
+        ]
     }
 
     if request.method == 'POST':
-        logger.info(f"Single Machine Demo POST received. Objective: {objective_choice}")
+        logger.info(f"Single Machine Demo POST received. Objective: {form_data.get('objective_choice')}")
         try:
             # 1. 데이터 파일 새성 및 검증
-            input_data = create_single_machine_json_data(jobs_list, form_data_for_post, submitted_num_jobs)
+            input_data = create_single_machine_json_data(jobs_list, form_data , submitted_num_jobs)
             
             # 2. 파일 저장
             if settings.SAVE_DATA_FILE:
@@ -187,7 +186,7 @@ def single_machine_demo_view(request):
                 context['error_message'] = (context.get('error_message', '') + " " + error_msg_opt).strip()
             elif results_data:
                 context['results'] = results_data
-                context['success_message'] = f"최적 스케줄 계산 완료! 목표값: {results_data['objective_value']:.2f}"
+                context['success_message'] = f"최적 스케줄 계산 완료! 목표값: {results_data['objective_value']}, 최종 완료:{results_data['last_end']}"
 
                 # 간트 차트용 데이터 준비
                 plot_data = {'jobs': []}
@@ -285,7 +284,7 @@ def flow_shop_demo_view(request):
                     context['error_message'] = error_msg_opt
                 elif results_data:
                     context['results'] = results_data
-                    context['success_message'] = f"최적 스케줄 계산 완료! Makespan: {results_data['makespan']:.2f}"
+                    context['success_message'] = f"최적 스케줄 계산 완료! Makespan: {results_data['makespan']}"
                     # 간트 차트용 데이터 준비
                     context['plot_data'] = json.dumps(results_data['schedule'])
                     # 중요한 부분: 다음 수동 조회를 위해 원본 데이터와 결과를 숨겨진 필드로 전달할 수 있도록 저장
