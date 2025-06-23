@@ -125,50 +125,51 @@ def single_machine_demo_view(request):
 
     if request.method == 'GET':
         submitted_num_jobs = int(request.GET.get('num_jobs_to_show', preset_single_machine_num_jobs))
-        submitted_num_jobs = max(2, min(8, submitted_num_jobs))  # 2~8개 작업
+        submitted_objective = request.GET.get('objective_choice', preset_single_machine_objective_choice)
+        submitted_num_jobs = max(2, min(10, submitted_num_jobs))
 
-        form_data['objective_choice'] = request.GET.get('objective_choice', preset_single_machine_objective_choice)
+        # GET 요청 시, URL 파라미터 또는 기본 데이터 풀 값으로 jobs_list 구성
         for i in range(submitted_num_jobs):
             preset = preset_single_machine_data[i]
-            form_data[f'job_{i}_id'] = request.GET.get(f'job_{i}_id', preset['id'])
-            form_data[f'job_{i}_processing_time'] = request.GET.get(f'job_{i}_processing_time', preset['processing_time'])
-            form_data[f'job_{i}_due_date'] = request.GET.get(f'job_{i}_due_date', preset['due_date'])
-            form_data[f'job_{i}_release_time'] = request.GET.get(f'job_{i}_release_time', preset['release_time'])
+            jobs_list.append({
+                'id': request.GET.get(f'job_{i}_id', preset['id']),
+                'processing_time': request.GET.get(f'job_{i}_processing_time', preset['processing_time']),
+                'due_date': request.GET.get(f'job_{i}_due_date', preset['due_date']),
+                'release_time': request.GET.get(f'job_{i}_release_time', preset['release_time']),
+            })
 
     elif request.method == 'POST':
-        form_data  = request.POST.copy()
+        form_data  = request.POST
         submitted_num_jobs = int(form_data .get('num_jobs', preset_single_machine_num_jobs))
+        submitted_objective = form_data.get('objective_choice', preset_single_machine_objective_choice)
 
-    for i in range(submitted_num_jobs):
-        jobs_list.append({
-            'id': form_data .get(f'job_{i}_id'),
-            'processing_time': form_data .get(f'job_{i}_processing_time'),
-            'due_date': form_data.get(f'job_{i}_due_date'),
-            'release_time': form_data.get(f'job_{i}_release_time'),
-        })
+        for i in range(submitted_num_jobs):
+            jobs_list.append({
+                'id': form_data.get(f'job_{i}_id'),
+                'processing_time': form_data.get(f'job_{i}_processing_time'),
+                'due_date': form_data.get(f'job_{i}_due_date'),
+                'release_time': form_data.get(f'job_{i}_release_time'),
+            })
 
     context = {
         'active_model': 'Production & Scheduling',
         'active_submenu': 'single_machine_demo',
-        'jobs_list': jobs_list,  # 가공된 리스트 전달
-        'form_data': form_data,
-        'results': None, 'error_message': None, 'success_message': None,
+        'jobs_list': jobs_list,  # 구조화된 리스트 전달
+        'results': None,
+        'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
         'num_jobs_options': range(2, 11),
         'submitted_num_jobs': submitted_num_jobs,
-        'plot_data': None,
-        'objective_options': [
-            {'value': 'total_flow_time', 'name': '총 흐름 시간 최소화 (SPT)'},
-            {'value': 'makespan', 'name': '총 완료 시간 최소화 (Makespan)'},
-            {'value': 'total_tardiness', 'name': '총 지연 시간 최소화'}
-        ]
+        'plot_data': {},
+        'objective_options': preset_single_machine_objective,
+        'submitted_objective': submitted_objective
     }
 
     if request.method == 'POST':
-        logger.info(f"Single Machine Demo POST received. Objective: {form_data.get('objective_choice')}")
+        logger.info(f"Single Machine Demo POST received. Objective: {submitted_objective}")
         try:
             # 1. 데이터 파일 새성 및 검증
-            input_data = create_single_machine_json_data(jobs_list, form_data , submitted_num_jobs)
+            input_data = create_single_machine_json_data(jobs_list, submitted_objective , submitted_num_jobs)
             
             # 2. 파일 저장
             if settings.SAVE_DATA_FILE:
@@ -186,8 +187,9 @@ def single_machine_demo_view(request):
                 context['error_message'] = (context.get('error_message', '') + " " + error_msg_opt).strip()
             elif results_data:
                 context['results'] = results_data
-                context['success_message'] = f"최적 스케줄 계산 완료! 목표값: {results_data['objective_value']}, 최종 완료:{results_data['last_end']}"
-
+                context['success_message'] = (f"최적 스케줄 계산 완료! 최종 완료일: {results_data['makespan']},"
+                                              f" 총 지연 시간 합계: {results_data['total_tardiness']}, "
+                                              f" 흐름 시간 합계: {results_data['total_flow_time']}")
                 # 간트 차트용 데이터 준비
                 plot_data = {'jobs': []}
                 for job in results_data['schedule']:
@@ -319,7 +321,7 @@ def flow_shop_demo_view(request):
                 context['manual_results'] = manual_results_data
                 context['manual_plot_data'] = json.dumps(manual_results_data['schedule'])
                 context['info_message'] \
-                    = f"수동 입력 순서 '{', '.join(manual_sequence)}'의 Makespan은 {manual_results_data['makespan']:.2f} 입니다."
+                    = f"수동 입력 순서 '{', '.join(manual_sequence)}'의 Makespan은 {manual_results_data['makespan']} 입니다."
         except ValueError as ve:
             context['error_message'] = f"입력값 오류: {str(ve)}"
         except Exception as e:
@@ -418,7 +420,7 @@ def job_shop_demo_view(request):
                 context['error_message'] = error_msg_opt
             elif results_data:
                 context['results'] = results_data
-                context['success_message'] = f"최적 스케줄 계산 완료! Makespan: {results_data['makespan']:.2f}"
+                context['success_message'] = f"최적 스케줄 계산 완료! Makespan: {results_data['makespan']}"
                 context['plot_data'] = json.dumps(results_data['schedule'])
         except (ValueError, TypeError) as ve:
             context['error_message'] = f"입력값 오류: {str(ve)}"
@@ -532,7 +534,7 @@ def rcpsp_demo_view(request):
                 context['error_message'] = error_msg_opt
             elif results_data:
                 context['results'] = results_data
-                context['success_message'] = f"최적 프로젝트 스케줄 수립 완료! 최소 프로젝트 기간(Makespan): {results_data['makespan']:.0f}일"
+                context['success_message'] = f"최적 프로젝트 스케줄 수립 완료! 최소 프로젝트 기간(Makespan): {results_data['makespan']}일"
                 # 차트용 데이터 준비
                 chart_data = {
                     'schedule': results_data['schedule'],

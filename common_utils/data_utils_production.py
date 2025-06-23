@@ -14,11 +14,11 @@ preset_single_machine_objective = [
             {'value': 'total_tardiness', 'name': '총 지연 시간 최소화'}
         ]
 preset_single_machine_data =[
-    {'id': 'Job 1(긴급)', 'processing_time': '8', 'due_date': '10', 'release_time': '0'},
-    {'id': 'Job 2(지연)', 'processing_time': '4', 'due_date': '30', 'release_time': '9'},
-    {'id': 'Job 3', 'processing_time': '2', 'due_date': '25', 'release_time': '0'},
-    {'id': 'Job 4', 'processing_time': '4', 'due_date': '20', 'release_time': '10'},
-    {'id': 'Job 5', 'processing_time': '4', 'due_date': '25', 'release_time': '12'},
+    {'id': 'Job 1', 'processing_time': '7', 'due_date': '20', 'release_time': '0'},
+    {'id': 'Job 2', 'processing_time': '3', 'due_date': '5', 'release_time': '0'},
+    {'id': 'Job 3', 'processing_time': '5', 'due_date': '25', 'release_time': '6'},
+    {'id': 'Job 4', 'processing_time': '4', 'due_date': '10', 'release_time': '0'},
+    {'id': 'Job 5', 'processing_time': '1', 'due_date': '30', 'release_time': '0'},
     {'id': 'Job 6', 'processing_time': '14', 'due_date': '60', 'release_time': '2'},
     {'id': 'Job 7', 'processing_time': '7', 'due_date': '45', 'release_time': '22'},
     {'id': 'Job 8', 'processing_time': '5', 'due_date': '28', 'release_time': '12'},
@@ -129,7 +129,7 @@ def create_lot_sizing_json_data(form_data, num_periods):
     return input_data
 
 
-def create_single_machine_json_data(jobs_list, form_data, num_jobs):
+def create_single_machine_json_data(jobs_list, objective_choice, num_jobs):
     """
     폼 데이터로부터 Single Machine 문제 입력을 위한 딕셔너리를 생성하고 검증합니다.
     """
@@ -145,9 +145,9 @@ def create_single_machine_json_data(jobs_list, form_data, num_jobs):
 
     input_data = {
         "timestamp": datetime.datetime.now().isoformat(),
-        "problem_type": form_data.get('problem_type'),
+        "problem_type": 'single_machine',
         "num_jobs": num_jobs,
-        'objective_choice': form_data.get('objective_choice'),
+        'objective_choice': objective_choice,
         'jobs_list': jobs_list
     }
 

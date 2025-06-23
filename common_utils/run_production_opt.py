@@ -181,12 +181,12 @@ def run_single_machine_optimizer(input_data):
                 'start': solver.Value(all_tasks[i].start),
                 'end': solver.Value(all_tasks[i].end),
                 'processing_time': jobs_list[i]['processing_time'],
-                'due_date': jobs_list[i]['due_date']
+                'due_date': jobs_list[i]['due_date'],
+                'release_time': jobs_list[i]['release_time']
             })
 
         results['schedule'].sort(key=lambda item: item['start'])
-        last_end = max(item['end'] for item in results['schedule'])
-        results['last_end'] = last_end
+        result_obj_info(results)
     else:
         error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
         logger.error(f"Single Machine Scheduling failed: {error_msg}")
@@ -490,3 +490,10 @@ def get_solving_time_cp_sec(processing_time):
     # solver.WallTime(): if solver is CP-SAT then, sec else ms
     processing_time = processing_time
     return f"{processing_time:.3f}" if processing_time is not None else "N/A"
+
+
+def result_obj_info(results):
+    results['makespan'] = max(job['end'] for job in results['schedule'])
+    results['total_tardiness'] = sum(max(0, job['end'] - job['due_date']) for job in results['schedule'])
+    results['total_flow_time'] = sum(job['end'] - job['release_time'] for job in results['schedule'])
+    return  results
