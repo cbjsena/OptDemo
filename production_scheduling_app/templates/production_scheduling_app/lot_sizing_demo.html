@@ -4,10 +4,6 @@
 
 {% block title %}Lot Sizing Demo{% endblock %}
 
-{% block styles %}
-    {# ... (기존 데모와 유사한 스타일) ... #}
-{% endblock %}
-
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -15,17 +11,24 @@
     </div>
     <p>각 기간별 수요, 생산/재고/준비 비용, 생산 능력을 입력하여 총비용을 최소화하는 최적의 생산 계획을 수립합니다.</p>
 
-    <form method="GET" class="mb-3 form-inline">
+    {# --- 사용자에게 보여지는 컨트롤러 (폼 바깥에 위치) --- #}
+    <div class="mb-3 form-inline">
         <div class="form-group mr-2">
             <label for="num_periods_to_show" class="mr-2">계획 기간 수 (3-12):</label>
-            <select name="num_periods_to_show" id="num_periods_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
+            <select id="num_periods_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
                 {% for i in num_periods_options %}
                     <option value="{{ i }}" {% if i == submitted_num_periods %}selected{% endif %}>{{ i }} 기간</option>
                 {% endfor %}
             </select>
         </div>
-        <noscript><button type="submit" class="btn btn-sm btn-secondary">기간 변경</button></noscript>
-    </form>
+        <div class="form-group ml-auto">
+            <button type="button" class="btn btn-sm btn-success mr-2" id="randomizeBtn">Random</button>
+            <a href="{% url 'production_scheduling_app:lot_sizing_demo' %}" class="btn btn-sm btn-warning">Default</a>
+        </div>
+    </div>
+
+    {# --- 설정 변경 값을 전달하기 위한 숨겨진 GET 폼 --- #}
+    <form method="GET" id="settingsForm" style="display: none;"></form>
 
     <form method="POST" id="lotSizingForm">
         {% csrf_token %}
@@ -47,42 +50,37 @@
                     <tbody>
                         <tr>
                             <th>수요량 (Demand)</th>
-                            {% for t in submitted_num_periods|get_range %}
-                                {% make_key1 'demand' t as key_name %}
-                                <td><input type="number" min="0" name="{{key_name}}" class="form-control form-control-sm"
-                                           value="{{form_data|get_item_simple:key_name}}"></td>
+                            {% for period in periods_data %}
+                            <td><input type="number" min="0" id="demand_{{ forloop.counter0 }}" name="demand_{{ forloop.counter0 }}"
+                                       class="form-control form-control-sm" value="{{ period.demand }}"></td>
                             {% endfor %}
                         </tr>
                         <tr>
-                            <th>생산 준비 비용 <br>(Setup Cost)</th>
-                            {% for t in submitted_num_periods|get_range %}
-                                {% make_key1 'setup_cost' t as key_name %}
-                                <td><input type="number" min="0" name="{{key_name}}" class="form-control form-control-sm"
-                                           value="{{form_data|get_item_simple:key_name}}"></td>
+                            <th>생산 준비 비용 (Setup Cost)</th>
+                             {% for period in periods_data %}
+                            <td><input type="number" min="0" id="setup_cost_{{ forloop.counter0 }}" name="setup_cost_{{ forloop.counter0 }}"
+                                       class="form-control form-control-sm" value="{{ period.setup_cost }}"></td>
                             {% endfor %}
                         </tr>
                          <tr>
-                            <th>단위당 생산 비용 <br>(Prod. Cost)</th>
-                            {% for t in submitted_num_periods|get_range %}
-                                {% make_key1 'prod_cost' t as key_name %}
-                                <td><input type="number" min="0" name="{{key_name}}" class="form-control form-control-sm"
-                                           value="{{form_data|get_item_simple:key_name}}"></td>
+                            <th>단위당 생산 비용 (Prod. Cost)</th>
+                            {% for period in periods_data %}
+                            <td><input type="number" min="0" id="prod_cost_{{ forloop.counter0 }}" name="prod_cost_{{ forloop.counter0 }}"
+                                       class="form-control form-control-sm" value="{{ period.prod_cost }}"></td>
                             {% endfor %}
                         </tr>
                          <tr>
-                            <th>단위당 재고 비용 <br>(Holding Cost)</th>
-                            {% for t in submitted_num_periods|get_range %}
-                                {% make_key1 'holding_cost' t as key_name %}
-                                <td><input type="number" min="0" name="{{key_name}}" class="form-control form-control-sm"
-                                           value="{{form_data|get_item_simple:key_name}}"></td>
+                            <th>단위당 재고 비용 (Holding Cost)</th>
+                             {% for period in periods_data %}
+                            <td><input type="number" min="0" id="holding_cost_{{ forloop.counter0 }}" name="holding_cost_{{ forloop.counter0 }}"
+                                       class="form-control form-control-sm" value="{{ period.holding_cost }}"></td>
                             {% endfor %}
                         </tr>
                          <tr>
-                            <th>최대 생산 능력 <br>(Capacity)</th>
-                            {% for t in submitted_num_periods|get_range %}
-                                {% make_key1 'capacity' t as key_name %}
-                                <td><input type="number" min="0" name="{{key_name}}" class="form-control form-control-sm"
-                                           value="{{form_data|get_item_simple:key_name}}"></td>
+                            <th>최대 생산 능력 (Capacity)</th>
+                            {% for period in periods_data %}
+                            <td><input type="number" min="0" id="capacity_{{ forloop.counter0 }}" name="capacity_{{ forloop.counter0 }}"
+                                       class="form-control form-control-sm" value="{{ period.capacity }}"></td>
                             {% endfor %}
                         </tr>
                     </tbody>
@@ -92,26 +90,24 @@
 
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 생산 계획 실행</button>
     </form>
+    {# --- 최적화 입력 데이터 폼 종료 --- #}
 
-    {% if results or error_message or success_message or info_message %}
-        <hr class="my-4">
-        <h3 class="mt-4">Optimization Results</h3>
-
-        {% if error_message %}
-            <div class="alert alert-danger" role="alert">
-                <strong>오류:</strong> {{ error_message }}
-            </div>
-        {% else %}
-            {# 에러가 없을 때만 정보 및 성공 메시지 표시 #}
-            {% if info_message %}
-                <div class="alert alert-info" role="alert">{{ info_message }}</div>
-            {% endif %}
-            {% if success_message %}
-                <div class="alert alert-success" role="alert">{{ success_message }}</div>
-            {% endif %}
-        {% endif %}
+    {# 1. 결과 메세지 #}
+    {% if success_save_message%}
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
+    {% endif %}
+    {% if opt_results is not None or error_message or success_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Results ({{ form_data.problem_type }})</h3>
+    {% endif %}
+    {% if error_message %}
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
     {% endif %}
 
+    {# 2. 결과 요약 및 시각화 #}
     {% if results %}
         {# ... 결과 요약 및 비용 분석 테이블 ... #}
         <div class="card mt-3">
@@ -163,63 +159,139 @@
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const plotDataJson = '{{ plot_data|safe|default_if_none:"{}" }}';
-    try {
-        const plotData = JSON.parse(plotDataJson);
-        if (plotData && plotData.labels) {
-            const ctx = document.getElementById('lotSizingChart');
-            if (ctx) {
-                new Chart(ctx, {
-                    type: 'bar', // 혼합 차트
-                    data: {
-                        labels: plotData.labels,
-                        datasets: [
-                            {
-                                type: 'bar',
-                                label: '생산량',
-                                data: plotData.productions,
-                                backgroundColor: 'rgba(54, 162, 235, 0.6)'
-                            },
-                            {
-                                type: 'line',
-                                label: '재고량',
-                                data: plotData.inventories,
-                                borderColor: 'rgba(75, 192, 192, 1)',
-                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                fill: true,
-                                yAxisID: 'y1' // 보조 y축 사용
-                            },
-                            {
-                                type: 'line',
-                                label: '수요량',
-                                data: plotData.demands,
-                                borderColor: 'rgba(255, 99, 132, 1)',
-                                fill: false
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: { // 기본 Y축 (생산량, 수요량)
-                                beginAtZero: true,
-                                position: 'left',
-                                title: { display: true, text: '수량 (Units)' }
-                            },
-                            y1: { // 보조 Y축 (재고량)
-                                beginAtZero: true,
-                                position: 'right',
-                                title: { display: true, text: '재고량 (Units)' },
-                                grid: { drawOnChartArea: false } // 보조축 그리드 숨기기
+    function submitSettingsForm() {
+        console.log("Number of periods changed, submitting form with current values.");
+
+        const hiddenSettingsForm  = document.getElementById('settingsForm');
+        settingsForm.innerHTML = ''; // 중복 제출 방지를 위해 폼 비우기
+
+        // 드롭다운 메뉴의 현재 값들을 숨겨진 필드로 추가
+        const numPeriodsSelect = document.getElementById('num_periods_to_show');
+        let inputNumPeriods = document.createElement('input');
+        inputNumPeriods.type = 'hidden';
+        inputNumPeriods.name = 'num_periods_to_show';
+        inputNumPeriods.value = numPeriodsSelect.value;
+        settingsForm.appendChild(inputNumPeriods);
+
+        // 2. 현재 테이블의 모든 입력 값을 숨겨진 필드로 추가
+        const numPeriodsInTable = {{ submitted_num_periods }};
+        const fields = ['demand', 'setup_cost', 'prod_cost', 'holding_cost', 'capacity'];
+
+        for (let i = 0; i < numPeriodsInTable; i++) {
+            fields.forEach(field => {
+                const inputElement = document.getElementById(`${field}_${i}`);
+                if (inputElement) {
+                    let hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = `${field}_${i}`;
+                    hiddenInput.value = inputElement.value;
+                    settingsForm.appendChild(hiddenInput);
+                }
+            });
+        }
+
+        // 3. GET 방식으로 폼 제출
+        settingsForm.submit();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const randomizeBtn = document.getElementById('randomizeBtn');
+        if (randomizeBtn) {
+            randomizeBtn.addEventListener('click', function() {
+                console.log("Randomize button clicked.");
+
+                // 범위 내에서 랜덤 정수를 생성하는 헬퍼 함수
+                function getRandomInt(min, max) {
+                    min = Math.ceil(min);
+                    max = Math.floor(max);
+                    return Math.floor(Math.random() * (max - min + 1)) + min;
+                }
+
+                const numPeriods = parseInt(document.getElementById('num_periods_to_show').value);
+
+                // 각 기간의 입력 필드에 랜덤 값 채우기
+                for (let i = 0; i < numPeriods; i++) {
+                    const demandInput = document.getElementById(`demand_${i}`);
+                    const capacityInput = document.getElementById(`capacity_${i}`);
+
+                    // 수요량과 생산능력은 서로 연관되도록 생성
+                    const randomDemand = getRandomInt(50, 150);
+                    const randomCapacity = getRandomInt(randomDemand, randomDemand + 100); // 생산능력은 항상 수요량보다 크거나 같게 설정
+
+                    if(demandInput) demandInput.value = randomDemand;
+                    if(capacityInput) capacityInput.value = randomCapacity;
+
+                    const setupCostInput = document.getElementById(`setup_cost_${i}`);
+                    if(setupCostInput) setupCostInput.value = getRandomInt(200, 500);
+
+                    const prodCostInput = document.getElementById(`prod_cost_${i}`);
+                    if(prodCostInput) prodCostInput.value = getRandomInt(5, 15);
+
+                    const holdingCostInput = document.getElementById(`holding_cost_${i}`);
+                    if(holdingCostInput) holdingCostInput.value = getRandomInt(1, 5);
+                }
+
+                console.log("Form populated with new random data.");
+            });
+        }
+
+        // 기존 최적화 차트 그리기
+        const plotDataJson = '{{ plot_data|safe|default_if_none:"{}" }}';
+        try {
+            const plotData = JSON.parse(plotDataJson);
+            if (plotData && plotData.labels) {
+                const ctx = document.getElementById('lotSizingChart');
+                if (ctx) {
+                    new Chart(ctx, {
+                        type: 'bar', // 혼합 차트
+                        data: {
+                            labels: plotData.labels,
+                            datasets: [
+                                {
+                                    type: 'bar',
+                                    label: '생산량',
+                                    data: plotData.productions,
+                                    backgroundColor: 'rgba(54, 162, 235, 0.6)'
+                                },
+                                {
+                                    type: 'line',
+                                    label: '재고량',
+                                    data: plotData.inventories,
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                    fill: true,
+                                    yAxisID: 'y1' // 보조 y축 사용
+                                },
+                                {
+                                    type: 'line',
+                                    label: '수요량',
+                                    data: plotData.demands,
+                                    borderColor: 'rgba(255, 99, 132, 1)',
+                                    fill: false
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { // 기본 Y축 (생산량, 수요량)
+                                    beginAtZero: true,
+                                    position: 'left',
+                                    title: { display: true, text: '수량 (Units)' }
+                                },
+                                y1: { // 보조 Y축 (재고량)
+                                    beginAtZero: true,
+                                    position: 'right',
+                                    title: { display: true, text: '재고량 (Units)' },
+                                    grid: { drawOnChartArea: false } // 보조축 그리드 숨기기
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                }
             }
-        }
-    } catch(e) {
+        } catch(e) {
         console.error("Error creating lot sizing chart:", e);
     }
 });

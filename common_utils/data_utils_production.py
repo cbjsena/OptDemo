@@ -5,6 +5,20 @@ import datetime
 logger = logging.getLogger(__name__)
 
 preset_lot_sizing_num_periods = 6
+preset_lot_sizing_data=[
+    {'demand': '145', 'setup_cost': '321', 'prod_cost': '9', 'holding_cost': '2', 'capacity': '243'},
+    {'demand': '60', 'setup_cost': '319', 'prod_cost': '9', 'holding_cost': '5', 'capacity': '156'},
+    {'demand': '116', 'setup_cost': '230', 'prod_cost': '5', 'holding_cost': '3', 'capacity': '218'},
+    {'demand': '146', 'setup_cost': '224', 'prod_cost': '12', 'holding_cost': '4', 'capacity': '265'},
+    {'demand': '69', 'setup_cost': '430', 'prod_cost': '7', 'holding_cost': '5', 'capacity': '181'},
+    {'demand': '125', 'setup_cost': '435', 'prod_cost': '8', 'holding_cost': '5', 'capacity': '290'},
+    {'demand': '65', 'setup_cost': '458', 'prod_cost': '6', 'holding_cost': '3', 'capacity': '193'},
+    {'demand': '58', 'setup_cost': '307', 'prod_cost': '5', 'holding_cost': '2', 'capacity': '291'},
+    {'demand': '125', 'setup_cost': '286', 'prod_cost': '12', 'holding_cost': '5', 'capacity': '257'},
+    {'demand': '68', 'setup_cost': '444', 'prod_cost': '15', 'holding_cost': '3', 'capacity': '193'},
+    {'demand': '116', 'setup_cost': '421', 'prod_cost': '13', 'holding_cost': '4', 'capacity': '163'},
+    {'demand': '83', 'setup_cost': '431', 'prod_cost': '9', 'holding_cost': '2', 'capacity': '277'}
+]
 
 preset_single_machine_num_jobs = 5
 preset_single_machine_objective_choice = 'total_flow_time'
@@ -29,16 +43,16 @@ preset_single_machine_data =[
 preset_flow_shop_num_jobs = 4
 preset_flow_shop_num_machines = 3
 preset_flow_shop_data = [
-    {'id': 'Job_1', 'processing_time': [29,78,9,36,49]},
-    {'id': 'Job_2', 'processing_time': [43,92,8,45,68]},
-    {'id': 'Job_3', 'processing_time': [90,85,87,32,91]},
-    {'id': 'Job_4', 'processing_time': [77,39,55,64,82]},
-    {'id': 'Job_5', 'processing_time': [95,13,47,84,22]},
-    {'id': 'Job_6', 'processing_time': [20,88,70,69,74]},
-    {'id': 'Job_7', 'processing_time': [58,48,85,6,86]},
-    {'id': 'Job_8', 'processing_time': [73,10,29,76,4]},
-    {'id': 'Job_9', 'processing_time': [36,2,31,75,59]},
-    {'id': 'Job_10', 'processing_time': [12,88,58,99,9]}
+    {'id': 'Job_1', 'processing_times': [29,78,9,36,49]},
+    {'id': 'Job_2', 'processing_times': [43,92,8,45,68]},
+    {'id': 'Job_3', 'processing_times': [90,85,87,32,91]},
+    {'id': 'Job_4', 'processing_times': [77,39,55,64,82]},
+    {'id': 'Job_5', 'processing_times': [95,13,47,84,22]},
+    {'id': 'Job_6', 'processing_times': [20,88,70,69,74]},
+    {'id': 'Job_7', 'processing_times': [58,48,85,6,86]},
+    {'id': 'Job_8', 'processing_times': [73,10,29,76,4]},
+    {'id': 'Job_9', 'processing_times': [36,2,31,75,59]},
+    {'id': 'Job_10', 'processing_times': [12,88,58,99,9]}
 ]
 
 preset_job_shop_num_jobs = 4

@@ -35,28 +35,50 @@ def lot_sizing_demo_view(request):
     """
     Lot Sizing Problem 데모 뷰.
     """
-    form_data = {}
-
+    form_data ={}
+    periods_data = []  # 템플릿에 전달할 데이터 리스트
     if request.method == 'GET':
         submitted_num_periods = int(request.GET.get('num_periods_to_show', preset_lot_sizing_num_periods))
         submitted_num_periods = max(3, min(12, submitted_num_periods))
 
         # GET 요청 시 랜덤 기본값으로 form_data 초기화
         for t in range(submitted_num_periods):
-            form_data[f'demand_{t}'] = request.GET.get(f'demand_{t}', str(random.randint(50, 150)))
-            form_data[f'setup_cost_{t}'] = request.GET.get(f'setup_cost_{t}', str(random.randint(200, 500)))
-            form_data[f'prod_cost_{t}'] = request.GET.get(f'prod_cost_{t}', str(random.randint(5, 15)))
-            form_data[f'holding_cost_{t}'] = request.GET.get(f'holding_cost_{t}', str(random.randint(1, 5)))
-            form_data[f'capacity_{t}'] = request.GET.get(f'capacity_{t}', str(random.randint(150, 300)))
+            preset = preset_lot_sizing_data[t]
+            periods_data.append({
+                'demand': request.GET.get(f'demand_{t}', preset['demand']),
+                'setup_cost': request.GET.get(f'setup_cost_{t}', preset['setup_cost']),
+                'prod_cost': request.GET.get(f'prod_cost_{t}', preset['prod_cost']),
+                'holding_cost': request.GET.get(f'holding_cost_{t}', preset['holding_cost']),
+                'capacity': request.GET.get(f'capacity_{t}', preset['capacity']),
+            })
+        # periods_data.append({
+        #     'demand': request.GET.get(f'demand_{t}', str(random.randint(50, 150))),
+        #     'setup_cost': request.GET.get(f'setup_cost_{t}', str(random.randint(200, 500))),
+        #     'prod_cost': request.GET.get(f'prod_cost_{t}', str(random.randint(5, 15))),
+        #     'holding_cost': request.GET.get(f'holding_cost_{t}', str(random.randint(1, 5))),
+        #     'capacity': request.GET.get(f'capacity_{t}', str(random.randint(150, 300)))
+        # })
+        logger.info(periods_data)
 
     elif request.method == 'POST':
         form_data = request.POST.copy()
         submitted_num_periods = int(form_data.get('num_periods', preset_lot_sizing_num_periods))
 
+        # POST 후 입력값 유지를 위해 periods_data 재생성
+        for t in range(submitted_num_periods):
+            preset = preset_lot_sizing_data[t]
+            periods_data.append({
+                'demand': form_data.get(f'demand_{t}', preset['demand']),
+                'setup_cost': form_data.get(f'setup_cost_{t}', preset['setup_cost']),
+                'prod_cost': form_data.get(f'prod_cost_{t}', preset['prod_cost']),
+                'holding_cost': form_data.get(f'holding_cost_{t}', preset['holding_cost']),
+                'capacity': form_data.get(f'capacity_{t}', preset['capacity']),
+            })
+
     context = {
         'active_model': 'Production & Scheduling',
         'active_submenu': 'lot_sizing_demo',
-        'form_data': form_data,
+        'periods_data': periods_data, # 구조화된 리스트 전달
         'results': None, 'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
         'num_periods_options': range(3, 13),  # 3~12 기간
@@ -120,7 +142,6 @@ def single_machine_introduction_view(request):
 
 
 def single_machine_demo_view(request):
-    form_data  = {}
     jobs_list = []  # 템플릿에 전달할 작업 데이터 리스트
 
     if request.method == 'GET':
@@ -230,29 +251,42 @@ def flow_shop_introduction_view(request):
 
 
 def flow_shop_demo_view(request):
-    form_data = {}
-
+    jobs_list = []
     if request.method == 'GET':
         submitted_num_jobs = int(request.GET.get('num_jobs_to_show', preset_flow_shop_num_jobs))
         submitted_num_machines = int(request.GET.get('num_machines_to_show', preset_flow_shop_num_machines))
         submitted_num_jobs = max(2, min(8, submitted_num_jobs))
         submitted_num_machines = max(3, min(5, submitted_num_machines))
 
+        # GET 요청 시, URL 파라미터 또는 기본 데이터 풀 값으로 jobs_list 구성
         for i in range(submitted_num_jobs):
-            preset = preset_flow_shop_data [i]
-            form_data[f'job_{i}_id'] = request.GET.get(f'job_{i}_id', preset['id'])
+            preset = preset_flow_shop_data[i]
+            job_info = {
+                'id': request.GET.get(f'job_{i}_id', preset['id']),
+                'processing_times': []
+            }
             for j in range(submitted_num_machines):
-                form_data[f'p_{i}_{j}'] = request.GET.get(f'p_{i}_{j}', preset['processing_time'][j])
+                time_val = request.GET.get(f'p_{i}_{j}', preset['processing_times'][j])
+                job_info['processing_times'].append(time_val)
+            jobs_list.append(job_info)
 
     elif request.method == 'POST':
         form_data = request.POST.copy()
         submitted_num_jobs = int(form_data.get('num_jobs', preset_flow_shop_num_jobs))
         submitted_num_machines = int(form_data.get('num_machines', preset_flow_shop_num_machines))
 
+        # POST 후 입력값 유지를 위해 jobs_list 재생성
+        for i in range(submitted_num_jobs):
+            job_info = {
+                'id': form_data.get(f'job_{i}_id'),
+                'processing_times': [form_data.get(f'p_{i}_{j}') for j in range(submitted_num_machines)]
+            }
+            jobs_list.append(job_info)
+
     context = {
         'active_model': 'Production & Scheduling',
         'active_submenu': 'flow_shop_demo',
-        'form_data': form_data,
+        'jobs_list': jobs_list,
         'results': None, 'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
         'num_jobs_options': range(2, 11),
@@ -343,28 +377,23 @@ def job_shop_introduction_view(request):
 
 def job_shop_demo_view(request):
     jobs_list = []
-    form_data_for_repopulate = {}
+
     if request.method == 'GET':
         submitted_num_jobs = int(request.GET.get('num_jobs_to_show', preset_job_shop_num_jobs))
         submitted_num_machines = int(request.GET.get('num_machines_to_show', preset_job_shop_num_machines))
-        submitted_num_jobs = max(2, min(8, submitted_num_jobs))
-        submitted_num_machines = max(3, min(5, submitted_num_machines))
 
-        # 기본 데이터 풀
-        default_job_ids = [f'Job {i + 1}' for i in range(5)]
-
+        # GET 요청 시, URL 파라미터 또는 기본 데이터 풀 값으로 jobs_list 구성
         for i in range(submitted_num_jobs):
-            preset = preset_job_shop_data [i]
-            processing_times = []
-            for j in range(submitted_num_machines):
-                processing_time = preset['processing_times'][j]
-                processing_times.append(request.GET.get(f'p_{i}_{j}', processing_time))
-
-            jobs_list.append({
+            preset = preset_job_shop_data[i]
+            job_info = {
                 'id': request.GET.get(f'job_{i}_id', preset['id']),
-                'processing_times': request.GET.get(f'job_{i}_processing_time', processing_times),
-                'selected_routing': request.GET.get(f'job_{i}_due_date', preset['selected_routing']),
-            })
+                'processing_times': [],
+                'selected_routing': request.GET.get(f'job_{i}_routing', preset['selected_routing'])
+            }
+            for j in range(submitted_num_machines):
+                time_val = request.GET.get(f'p_{i}_{j}', preset['processing_times'][j])
+                job_info['processing_times'].append(time_val)
+            jobs_list.append(job_info)
 
     elif request.method == 'POST':
         form_data_for_repopulate = request.POST.copy()

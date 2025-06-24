@@ -4,19 +4,12 @@
 
 {% block title %}Single Machine Scheduling Demo{% endblock %}
 
-{% block styles %}
-    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
-{% endblock %}
-
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">Single Machine Scheduling Demo</h1>
     </div>
     <p>여러 작업의 처리 시간과 납기일을 입력하고 최적화 목표를 선택하여, 최적의 작업 순서를 계산하고 간트 차트로 확인합니다.</p>
-
-    {# --- 설정 변경을 위한 숨겨진 GET 폼 --- #}
-    <form method="GET" id="settingsForm" style="display: none;"></form>
 
     {# --- 사용자에게 보여지는 컨트롤러 (폼 바깥에 위치) --- #}
     <div class="mb-3 form-inline">
@@ -36,7 +29,14 @@
                 {% endfor %}
             </select>
         </div>
+        <div class="form-group ml-auto">
+            <button type="button" class="btn btn-sm btn-success mr-2" id="randomizeBtn">Random</button>
+            <a href="{% url 'production_scheduling_app:single_machine_demo' %}" class="btn btn-sm btn-warning">Default</a>
+        </div>
     </div>
+
+    {# --- 설정 변경 값을 전달하기 위한 숨겨진 GET 폼 --- #}
+    <form method="GET" id="settingsForm" style="display: none;"></form>
 
     <form method="POST" id="schedulingForm">
         {% csrf_token %}
@@ -76,6 +76,7 @@
         
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 스케줄 계산 실행</button>
     </form>
+    {# --- 최적화 입력 데이터 폼 종료 --- #}
 
     {# 1. 결과 메세지 #}
     {% if success_save_message%}
@@ -93,7 +94,6 @@
     {% endif %}
 
     {# 2. 결과 요약 및 시각화 #}
-
     {% if results %}
         <div class="card mt-3">
             <div class="card-header"><strong>결과 요약</strong></div>
@@ -123,95 +123,134 @@
 
 {% block scripts %}
 <script>
-function submitSettingsForm() {
-    console.log("Settings changed, submitting form with current values.");
+    function submitSettingsForm() {
+        console.log("Settings changed, submitting form with current values.");
 
-    const settingsForm = document.getElementById('settingsForm');
-    settingsForm.innerHTML = ''; // 중복 제출 방지를 위해 폼 비우기
+        const settingsForm = document.getElementById('settingsForm');
+        settingsForm.innerHTML = ''; // 중복 제출 방지를 위해 폼 비우기
 
-    // 1. 드롭다운 메뉴의 현재 값들을 숨겨진 필드로 추가
-    const numJobsSelect = document.getElementById('num_jobs_to_show');
-    const objectiveSelect = document.getElementById('objective_choice_get');
+        // 1. 드롭다운 메뉴의 현재 값들을 숨겨진 필드로 추가
+        const numJobsSelect = document.getElementById('num_jobs_to_show');
+        const objectiveSelect = document.getElementById('objective_choice_get');
 
-    const hiddenNumJobs = document.createElement('input');
-    hiddenNumJobs.type = 'hidden';
-    hiddenNumJobs.name = 'num_jobs_to_show';
-    hiddenNumJobs.value = numJobsSelect.value;
-    settingsForm.appendChild(hiddenNumJobs);
+        const hiddenNumJobs = document.createElement('input');
+        hiddenNumJobs.type = 'hidden';
+        hiddenNumJobs.name = 'num_jobs_to_show';
+        hiddenNumJobs.value = numJobsSelect.value;
+        settingsForm.appendChild(hiddenNumJobs);
 
-    const hiddenObjective = document.createElement('input');
-    hiddenObjective.type = 'hidden';
-    hiddenObjective.name = 'objective_choice';
-    hiddenObjective.value = objectiveSelect.value;
-    settingsForm.appendChild(hiddenObjective);
+        const hiddenObjective = document.createElement('input');
+        hiddenObjective.type = 'hidden';
+        hiddenObjective.name = 'objective_choice';
+        hiddenObjective.value = objectiveSelect.value;
+        settingsForm.appendChild(hiddenObjective);
 
-    // 2. 현재 테이블의 모든 입력 값을 숨겨진 필드로 추가
-    const numJobsInTable = document.querySelectorAll('#schedulingForm tbody tr').length;
-    const fields = ['id', 'processing_time', 'due_date', 'release_time'];
+        // 2. 현재 테이블의 모든 입력 값을 숨겨진 필드로 추가
+        const numJobsInTable = document.querySelectorAll('#schedulingForm tbody tr').length;
+        const fields = ['id', 'processing_time', 'due_date', 'release_time'];
 
-    for (let i = 0; i < numJobsInTable; i++) {
-        fields.forEach(field => {
-            const inputElement = document.getElementById(`job_${i}_${field}`);
-            if (inputElement) {
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = `job_${i}_${field}`;
-                hiddenInput.value = inputElement.value;
-                settingsForm.appendChild(hiddenInput);
-            }
-        });
+        for (let i = 0; i < numJobsInTable; i++) {
+            fields.forEach(field => {
+                const inputElement = document.getElementById(`job_${i}_${field}`);
+                if (inputElement) {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = `job_${i}_${field}`;
+                    hiddenInput.value = inputElement.value;
+                    settingsForm.appendChild(hiddenInput);
+                }
+            });
+        }
+
+        // 3. GET 방식으로 폼 제출 (페이지 리로드)
+        settingsForm.submit();
     }
 
-    // 3. GET 방식으로 폼 제출 (페이지 리로드)
-    settingsForm.submit();
-}
+    document.addEventListener('DOMContentLoaded', function() {
+        const randomizeBtn = document.getElementById('randomizeBtn');
+        if (randomizeBtn) {
+            randomizeBtn.addEventListener('click', function() {
+                console.log("Randomize button clicked for Single Machine Scheduling.");
 
-document.addEventListener('DOMContentLoaded', function() {
-    const plotDataJson = '{{ plot_data|safe|default_if_none:"{}" }}';
-    try {
-        const plotData = JSON.parse(plotDataJson);
-        if (plotData && plotData.jobs) {
-            const ctx = document.getElementById('ganttChart');
-            if (ctx) {
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: plotData.jobs.map(j => j.label),
-                        datasets: [{
-                            label: '작업 스케줄',
-                            data: plotData.jobs.map(j => j.data),
-                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1,
-                            borderSkipped: false, // 막대 양쪽 테두리 모두 표시
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y', // 축을 바꿔서 가로 막대 차트 (간트 차트 형태)로 만듦
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: {
-                                beginAtZero: true,
-                                title: { display: true, text: 'Time' }
-                            }
+                function getRandomInt(min, max) {
+                    return Math.floor(Math.random() * (max - min + 1)) + min;
+                }
+
+                const numJobs = parseInt(document.getElementById('num_jobs_to_show').value);
+                let cumulativeTime = 0; // 납기일 생성을 위한 가상 시간
+
+                for (let i = 0; i < numJobs; i++) {
+                    // Job ID 설정
+                    const idInput = document.getElementById(`job_${i}_id`);
+                    if(idInput) idInput.value = `Job ${i + 1}`;
+
+                    // 처리 시간 설정
+                    const procTime = getRandomInt(3, 15);
+                    const procTimeInput = document.getElementById(`job_${i}_processing_time`);
+                    if(procTimeInput) procTimeInput.value = procTime;
+
+                    // 준비 시간 설정
+                    const releaseTime = getRandomInt(i * 2, (i + 1) * 5);
+                    const releaseTimeInput = document.getElementById(`job_${i}_release_time`);
+                    if(releaseTimeInput) releaseTimeInput.value = releaseTime;
+
+                    // 납기일 설정 (준비 시간 + 처리 시간 이후로 설정하여 현실성 부여)
+                    const earliestCompletion = releaseTime + procTime;
+                    const dueDate = getRandomInt(earliestCompletion + 5, earliestCompletion + 30);
+                    const dueDateInput = document.getElementById(`job_${i}_due_date`);
+                    if(dueDateInput) dueDateInput.value = dueDate;
+                }
+
+                console.log("Form populated with new random data.");
+            });
+        }
+
+        // 기존 최적화 차트 그리기
+        const plotDataJson = '{{ plot_data|safe|default_if_none:"{}" }}';
+        try {
+            const plotData = JSON.parse(plotDataJson);
+            if (plotData && plotData.jobs) {
+                const ctx = document.getElementById('ganttChart');
+                if (ctx) {
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: plotData.jobs.map(j => j.label),
+                            datasets: [{
+                                label: '작업 스케줄',
+                                data: plotData.jobs.map(j => j.data),
+                                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1,
+                                borderSkipped: false, // 막대 양쪽 테두리 모두 표시
+                            }]
                         },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const job = plotData.jobs[context.dataIndex];
-                                        return `Start: ${job.data[0]}, End: ${job.data[1]}, Duration: ${job.data[1] - job.data[0]}`;
+                        options: {
+                            indexAxis: 'y', // 축을 바꿔서 가로 막대 차트 (간트 차트 형태)로 만듦
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    title: { display: true, text: 'Time' }
+                                }
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const job = plotData.jobs[context.dataIndex];
+                                            return `Start: ${job.data[0]}, End: ${job.data[1]}, Duration: ${job.data[1] - job.data[0]}`;
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                });
+                    });
+                }
             }
-        }
-    } catch(e) { console.error("Error creating Gantt chart:", e); }
-});
+        } catch(e) { console.error("Error creating Gantt chart:", e); }
+    });
 </script>
 {% endblock %}

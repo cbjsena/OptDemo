@@ -6,24 +6,37 @@
 
 {% block content %}
 <div class="container-fluid">
-    <h1 class="h2">Job Shop Scheduling Demo</h1>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Job Shop Scheduling Demo</h1>
+    </div>
     <p>각 작업의 공정 순서(기계, 처리 시간)를 입력하여, 전체 작업 완료 시간(Makespan)을 최소화하는 최적 스케줄을 계산하고 간트 차트로 확인합니다.</p>
 
-    <form method="GET" class="mb-3 form-inline">
+    {# --- 사용자에게 보여지는 컨트롤러 (폼 바깥에 위치) --- #}
+    <div class="mb-3 form-inline">
         <div class="form-group mr-2">
-            <label for="num_jobs_to_show">작업 수 (2-5):</label>
-            <select name="num_jobs_to_show" id="num_jobs_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
-                {% for i in num_jobs_options %}<option value="{{ i }}" {% if i == submitted_num_jobs %}selected{% endif %}>{{ i }}개</option>{% endfor %}
+            <label for="num_jobs_to_show" class="mr-2">작업 수 (2-5):</label>
+            <select name="num_jobs_to_show" id="num_jobs_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                {% for i in num_jobs_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_jobs %}selected{% endif %}>{{ i }}개</option>
+                {% endfor %}
             </select>
         </div>
         <div class="form-group mr-2">
             <label for="num_machines_to_show">기계 수 (3-4):</label>
-            <select name="num_machines_to_show" id="num_machines_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
-                {% for i in num_machines_options %}<option value="{{ i }}" {% if i == submitted_num_machines %}selected{% endif %}>{{ i }}대</option>{% endfor %}
+            <select name="num_machines_to_show" id="num_machines_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                {% for i in num_machines_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_machines %}selected{% endif %}>{{ i }}대</option>
+                {% endfor %}
             </select>
-            (작업 수나 기계 수를 변경하면 작업 정보가 초기화 됩니다.)
         </div>
-    </form>
+        <div class="form-group ml-auto">
+            <button type="button" class="btn btn-sm btn-success mr-2" id="randomizeBtn">Random</button>
+            <a href="{% url 'production_scheduling_app:job_shop_demo' %}" class="btn btn-sm btn-warning">Default</a>
+        </div>
+    </div>
+
+    {# --- 설정 변경 값을 전달하기 위한 숨겨진 GET 폼 --- #}
+    <form method="GET" id="settingsForm" style="display: none;"></form>
 
     <form method="POST" id="schedulingForm">
         {% csrf_token %}
@@ -34,7 +47,7 @@
         <div class="form-section">
             <h4>작업별 정보 입력</h4>
             <div class="table-responsive">
-                <table class="table table-bordered text-center">
+                <table class="table table-bordered text-center" id="jobShopTable">
                     <thead class="thead-light">
                         <tr>
                             <th rowspan="2" class="align-middle">작업 ID</th>
@@ -50,17 +63,20 @@
                     <tbody>
                         {% for job in jobs_list %}
                         <tr>
-                            <td><input type="text" class="form-control form-control-sm" name="job_{{ forloop.counter0 }}_id" value="{{ job.id }}"></td>
+                            <td><input type="text" class="form-control form-control-sm"
+                                       id="job_{{ forloop.counter0 }}_id" name="job_{{ forloop.counter0 }}_id" value="{{ job.id }}"></td>
 
                             {% for processing_time in job.processing_times %}
                             <td>
-                                <input type="number" min="1" name="p_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}"
-                                       class="form-control form-control-sm" value="{{ processing_time }}">
+                                <input type="number" min="1" class="form-control form-control-sm"
+                                       id="p_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}"
+                                       name="p_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}" value="{{ processing_time }}">
                             </td>
                             {% endfor %}
 
                             <td>
-                                <select class="form-control form-control-sm" name="job_{{ forloop.counter0 }}_routing">
+                                <select class="form-control form-control-sm"
+                                        id="job_{{ forloop.counter0 }}_routing" name="job_{{ forloop.counter0 }}_routing">
                                     {% for route_tuple in possible_routings %}
                                         {% with route_str=route_tuple|join:"-" %}
                                             <option value="{{ route_str }}" {% if job.selected_routing == route_str %}selected{% endif %}>
@@ -81,13 +97,24 @@
 
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 스케줄 계산 실행</button>
     </form>
+    {# --- 최적화 입력 데이터 폼 종료 --- #}
 
-    {% if results or error_message or success_message %}
-        <hr class="my-4"><h3 class="mt-4">Optimization Results</h3>
-        {% if success_message and not error_message %}<div class="alert alert-success">{{ success_message }}</div>{% endif %}
-        {% if error_message %}<div class="alert alert-danger">{{ error_message }}</div>{% endif %}
+    {# 1. 결과 메세지 #}
+    {% if success_save_message%}
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
+    {% endif %}
+    {% if opt_results is not None or error_message or success_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Results ({{ form_data.problem_type }})</h3>
+    {% endif %}
+    {% if error_message %}
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
     {% endif %}
 
+    {# 2. 결과 요약 및 시각화 #}
     {% if results %}
         <div class="card mt-3">
             <div class="card-header"><strong>결과 요약</strong></div>
@@ -112,48 +139,135 @@
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const plotDataJson = '{{ plot_data|safe|default_if_none:"[]" }}';
-    try {
-        const plotData = JSON.parse(plotDataJson);
-        if (plotData && plotData.length > 0) {
-            const ctx = document.getElementById('jobShopGanttChart');
-            if (ctx) {
-                // Flow Shop 차트와 동일한 로직 사용 가능
-                const machineLabels = [];
-                const numMachines = {{ submitted_num_machines }};
-                for (let i = 1; i <= numMachines; i++) {
-                    machineLabels.push(`Machine ${i}`);
+    function submitSettingsForm() {
+        console.log("Settings changed, submitting form with current values.");
+
+        const settingsForm = document.getElementById('settingsForm');
+        settingsForm.innerHTML = '';
+
+        // 1. 드롭다운 메뉴의 현재 값들을 숨겨진 필드로 추가
+        const numJobsSelect = document.getElementById('num_jobs_to_show');
+        const numMachinesSelect = document.getElementById('num_machines_to_show');
+
+        let hiddenNumJobs = document.createElement('input');
+        hiddenNumJobs.type = 'hidden';
+        hiddenNumJobs.name = 'num_jobs_to_show';
+        hiddenNumJobs.value = numJobsSelect.value;
+        settingsForm.appendChild(hiddenNumJobs);
+
+        let hiddenNumMachines = document.createElement('input');
+        hiddenNumMachines.type = 'hidden';
+        hiddenNumMachines.name = 'num_machines_to_show';
+        hiddenNumMachines.value = numMachinesSelect.value;
+        settingsForm.appendChild(hiddenNumMachines);
+
+        // 2. 현재 테이블의 모든 입력 값을 숨겨진 필드로 추가
+        const numJobsInTable = {{ submitted_num_jobs }};
+        const numMachinesInTable = {{ submitted_num_machines }};
+
+        for (let i = 0; i < numJobsInTable; i++) {
+            const idElement = document.getElementById(`job_${i}_id`);
+            if(idElement) {
+                let hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = `job_${i}_id`;
+                hiddenInput.value = idElement.value;
+                settingsForm.appendChild(hiddenInput);
+            }
+            const routingElement = document.getElementById(`job_${i}_routing`);
+            if(routingElement) {
+                 let hiddenInput = document.createElement('input');
+                 hiddenInput.type = 'hidden';
+                 hiddenInput.name = `job_${i}_routing`;
+                 hiddenInput.value = routingElement.value;
+                 settingsForm.appendChild(hiddenInput);
+            }
+            for (let j = 0; j < numMachinesInTable; j++) {
+                const timeElement = document.getElementById(`p_${i}_${j}`);
+                if(timeElement) {
+                    let hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = `p_${i}_${j}`;
+                    hiddenInput.value = timeElement.value;
+                    settingsForm.appendChild(hiddenInput);
                 }
-
-                const colors = ['rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)'];
-                const datasets = plotData.map((job, index) => {
-                    // 각 작업의 데이터를 기계별로 재구성
-                    let jobDataOnMachines = new Array(numMachines).fill(null);
-                    job.tasks.forEach(task => {
-                        // "Machine 1" -> 0, "Machine 2" -> 1
-                        const machineIndex = parseInt(task.machine.split(' ')[1]) - 1;
-                        jobDataOnMachines[machineIndex] = [task.start, task.end];
-                    });
-
-                    return {
-                        label: job.job_id,
-                        data: jobDataOnMachines,
-                        backgroundColor: colors[index % colors.length],
-                        borderColor: colors[index % colors.length].replace('0.7', '1'),
-                        borderWidth: 1,
-                        borderSkipped: false
-                    }
-                });
-
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: { labels: machineLabels, datasets: datasets },
-                    options: { /* ... (Flow Shop 차트와 동일한 옵션) ... */ }
-                });
             }
         }
-    } catch(e) { console.error("Error creating Job Shop Gantt chart:", e); }
-});
+
+        // 3. GET 방식으로 폼 제출 (페이지 리로드)
+        settingsForm.submit();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // [NEW] 랜덤 버튼 이벤트 리스너 추가
+        const randomizeBtn = document.getElementById('randomizeBtn');
+        if (randomizeBtn) {
+            randomizeBtn.addEventListener('click', function() {
+                console.log("Randomize button clicked for Job Shop.");
+                function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+                const numJobs = parseInt(document.getElementById('num_jobs_to_show').value);
+                const numMachines = parseInt(document.getElementById('num_machines_to_show').value);
+
+                const routingSelects = document.querySelectorAll('select[name^="job_"][name$="_routing"]');
+                const possibleOptionsCount = routingSelects.length > 0 ? routingSelects[0].options.length : 0;
+
+                for (let i = 0; i < numJobs; i++) {
+                    for (let j = 0; j < numMachines; j++) {
+                        const timeInput = document.getElementById(`p_${i}_${j}`);
+                        if(timeInput) timeInput.value = getRandomInt(5, 30);
+                    }
+                    if (possibleOptionsCount > 0) {
+                        const routingSelect = document.getElementById(`job_${i}_routing`);
+                        if (routingSelect) {
+                            routingSelect.selectedIndex = getRandomInt(0, possibleOptionsCount - 1);
+                        }
+                    }
+                }
+            });
+        }
+
+        const plotDataJson = '{{ plot_data|safe|default_if_none:"[]" }}';
+        try {
+            const plotData = JSON.parse(plotDataJson);
+            if (plotData && plotData.length > 0) {
+                const ctx = document.getElementById('jobShopGanttChart');
+                if (ctx) {
+                    // Flow Shop 차트와 동일한 로직 사용 가능
+                    const machineLabels = [];
+                    const numMachines = {{ submitted_num_machines }};
+                    for (let i = 1; i <= numMachines; i++) {
+                        machineLabels.push(`Machine ${i}`);
+                    }
+
+                    const colors = ['rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)'];
+                    const datasets = plotData.map((job, index) => {
+                        // 각 작업의 데이터를 기계별로 재구성
+                        let jobDataOnMachines = new Array(numMachines).fill(null);
+                        job.tasks.forEach(task => {
+                            // "Machine 1" -> 0, "Machine 2" -> 1
+                            const machineIndex = parseInt(task.machine.split(' ')[1]) - 1;
+                            jobDataOnMachines[machineIndex] = [task.start, task.end];
+                        });
+
+                        return {
+                            label: job.job_id,
+                            data: jobDataOnMachines,
+                            backgroundColor: colors[index % colors.length],
+                            borderColor: colors[index % colors.length].replace('0.7', '1'),
+                            borderWidth: 1,
+                            borderSkipped: false
+                        }
+                    });
+
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: { labels: machineLabels, datasets: datasets },
+                        options: { /* ... (Flow Shop 차트와 동일한 옵션) ... */ }
+                    });
+                }
+            }
+        } catch(e) { console.error("Error creating Job Shop Gantt chart:", e); }
+    });
 </script>
 {% endblock %}
