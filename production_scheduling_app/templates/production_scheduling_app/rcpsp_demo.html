@@ -27,6 +27,7 @@
             <select name="num_resources_to_show" id="num_resources_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
                 {% for i in num_resources_options %}<option value="{{ i }}" {% if i == submitted_num_resources %}selected{% endif %}>{{ i }}개</option>{% endfor %}
             </select>
+            (활동 수나 자원 수를 변경하면 활동 정보가 초기화 됩니다.)
         </div>
     </form>
 

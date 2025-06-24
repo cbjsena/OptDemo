@@ -21,6 +21,7 @@
             <select name="num_machines_to_show" id="num_machines_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
                 {% for i in num_machines_options %}<option value="{{ i }}" {% if i == submitted_num_machines %}selected{% endif %}>{{ i }}대</option>{% endfor %}
             </select>
+            (작업 수나 기계 수를 변경하면 작업 정보가 초기화 됩니다.)
         </div>
     </form>
 
