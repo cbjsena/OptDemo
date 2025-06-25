@@ -1,0 +1,104 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Sudoku Solver - Introduction{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">스도쿠 해결사 (Sudoku Solver)</h1>
+    </div>
+
+    <p>
+        <strong>스도쿠(Sudoku)</strong>는 가장 유명한 논리 기반 퍼즐 중 하나로, 최적화 문제라기보다는
+        <strong>제약 충족 문제(Constraint Satisfaction Problem, CSP)</strong>의 대표적인 예시입니다.
+        목표는 비용을 최소화하는 것이 아니라, 주어진 여러 제약(규칙)을 모두 만족시키는 실행 가능한 해를 찾는 것입니다.
+        이러한 특징 때문에 스도쿠는 제약 프로그래밍(Constraint Programming) 기술의 원리를 설명하는 데 매우 효과적으로 사용됩니다.
+    </p>
+
+    <figure>
+        <img src="{% static 'puzzles_logic_app/images/sudoku_solver_concept.png' %}"
+             alt="스도쿠 해결사 문제 개념도" class="intro-image" style="max-width: 600px;">
+        <figcaption class="image-caption">그림 1: 스도쿠 문제 개념 - 주어진 숫자들과 스도쿠 규칙(제약)을 바탕으로, 솔버가 논리적으로 빈칸을 채워 해를 찾습니다.</figcaption>
+    </figure>
+
+    <h3>1. 문제의 규칙 (핵심 제약)</h3>
+    <p>스도쿠 퍼즐은 간단한 세 가지 규칙(제약)으로 정의됩니다.</p>
+    <ol>
+        <li><strong>행 제약:</strong> 9개의 각 행에는 1부터 9까지의 숫자가 중복 없이 한 번씩만 나타나야 합니다.</li>
+        <li><strong>열 제약:</strong> 9개의 각 열에는 1부터 9까지의 숫자가 중복 없이 한 번씩만 나타나야 합니다.</li>
+        <li><strong>박스 제약:</strong> 9개의 3x3 서브그리드(박스) 각각에도 1부터 9까지의 숫자가 중복 없이 한 번씩만 나타나야 합니다.</li>
+    </ol>
+
+    <p>제약 프로그래밍 솔버는 이러한 규칙들을 기반으로 각 빈칸에 들어갈 수 있는 숫자의 범위를 좁혀나가며(전파), 모든 규칙을 만족하는 최종 해를 효율적으로 찾아냅니다.</p>
+
+    <hr class="my-4">
+
+    {# --- 추가된 수학적 모델 섹션 --- #}
+    <h3>2. 수리 모델 (제약 프로그래밍)</h3>
+    <div class="col-md-8 model-definition-content">
+        <p>
+            스도쿠 문제는 다음과 같이 제약 프로그래밍 모델로 명확하게 정의할 수 있습니다.
+        </p>
+
+        <h4 class="model-definition-content"><strong>입력 데이터 (Parameters):</strong></h4>
+        <ul>
+            <li> <strong>\( r, c \in \{0, 1, \dots, 8\} \)</strong> : 9x9 격자의 행(row)과 열(column) 인덱스.</li>
+            <li> <strong>\( V \in \{1, 2, \dots, 9\} \)</strong> : 각 셀에 들어갈 수 있는 숫자의 집합.</li>
+            <li> <strong>\( \text{InitialGrid}_{rc} \)</strong> : 문제에서 초기에 주어진 숫자가 있는 셀의 값. 빈칸은 0으로 표현.</li>
+        </ul>
+
+        <h4 class="model-definition-content"><strong>결정 변수 (Decision Variables):</strong></h4>
+        <ul>
+            <li> <strong>\( x_{rc} \)</strong> : 행 \( r \), 열 \( c \)에 위치한 셀에 들어갈 숫자. 각 변수는 1부터 9까지의 정수 값을 가질 수 있습니다.
+                <div class="math-block">
+                    $$ x_{rc} \in \{1, 2, \dots, 9\} \quad (\forall r, c)$$
+                </div>
+            </li>
+        </ul>
+
+        <h4 class="model-definition-content"><strong>목표 함수 (Objective Function):</strong></h4>
+        <p>이 문제는 특정 값을 최소화하거나 최대화하는 최적화 문제가 아닌, 모든 제약을 만족하는 **실행 가능한 해(feasible solution)를 찾는 문제**입니다. 따라서 별도의 목표 함수는 필요하지 않습니다.</p>
+
+
+        <h4 class="model-definition-content"><strong>제약 조건 (Constraints)</strong></h4>
+        <ul>
+            <li><strong>초기값 제약 (Initial Value Constraint):</strong>
+                <p>문제에 이미 숫자가 채워져 있는 칸은 해당 숫자로 고정되어야 합니다.</p>
+                <div class="math-block">
+                    $$ x_{rc} = \text{InitialGrid}_{rc} \quad (\forall (r, c) \text{ where } \text{InitialGrid}_{rc} \ne 0)$$
+                </div>
+            </li>
+            <li><strong>행 제약 (Row Constraint):</strong>
+                <p>각 행에 있는 9개의 숫자는 모두 달라야 합니다.</p>
+                <div class="math-block">
+                    $$ \text{AllDifferent}(x_{r0}, x_{r1}, \dots, x_{r8}) \quad (\forall r = 0, \dots, 8)$$
+                </div>
+            </li>
+             <li><strong>열 제약 (Column Constraint):</strong>
+                <p>각 열에 있는 9개의 숫자는 모두 달라야 합니다.</p>
+                <div class="math-block">
+                    $$ \text{AllDifferent}(x_{0c}, x_{1c}, \dots, x_{8c}) \quad (\forall c = 0, \dots, 8)$$
+                </div>
+            </li>
+            <li><strong>3x3 박스 제약 (Box Constraint):</strong>
+                <p>9개의 3x3 서브그리드 각각에 있는 9개의 숫자들은 모두 달라야 합니다.</p>
+                <div class="math-block">
+                    $$ \text{AllDifferent}(\{ x_{rc} \mid \lfloor r/3 \rfloor = i, \lfloor c/3 \rfloor = j \}) \quad (\forall i, j \in \{0, 1, 2\})$$
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+{% endblock %}

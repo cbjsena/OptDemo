@@ -1,0 +1,114 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Sports Scheduling - Introduction{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h2>스포츠 스케줄링 (Sports Scheduling)</h2>
+    </div>
+
+    <p>
+        <strong>스포츠 스케줄링</strong>은 프로 스포츠 리그의 전체 시즌 경기 일정을 생성하는, 매우 복잡하고 현실적인 조합 최적화 문제입니다.
+        이 문제는 단순히 모든 팀이 서로 경기를 치르도록 하는 것을 넘어, 공정성, 팬들의 흥미, 구단의 수익 등 다양한 요소를 모두 고려해야 합니다.
+        우리가 매주 즐겨보는 스포츠 리그의 대진표는 바로 이러한 복잡한 최적화 모델링의 결과물입니다.
+    </p>
+
+    <figure>
+        <img src="{% static 'puzzles_logic_app/images/sports_scheduling_concept.png' %}"
+             alt="스포츠 스케줄링 문제 개념도" class="intro-image" style="max-width: 600px;">
+        <figcaption class="image-caption">그림 1: 스포츠 스케줄링 개념 - 수많은 팀, 경기장, 날짜와 복잡한 제약 조건들을 고려하여 최적의 시즌 대진표를 생성합니다.</figcaption>
+    </figure>
+
+    <h3>1. 문제 설명 및 핵심 제약</h3>
+    <p>
+        스포츠 리그의 일정을 계획할 때는 다음과 같은 다양한 제약 조건들을 만족시켜야 합니다.
+    </p>
+    <ul>
+        <li><strong>라운드 로빈 (Round-Robin):</strong> 모든 팀은 다른 모든 팀과 정해진 횟수만큼 경기를 치러야 합니다 (예: 홈에서 1번, 원정에서 1번).</li>
+        <li><strong>장소 제약 (Venue Constraints):</strong> 특정 날짜에 경기장이 다른 행사로 인해 사용 불가능할 수 있습니다. 두 팀이 같은 경기장을 공유하는 경우, 같은 날 홈 경기를 치를 수 없습니다.</li>
+        <li><strong>공정성 제약 (Fairness Constraints):</strong>
+            <ul>
+                <li><strong>홈-원정 균형:</strong> 시즌 전체적으로 홈 경기와 원정 경기의 수가 거의 같아야 합니다.</li>
+                <li><strong>연속 경기 제한:</strong> 특정 횟수 이상의 연속적인 홈 경기나 원정 경기는 피해야 합니다 (예: 3연속 원정 금지).</li>
+                <li><strong>휴식일 보장:</strong> 팀들은 경기 사이에 최소한의 휴식일을 보장받아야 합니다.</li>
+            </ul>
+        </li>
+        <li><strong>흥행 및 방송 제약 (Commercial Constraints):</strong>
+            <ul>
+                <li><strong>라이벌전:</strong> 가장 인기 있는 라이벌 간의 경기는 주말이나 휴일 등 시청률이 높은 시간대에 편성되어야 합니다.</li>
+                <li><strong>방송사 요구:</strong> 특정 방송사는 매주 특정 팀들의 경기를 중계하기를 원할 수 있습니다.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3>2. 목표 함수</h3>
+    <p>모든 제약 조건을 만족하는 "가능한" 스케줄을 찾는 것 자체가 어려운 목표일 수 있지만, 추가적으로 다음과 같은 목표를 최적화할 수 있습니다.</p>
+    <ul>
+        <li><strong>총 이동 거리 최소화:</strong> 모든 팀의 시즌 전체 이동 거리를 합산하여 최소화함으로써 비용을 절감하고 선수들의 피로를 줄입니다.</li>
+        <li><strong>홈-원정 패턴의 매력도 최대화:</strong> 팬들이 예측 가능하고 흥미를 느낄 수 있도록 홈 경기와 원정 경기가 이상적으로 번갈아 나타나는 패턴을 최대화합니다.</li>
+        <li><strong>리그 경쟁력의 균형:</strong> 특정 팀이 시즌 초반이나 후반에 유독 강팀 또는 약팀과 연속해서 만나는 것을 방지하여 리그의 경쟁적 균형을 유지합니다.</li>
+    </ul>
+
+    <h3>3. 수리 모델 (기본 라운드 로빈)</h3>
+    <p> 가장 기본적인 모든 팀이 서로 한 번씩만 경기를 치르는 싱글 라운드 로빈 스케줄을 생성하는 문제입니다.<br>
+        목표는 이동 거리를 최소화입니다.
+    </p>
+
+    <div class="col-md-8 model-definition-content">
+        <h4 class="model-definition-content"><strong>입력 데이터:</strong></h4>
+        <ul>
+            <li><strong>\( i, j  \in \{1, 2, \dots, n\} \)</strong> : 팀(Team)의 인덱스. \( n \) 은 총 팀의 수로 짝수로 가정</li>
+            <li><strong>\( s \in \{1, 2, \dots, n-1\} \)</strong> : 시간 단위(Slot 또는 주차)의 인덱스</li>
+            <li><strong>\( d_{ij} \)</strong> : 팀 \( i \) 와 \( j \) 의 홈구장 간 거리</li>
+        </ul>
+        <hr>
+
+        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
+        <ul>
+            <li> <strong>\( x_{ijs} \)</strong> : 시간 \( s \) 에 팀 \( i \) 와 팀 \( j \) 가 경기를 하면 1, 아니면 0 (이진 변수)</li>
+        </ul>
+
+        <h4 class="model-definition-content"><strong>목표 함수:</strong></h4> 이동 거리 최소화
+        <div class="math-block">
+            $$ \min \sum_{i} \sum_{j} \sum_{s} d_{ij} \cdot x_{ijs} $$
+        </div>
+
+        <h4 class="model-definition-content"><strong>제약 조건</strong></h4>
+        <ul>
+            <li><strong>경기 제약 (Play Once per Slot):</strong>
+                <p>모든 팀은 각 시간 단위(주)에 정확히 한 경기만 치러야 합니다.</p>
+                <div class="math-block">
+                    $$ \sum_{j: j \ne i} x_{ijs} = 1 \quad (\forall i, s)$$
+                </div>
+            </li>
+            <li><strong>라운드 로빈 제약 (Round-Robin): </strong>
+                <p>모든 두 팀은 시즌 전체에 걸쳐 정확히 한 번만 만나야 합니다.</p>
+                <div class="math-block">
+                    <p>$$ \sum_{s=1}^{n-1} x_{ijs} = 1  \quad (\forall i < j)$$</p>
+                </div>
+            </li>
+             <li><strong>대칭성 제약 (Symmetry):</strong>
+                <p>팀 \( i \)가 팀 \( j \)와 경기하는 것은 팀 \( j \)가 팀 \( i \)와 경기하는 것과 같습니다.</p>
+                <div class="math-block">
+                    <p>$$ x_{ijs} = x_{jis} \quad (\forall i, j, s)$$</p>
+                </div>
+            </li>
+        </ul>
+        <p >
+            참고: 위 모델은 가장 기본적인 형태입니다. 실제 리그 스케줄링에서는 홈/원정 배분, 연속 원정 제한, 특정 날짜 제약 등 수많은 현실적인 제약 조건들이 추가되어 훨씬 더 복잡한 모델이 됩니다.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+{% endblock %}

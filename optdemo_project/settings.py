@@ -63,11 +63,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'core',          # core 앱 추가
-    'matching_assignment_app',  # matching_assignment_app 추가
-    'resource_allocation_app',  # 예시
-    'routing_logistics_app',  # 예시
-    'production_scheduling_app',  # 예시
+    'core',
+    'matching_assignment_app',
+    'resource_allocation_app',
+    'routing_logistics_app',
+    'production_scheduling_app',
+    'puzzles_logic_app',
 ]
 
 MIDDLEWARE = [
@@ -274,6 +275,11 @@ LOGGING = {
             'propagate': False,
         },
         'production_scheduling_app': { # 우리 앱 로거
+            'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
+            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'propagate': False,
+        },
+        'puzzles_logic_app': { # 우리 앱 로거
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
             'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,
