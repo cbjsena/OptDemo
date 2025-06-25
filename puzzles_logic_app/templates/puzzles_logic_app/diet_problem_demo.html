@@ -1,12 +1,357 @@
 {% extends "core/base.html" %}
+{% load static %}
+{% load routing_filters %}
 
-{% block title %}Home{% endblock %}
+{% block title %}The Diet Problem Demo{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+    <style>
+        .table-responsive { margin-top: 1rem; }
+        .form-section h4 { margin-top: 1.5rem; margin-bottom: 1rem; }
+        .results-table th, .results-table td { text-align: center; vertical-align: middle; }
+        .results-table .text-left { text-align: left; }
+        .results-table .text-right { text-align: right; }
+        .nutrient-status-ok { color: #28a745; }
+        .nutrient-status-bad { color: #dc3545; font-weight: bold; }
+    </style>
+{% endblock %}
+
 
 {% block content %}
-<div class="container">
-    <h1>Optimization Demo Platform</h1>
-    <h2>{{active_model}}</h2>
-    <h3>{{active_submenu}}</h3>
-    <p>준비 중 입니다. </p>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">The Diet Problem Demo</h1>
+    </div>
+    <p>식품별 영양 정보와 가격, 그리고 영양소별 최소/최대 요구량을 입력하여 최소 비용으로 최적의 식단을 구성합니다.</p>
+
+    {# --- 설정 변경 컨트롤러 --- #}
+    <div class="mb-3 form-inline">
+        <div class="form-group mr-2">
+            <label for="num_foods_to_show" class="mr-2">식품 수 (2-10):</label>
+            <select id="num_foods_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                {% for i in num_foods_options %}<option value="{{ i }}" {% if i == submitted_num_foods %}selected{% endif %}>{{ i }}개</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-group mr-2">
+            <label for="num_nutrients_to_show" class="mr-2">영양소 수 (2-5):</label>
+            <select id="num_nutrients_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                {% for i in num_nutrients_options %}<option value="{{ i }}" {% if i == submitted_num_nutrients %}selected{% endif %}>{{ i }}개</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-group ml-auto">
+            <button type="button" class="btn btn-sm btn-success mr-2" id="randomizeBtn">Random</button>
+            <a href="{% url 'puzzles_logic_app:diet_problem_demo' %}" class="btn btn-sm btn-warning">Default</a>
+        </div>
+    </div>
+
+    <form method="GET" id="settingsForm" style="display: none;"></form>
+
+    {# --- 최적화 실행을 위한 POST 폼 --- #}
+    <form method="POST" id="dietForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="optimize">
+        <input type="hidden" name="num_foods" value="{{ submitted_num_foods }}">
+        <input type="hidden" name="num_nutrients" value="{{ submitted_num_nutrients }}">
+        <input type="hidden" name="problem_type" value="diet_problem">
+
+        <div class="form-section">
+            <h4>1. 영양소 요구사항 (Nutrient Requirements)</h4>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered text-center">
+                    <thead class="thead-light"><tr><th>영양소</th><th>최소 요구량</th><th>최대 요구량</th></tr></thead>
+                    <tbody>
+                        {% for nutrient in nutrients_list %}
+                        <tr>
+                            <td><input type="text" class="form-control form-control-sm" id="nutrient_{{ forloop.counter0 }}_name" name="nutrient_{{ forloop.counter0 }}_name" value="{{ nutrient.name }}"></td>
+                            <td><input type="number" min="0" step="any" class="form-control form-control-sm" id="nutrient_{{ forloop.counter0 }}_min" name="nutrient_{{ forloop.counter0 }}_min" value="{{ nutrient.min }}"></td>
+                            <td><input type="number" min="0" step="any" class="form-control form-control-sm" id="nutrient_{{ forloop.counter0 }}_max" name="nutrient_{{ forloop.counter0 }}_max" value="{{ nutrient.max }}"></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>2. 식품별 정보 (Food Data)</h4>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered text-center" id="foodDataTable">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>식품명</th><th>단위당 비용</th><th>최소 섭취량</th><th>최대 섭취량</th>
+                            {% for nutrient in nutrients_list %}
+                            <th>{{ nutrient.name }} 함량</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for food in foods_list %}
+                        <tr>
+                            <td><input type="text" class="form-control form-control-sm" id="food_{{ forloop.counter0 }}_name" name="food_{{ forloop.counter0 }}_name" value="{{ food.name }}"></td>
+                            <td><input type="number" min="0" step="any" class="form-control form-control-sm" id="food_{{ forloop.counter0 }}_cost" name="food_{{ forloop.counter0 }}_cost" value="{{ food.cost }}"></td>
+                            <td><input type="number" min="0" step="any" class="form-control form-control-sm" id="food_{{ forloop.counter0 }}_min_intake" name="food_{{ forloop.counter0 }}_min_intake" value="{{ food.min_intake }}"></td>
+                            <td><input type="number" min="0" step="any" class="form-control form-control-sm" id="food_{{ forloop.counter0 }}_max_intake" name="food_{{ forloop.counter0 }}_max_intake" value="{{ food.max_intake }}"></td>
+                            {% for nutrient_val in food.nutrients %}
+                            <td><input type="number" min="0" step="any" class="form-control form-control-sm" id="nutrient_val_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}" name="nutrient_val_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}" value="{{ nutrient_val }}"></td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 식단 계산 실행</button>
+    </form>
+
+    {# --- 결과 표시 영역 --- #}
+    {% if results or error_message or success_message %}
+        <hr class="my-4"><h3 class="mt-4">Optimization Results</h3>
+        {% if info_message %}<div class="alert alert-info">{{ info_message }}</div>{% endif %}
+        {% if success_message and not error_message %}<div class="alert alert-success">{{ success_message }}</div>{% endif %}
+        {% if error_message %}<div class="alert alert-danger"><strong>오류:</strong> {{ error_message }}</div>{% endif %}
+    {% endif %}
+
+    {% if results %}
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card mt-3">
+                    <div class="card-header"><strong>[최적화 결과] 식단 계획</strong></div>
+                    <div class="card-body">
+                        <p class="h5"><strong>최소 총 비용: {{ results.total_cost|floatformat:2 }}</strong></p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm results-table mb-0">
+                            <thead class="thead-light"><tr><th class="text-left">식품명</th><th>섭취량</th><th class="text-right">비용</th></tr></thead>
+                            <tbody>
+                            {% for item in results.diet_plan %}
+                                <tr><td class="text-left">{{ item.name }}</td><td>{{ item.intake }}</td><td class="text-right">{{ item.cost }}</td></tr>
+                            {% empty %}
+                                <tr><td colspan="3" class="text-center text-muted">섭취할 음식이 없습니다.</td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                 <div class="card mt-3">
+                    <div class="card-header"><strong>[최적화 결과] 영양소 충족 현황</strong></div>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm results-table mb-0">
+                            <thead class="thead-light"><tr><th class="text-left">영양소</th><th>요구량 (최소-최대)</th><th>실제 섭취량</th></tr></thead>
+                            <tbody>
+                            {% for item in results.nutrient_summary %}
+                                <tr>
+                                    <td class="text-left">{{ item.name }}</td>
+                                    <td>{{ item.min_req }} - {{ item.max_req }}</td>
+                                    <td>{{ item.actual_intake }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# --- 수동 결과 비교 폼 --- #}
+        <hr class="my-5">
+        <div class="manual-check-section mt-4">
+            <h3 class="mt-4">수동 식단 비교</h3>
+            <p>직접 식단을 구성하여 최적 결과와 비교해 보세요.</p>
+            <form method="POST" id="manualCheckForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="manual_check">
+                {# 최적화 실행 시의 모든 입력값을 다시 보냄 #}
+                <input type="hidden" name="num_foods" value="{{ submitted_num_foods }}">
+                <input type="hidden" name="num_nutrients" value="{{ submitted_num_nutrients }}">
+                {% for nutrient in nutrients_list %}
+                    <input type="hidden" name="nutrient_{{ forloop.counter0 }}_name" value="{{ nutrient.name }}">
+                    <input type="hidden" name="nutrient_{{ forloop.counter0 }}_min" value="{{ nutrient.min }}">
+                    <input type="hidden" name="nutrient_{{ forloop.counter0 }}_max" value="{{ nutrient.max }}">
+                {% endfor %}
+                {% for food in foods_list %}
+                    <input type="hidden" name="food_{{ forloop.counter0 }}_name" value="{{ food.name }}">
+                    <input type="hidden" name="food_{{ forloop.counter0 }}_cost" value="{{ food.cost }}">
+                    <input type="hidden" name="food_{{ forloop.counter0 }}_min_intake" value="{{ food.min_intake }}">
+                    <input type="hidden" name="food_{{ forloop.counter0 }}_max_intake" value="{{ food.max_intake }}">
+                    {% for nutrient_val in food.nutrients %}
+                        <input type="hidden" name="nutrient_val_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}" value="{{ nutrient_val }}">
+                    {% endfor %}
+                {% endfor %}
+
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead class="thead-light"><tr><th>식품명</th><th>섭취량 입력</th></tr></thead>
+                        <tbody>
+                        {% for food in foods_list %}
+                            <tr>
+                                <td><label for="manual_food_{{ forloop.counter0 }}_intake">{{ food.name }}</label></td>
+                                <td><input type="number" min="0" step="any" class="form-control form-control-sm" name="manual_food_{{ forloop.counter0 }}_intake" value="0"></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <button type="submit" class="btn btn-secondary mt-2">수동 식단 결과 조회</button>
+            </form>
+        </div>
+
+        {# --- 수동 결과 표시 --- #}
+        {% if manual_results %}
+            <div class="row mt-4">
+                <div class="col-lg-6">
+                    <div class="card mt-3 border-secondary">
+                        <div class="card-header bg-secondary text-white"><strong>[수동 입력 결과] 식단 계획</strong></div>
+                        <div class="card-body">
+                             <p class="h5"><strong>총 비용:
+                                <span class="{% if manual_results.total_cost > results.total_cost %}text-danger{% else %}text-success{% endif %}">
+                                    {{ manual_results.total_cost|floatformat:2 }}
+                                </span>
+                                </strong>
+                                <small>(최적 비용: {{ results.total_cost|floatformat:2 }})</small>
+                            </p>
+                        </div>
+                        <div class="table-responsive">
+                             <table class="table table-striped table-sm results-table mb-0">
+                                <thead class="thead-light"><tr><th class="text-left">식품명</th><th>섭취량</th><th class="text-right">비용</th></tr></thead>
+                                <tbody>
+                                {% for item in manual_results.diet_plan %}
+                                    <tr><td class="text-left">{{ item.name }}</td><td>{{ item.intake }}</td><td class="text-right">{{ item.cost }}</td></tr>
+                                {% empty %}
+                                    <tr><td colspan="3" class="text-center text-muted">섭취할 음식이 없습니다.</td></tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                     <div class="card mt-3 border-secondary">
+                        <div class="card-header bg-secondary text-white"><strong>[수동 입력 결과] 영양소 충족 현황</strong></div>
+                        <div class="table-responsive">
+                             <table class="table table-striped table-sm results-table mb-0">
+                                <thead class="thead-light"><tr><th class="text-left">영양소</th><th>요구량 (최소-최대)</th><th>실제 섭취량</th><th>상태</th></tr></thead>
+                                <tbody>
+                                {% for item in manual_results.nutrient_summary %}
+                                    <tr class="{% if item.status != 'OK' %}table-danger{% endif %}">
+                                        <td class="text-left">{{ item.name }}</td>
+                                        <td>{{ item.min_req }} - {{ item.max_req }}</td>
+                                        <td>{{ item.actual_intake }}</td>
+                                        <td class="{% if item.status != 'OK' %}nutrient-status-bad{% else %}nutrient-status-ok{% endif %}">{{ item.status }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    function submitSettingsForm() {
+        console.log("Settings changed, submitting form with current values.");
+        const settingsForm = document.getElementById('settingsForm');
+        settingsForm.innerHTML = '';
+
+        // 드롭다운 값 추가
+        const numFoodsSelect = document.getElementById('num_foods_to_show');
+        const numNutrientsSelect = document.getElementById('num_nutrients_to_show');
+
+        let hiddenNumFoods = document.createElement('input');
+        hiddenNumFoods.type = 'hidden';
+        hiddenNumFoods.name = 'num_foods_to_show';
+        hiddenNumFoods.value = numFoodsSelect.value;
+        settingsForm.appendChild(hiddenNumFoods);
+
+        let hiddenNumNutrients = document.createElement('input');
+        hiddenNumNutrients.type = 'hidden';
+        hiddenNumNutrients.name = 'num_nutrients_to_show';
+        hiddenNumNutrients.value = numNutrientsSelect.value;
+        settingsForm.appendChild(hiddenNumNutrients);
+
+        // 현재 테이블의 모든 입력 값을 숨겨진 필드로 추가
+        const numFoodsInTable = {{ submitted_num_foods }};
+        const numNutrientsInTable = {{ submitted_num_nutrients }};
+
+        // 영양소 테이블
+        for (let i = 0; i < numNutrientsInTable; i++) {
+            ['name', 'min', 'max'].forEach(field => {
+                const el = document.getElementById(`nutrient_${i}_${field}`);
+                if (el) {
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = el.name;
+                    hidden.value = el.value;
+                    settingsForm.appendChild(hidden);
+                }
+            });
+        }
+        // 식품 테이블
+        for (let i = 0; i < numFoodsInTable; i++) {
+             ['name', 'cost', 'min_intake', 'max_intake'].forEach(field => {
+                const el = document.getElementById(`food_${i}_${field}`);
+                if (el) {
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = el.name;
+                    hidden.value = el.value;
+                    settingsForm.appendChild(hidden);
+                }
+            });
+            for (let j = 0; j < numNutrientsInTable; j++) {
+                 const el = document.getElementById(`nutrient_val_${i}_${j}`);
+                 if (el) {
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = el.name;
+                    hidden.value = el.value;
+                    settingsForm.appendChild(hidden);
+                 }
+            }
+        }
+        settingsForm.submit();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const randomizeBtn = document.getElementById('randomizeBtn');
+        if (randomizeBtn) {
+            randomizeBtn.addEventListener('click', function() {
+                console.log("Randomize button clicked for Diet Problem.");
+                function getRand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+                const numFoods = {{ submitted_num_foods }};
+                const numNutrients = {{ submitted_num_nutrients }};
+
+                // 영양소 요구량 랜덤화
+                for (let i = 0; i < numNutrients; i++) {
+                    const minEl = document.getElementById(`nutrient_${i}_min`);
+                    const maxEl = document.getElementById(`nutrient_${i}_max`);
+                    const randMin = getRand(1000, 2000);
+                    if(minEl) minEl.value = randMin;
+                    if(maxEl) maxEl.value = randMin + getRand(300, 800);
+                }
+
+                // 식품 정보 랜덤화
+                for (let i = 0; i < numFoods; i++) {
+                    const costEl = document.getElementById(`food_${i}_cost`);
+                    if(costEl) costEl.value = getRand(100, 2000);
+
+                    for (let j = 0; j < numNutrients; j++) {
+                        const valEl = document.getElementById(`nutrient_val_${i}_${j}`);
+                        if(valEl) valEl.value = getRand(0, 100);
+                    }
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

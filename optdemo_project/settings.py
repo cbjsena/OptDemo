@@ -36,7 +36,13 @@ DEMO_DIR_MAP ={'matching_cf_tft_data':DEMO_DIR/'match_cf_tft_data',
                'production_single_machine_data':DEMO_DIR/'production_single_machine_data',
                'production_flow_shop_data':DEMO_DIR/'production_flow_shop_data',
                'production_job_shop_data':DEMO_DIR/'production_job_shop_data',
-               'production_rcpsp_data':DEMO_DIR/'production_rcpsp_data'}
+               'production_rcpsp_data':DEMO_DIR/'production_rcpsp_data',
+               'puzzles_diet_problem_data':DEMO_DIR/'puzzles_diet_problem_data',
+               'puzzles_sport_scheduling_data':DEMO_DIR/'puzzles_sport_scheduling_data',
+               'puzzles_nurse_rostering':DEMO_DIR/'puzzles_nurse_rostering',
+               'puzzles_tsp_data':DEMO_DIR/'puzzles_tsp_data',
+               'puzzles_sudoku_data':DEMO_DIR/'puzzles_sudoku_data'
+            }
 
 # DEMO_DIR_MAP에 정의된 모든 디렉토리 생성 (없으면)
 for demo_key, dir_path in DEMO_DIR_MAP.items():
