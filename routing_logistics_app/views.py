@@ -63,7 +63,7 @@ def vrp_demo_view(request):
     context = {
         'active_model': 'Routing & Logistics',
         'active_submenu_category': 'vehicle_routing_problems',
-        'active_submenu': 'vrp_demo',
+        'active_submenu': 'VRP Demo',
         'form_data': form_data,
         'opt_results': None,
         'error_message': None, 'success_message': None,
@@ -180,7 +180,7 @@ def cvrp_demo_view(request):
     context = {
         'active_model': 'Routing & Logistics',
         'active_submenu_category': 'capacitated_vehicle_routing_problems',
-        'active_submenu': 'cvrp_demo',
+        'active_submenu': 'CVRP Demo',
         'form_data': form_data,
         'opt_results': None,
         'error_message': None, 'success_message': None,
@@ -302,7 +302,7 @@ def pdp_demo_view(request):
     context = {
         'active_model': 'Routing & Logistics',
         'active_submenu_category': 'pickup_delivery_problems',
-        'active_submenu': 'pdp_demo',
+        'active_submenu': 'PDP Demo',
         'form_data': form_data,
         'opt_results': None,
         'error_message': None, 'success_message': None,

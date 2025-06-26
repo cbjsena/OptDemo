@@ -424,7 +424,7 @@ def transport_assignment_demo_view(request):
     context = {
         'active_model': 'Matching & Assignment',
         'active_submenu_category': 'transport_assignment_problems',
-        'active_submenu': 'transport_assignment_demo',
+        'active_submenu': 'Transport Assignment Demo',
         'form_data': form_data,
         'assignment_results': None,
         'error_message': None, 'success_message': None,
@@ -513,7 +513,7 @@ def resource_skill_matching_demo_view(request):
     context = {
         'active_model': 'Matching & Assignment',
         'active_submenu_category': 'resource_skill_matching_problems',
-        'active_submenu': 'resource_skill_matching_demo',
+        'active_submenu': 'Resource Skill Matching Demo',
         'form_data': form_data,
         'results': None, 'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",

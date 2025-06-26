@@ -179,17 +179,16 @@ def validate_required_skills(input_data):
 
 
 def save_matching_assignment_json_data(input_data):
-    dir=''
+    problem_type = input_data.get('problem_type')
+    dir = f'matching_{problem_type}_data'
     filename_pattern = ''
-    if "Transport Assignment" == input_data.get('problem_type'):
+    if "Transport Assignment" == problem_type:
         num_driver = len(input_data.get('driver_names'))
         num_zone = len(input_data.get('zone_names'))
-        dir = 'matching_transport_data'
         filename_pattern = f"driver{num_driver}_zone{num_zone}"
-    elif "Resource Skill Matching" == input_data.get('problem_type'):
+    elif "resource skill" == problem_type:
         num_resources = input_data.get('num_resources')
         num_projects = input_data.get('num_projects')
-        dir = 'matching_resource_data'
         filename_pattern = f"resource{num_resources}_project{num_projects}"
 
     return save_json_data(input_data, dir, filename_pattern)

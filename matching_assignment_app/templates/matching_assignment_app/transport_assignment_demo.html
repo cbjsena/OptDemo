@@ -48,7 +48,7 @@
 
     <form method="POST" id="assignmentForm">
         {% csrf_token %}
-        <input type="hidden" name="problem_type" value="Transport Assignment" id="problem_type">
+        <input type="hidden" name="problem_type" value="transport assignment" id="problem_type">
         <input type="hidden" name="num_items" value="{{ submitted_num_items }}">
 
         <div class="form-section">
@@ -96,7 +96,7 @@
     {% endif %}
     {% if opt_results is not None or error_message or success_message %}
     <hr class="my-4">
-    <h3 class="mt-4">Optimization Results ({{ form_data.problem_type }})</h3>
+    <h3 class="mt-4">Optimization Results ({{ active_submenu }})</h3>
     {% endif %}
     {% if error_message %}
         <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>

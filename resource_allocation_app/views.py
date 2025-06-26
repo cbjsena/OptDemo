@@ -49,7 +49,7 @@ def budget_allocation_demo_view(request):
 
     context = {
         'active_model': 'Resource Allocation',
-        'active_submenu': 'budget_allocation_demo',
+        'active_submenu': 'Budget Allocation Demo',
         'num_items_options': range(1, 11),
         'form_data': form_data,
         'results': None,
@@ -139,7 +139,7 @@ def financial_portfolio_demo_view(request):
 
     context = {
         'active_model': 'Resource Allocation',
-        'active_submenu': 'financial_portfolio_demo',
+        'active_submenu': 'Financial Portfolio Demo',
         'num_assets_options': range(2, 6),  # 예: 2~5개 자산
         'form_data': current_form_data,
         'results': None,
@@ -278,7 +278,7 @@ def data_center_capacity_demo_view(request):
 
     context = {
         'active_model': 'Resource Allocation',
-        'active_submenu': 'data_center_capacity_demo',
+        'active_submenu': 'Data Center Capacity Demo',
         'form_data': form_data, # GET 또는 POST로부터 채워진 form_data
         'results': None,
         'error_message': None,

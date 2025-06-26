@@ -74,7 +74,7 @@ def diet_problem_demo_view(request):
 
     context = {
         'active_model': 'Puzzles & Real-World Logic',
-        'active_submenu': 'diet_problem_demo',
+        'active_submenu': 'Diet Problem Demo',
         'nutrients_list': nutrients_list,
         'foods_list': foods_list,
         'form_data': form_data,
@@ -156,7 +156,7 @@ def sports_scheduling_introduction_view(request):
 def sports_scheduling_demo_view(request):
     context = {
         'active_model': 'Puzzles & Real-World Logic',
-        'active_submenu': 'sports_scheduling_demo'
+        'active_submenu': 'Sports Scheduling Demo'
     }
     logger.debug("Rendering Sports Scheduling demo page.")
     return render(request, 'puzzles_logic_app/sports_scheduling_demo.html', context)
@@ -173,7 +173,7 @@ def nurse_rostering_introduction_view(request):
 def nurse_rostering_demo_view(request):
     context = {
         'active_model': 'Puzzles & Real-World Logic',
-        'active_submenu': 'nurse_rostering_demo'
+        'active_submenu': 'Nurse Rostering Demo'
     }
     logger.debug("Rendering Nurse Rostering demo page.")
     return render(request, 'puzzles_logic_app/nurse_rostering_demo.html', context)
@@ -190,7 +190,7 @@ def tsp_introduction_view(request):
 def tsp_demo_view(request):
     context = {
         'active_model': 'Puzzles & Real-World Logic',
-        'active_submenu': 'tsp_demo'
+        'active_submenu': 'TSP Demo'
     }
     logger.debug("Rendering TSP demo page.")
     return render(request, 'puzzles_logic_app/tsp_demo.html', context)
@@ -207,7 +207,7 @@ def sudoku_introduction_view(request):
 def sudoku_demo_view(request):
     context = {
         'active_model': 'Puzzles & Real-World Logic',
-        'active_submenu': 'sudoku_demo'
+        'active_submenu': 'Sudoku Demo'
     }
     logger.debug("Rendering Sudoku demo page.")
     return render(request, 'puzzles_logic_app/sudoku_demo.html', context)

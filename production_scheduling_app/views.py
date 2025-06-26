@@ -77,7 +77,7 @@ def lot_sizing_demo_view(request):
 
     context = {
         'active_model': 'Production & Scheduling',
-        'active_submenu': 'lot_sizing_demo',
+        'active_submenu': 'Lot Sizing Demo',
         'periods_data': periods_data, # 구조화된 리스트 전달
         'results': None, 'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
@@ -174,7 +174,7 @@ def single_machine_demo_view(request):
 
     context = {
         'active_model': 'Production & Scheduling',
-        'active_submenu': 'single_machine_demo',
+        'active_submenu': 'Single Machine Demo',
         'jobs_list': jobs_list,  # 구조화된 리스트 전달
         'results': None,
         'error_message': None, 'success_message': None,
@@ -285,7 +285,7 @@ def flow_shop_demo_view(request):
 
     context = {
         'active_model': 'Production & Scheduling',
-        'active_submenu': 'flow_shop_demo',
+        'active_submenu': 'Flow Shop Demo',
         'jobs_list': jobs_list,
         'results': None, 'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
@@ -417,7 +417,7 @@ def job_shop_demo_view(request):
 
     context = {
         'active_model': 'Production & Scheduling',
-        'active_submenu': 'job_shop_demo',
+        'active_submenu': 'Job Shop Demo',
         'jobs_list': jobs_list,  # 평평한 form_data 대신 구조화된 리스트 전달
         'results': None, 'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
@@ -531,7 +531,7 @@ def rcpsp_demo_view(request):
 
     context = {
         'active_model': 'Production & Scheduling',
-        'active_submenu': 'rcpsp_demo',
+        'active_submenu': 'RCPSP Demo',
         'resources_list': resources_list,
         'activities_list': activities_list,
         'results': None, 'error_message': None, 'success_message': None, 'info_message': None,

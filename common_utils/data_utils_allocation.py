@@ -230,11 +230,11 @@ def save_allocation_json_data(input_data):
     dir=f'allocation_{problem_type}_data'
     filename_pattern = ''
     if "budjet" == problem_type:
-        num_item = len(input_data.get('items_data'))
-        filename_pattern = f"item{num_item}"
+        num_items = input_data.get('num_items')
+        filename_pattern = f"item{num_items}"
     elif "datacenter" == problem_type:
-        num_server = len(input_data.get('server_types'))
-        num_service = len(input_data.get('service_demands'))
-        filename_pattern = f"svr{num_server}_svc{num_service}"
+        num_server_types =input_data.get('num_server_types')
+        num_services = input_data.get('num_services')
+        filename_pattern = f"svr{num_server_types}_svc{num_services}"
 
     return save_json_data(input_data, dir, filename_pattern)
