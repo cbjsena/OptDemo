@@ -153,12 +153,73 @@ def sports_scheduling_introduction_view(request):
     logger.debug("Rendering Sports Scheduling introduction page.")
     return render(request, 'puzzles_logic_app/sports_scheduling_introduction.html', context)
 
+
 def sports_scheduling_demo_view(request):
+    teams_list = []
+    form_data_post = {}
+    if request.method == 'POST':
+        form_data_post = request.POST.copy()
+        submitted_num_teams = int(form_data_post.get('num_teams', preset_sport_schedule_num_teams))
+        submitted_schedule_type = form_data_post.get('schedule_type', preset_sport_schedule_type)
+        submitted_objective = form_data_post.get('objective_choice', preset_sport_schedule_objective_choice)
+        submitted_max_consecutive = int(form_data_post.get('max_consecutive', preset_sport_schedule_max_consecutive))
+        for i in range(submitted_num_teams):
+            teams_list.append(form_data_post.get(f'team_{i}_name'))
+    else:  # GET
+        submitted_num_teams = int(request.GET.get('num_teams_to_show', preset_sport_schedule_num_teams))
+        submitted_schedule_type = request.GET.get('schedule_type', preset_sport_schedule_type)
+        submitted_objective = request.GET.get('objective_choice_get', preset_sport_schedule_objective_choice)
+        submitted_max_consecutive = int(request.GET.get('max_consecutive', preset_sport_schedule_objective_choice))
+        for i in range(submitted_num_teams):
+            team_name = request.GET.get(f'team_{i}_name', preset_sport_schedule_team_list[i])
+            teams_list.append(team_name)
+
     context = {
         'active_model': 'Puzzles & Real-World Logic',
-        'active_submenu': 'Sports Scheduling Demo'
+        'active_submenu': 'Sports Scheduling Demo',
+        'teams_list': teams_list,
+        'results': None, 'error_message': None, 'success_message': None,
+        'processing_time_seconds': "N/A",
+        'num_teams_options': range(2, 11),
+        'submitted_num_teams': submitted_num_teams,
+        'submitted_objective': submitted_objective,
+        'submitted_schedule_type': submitted_schedule_type,
+        'submitted_max_consecutive': submitted_max_consecutive,
+        'objective_options': preset_sport_schedule_objective_list,
+        'schedule_type_options': preset_sport_schedule_type_options_list,
+        'max_consecutive_options': range(2, 6),
+        'all_teams_for_matrix': preset_sport_schedule_team_list,
+        'full_distance_matrix': preset_sport_schedule_dist_map_10
     }
-    logger.debug("Rendering Sports Scheduling demo page.")
+
+    if request.method == 'POST':
+        try:
+            # 1. 데이터 파일 새성 및 검증
+            input_data = create_sports_scheduling_json_data(form_data_post, submitted_num_teams,
+                                                            submitted_objective, submitted_schedule_type)
+
+            # 2. 파일 저장
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_puzzle_json_data(input_data)
+                if save_error:
+                    context['error_message'] = save_error
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
+
+            # 3. 최적화 실행
+            results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
+
+            if error_msg_opt:
+                context['error_message'] = error_msg_opt
+            elif results_data:
+                context['results'] = results_data
+                context['success_message'] = f"Total distance: {results_data['total_distance']} km, Max Gap: {results_data['max_gap']} km"
+
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+            logger.error(f"Unexpected error in sports_scheduling_demo_view: {e}", exc_info=True)
+
     return render(request, 'puzzles_logic_app/sports_scheduling_demo.html', context)
 
 # --- 3. Nurse Rostering Problem ---

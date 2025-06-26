@@ -38,7 +38,7 @@ DEMO_DIR_MAP ={'matching_cf_tft_data':DEMO_DIR/'match_cf_tft_data',
                'production_job_shop_data':DEMO_DIR/'production_job_shop_data',
                'production_rcpsp_data':DEMO_DIR/'production_rcpsp_data',
                'puzzles_diet_problem_data':DEMO_DIR/'puzzles_diet_problem_data',
-               'puzzles_sport_scheduling_data':DEMO_DIR/'puzzles_sport_scheduling_data',
+               'puzzles_sports_scheduling_data':DEMO_DIR/'puzzles_sports_scheduling_data',
                'puzzles_nurse_rostering':DEMO_DIR/'puzzles_nurse_rostering',
                'puzzles_tsp_data':DEMO_DIR/'puzzles_tsp_data',
                'puzzles_sudoku_data':DEMO_DIR/'puzzles_sudoku_data'

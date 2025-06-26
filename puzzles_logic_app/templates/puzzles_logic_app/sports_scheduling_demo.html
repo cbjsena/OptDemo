@@ -1,12 +1,320 @@
 {% extends "core/base.html" %}
+{% load static %}
+{% load production_filters %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Sports Scheduling Demo{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+    <style>
+        .distance-matrix-table {
+            font-size: 0.8rem;
+        }
+        .distance-matrix-table th, .distance-matrix-table td {
+            min-width: 65px; /* 셀 최소 너비 */
+            text-align: center;
+            vertical-align: middle;
+        }
+        /* [수정] thead의 th에 적용된 vertical-lr 스타일 제거 */
+        .distance-matrix-table thead th {
+            /* writing-mode, transform 속성 제거 */
+            padding: 0.5rem;
+            white-space: nowrap; /* 팀 이름이 길 경우 줄바꿈 방지 */
+            background-color: #f8f9fa;
+        }
+        /* 첫 번째 열 헤더(세로 팀 이름)는 오른쪽 정렬 */
+        .distance-matrix-table tbody th {
+            text-align: right;
+            padding-right: 10px;
+            background-color: #f8f9fa;
+        }
+    </style>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Optimization Demo Platform</h1>
-    <h2>{{active_model}}</h2>
-    <h3>{{active_submenu}}</h3>
-    <p>준비 중 입니다. </p>
+<div class="container-fluid">
+    <h1 class="h2">Sports Scheduling Demo</h1>
+    <p>팀 수, 리그 방식, 최적화 목표를 선택하고 팀 이름을 입력하여 최적의 리그 대진표를 생성합니다.</p>
+    <p>싱글 라운드 로빈은 모든 팀이 다른 모든 팀과 한 번씩 만나는 방식이고
+        더블 라운드 로빈은 모든 팀이 다른 모든 팀과 홈&어웨이로 한 번씩 만나는 방식입니다. </p>
+
+    <div class="mb-3 form-inline">
+        <div class="form-group mr-2">
+            <label for="num_teams_to_show" class="mr-2">팀 수 (2-8):</label>
+            <select id="num_teams_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                {% for i in num_teams_options %}
+                    <option value="{{ i }}" {% if i == submitted_num_teams %}selected{% endif %}>{{ i }}팀</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group mr-2">
+            <label for="schedule_type_get" class="mr-2">리그 방식:</label>
+            <select id="schedule_type_get" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                {% for stype in schedule_type_options %}
+                    <option value="{{ stype.value }}" {% if stype.value == submitted_schedule_type %}selected{% endif %}>{{ stype.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group mr-2">
+            <label for="objective_choice_get" class="mr-2">최적화 목표:</label>
+            <select id="objective_choice_get" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                {% for obj in objective_options %}
+                    <option value="{{ obj.value }}" {% if obj.value == submitted_objective %}selected{% endif %}>{{ obj.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group mr-2">
+            <label for="max_consecutive_get" class="mr-2">최대 연속 홈/원정:</label>
+            <select id="max_consecutive_get" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                {% for i in max_consecutive_options %}
+                    <option value="{{ i }}" {% if i == submitted_max_consecutive %}selected{% endif %}>{{ i }} 경기</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group ml-auto">
+            <button type="button" class="btn btn-sm btn-success mr-2" id="randomizeBtn">Random Names</button>
+            <a href="{% url 'puzzles_logic_app:sports_scheduling_demo' %}" class="btn btn-sm btn-warning">Default</a>
+        </div>
+    </div>
+
+    <form method="GET" id="settingsForm" style="display: none;"></form>
+
+    <form method="POST" id="schedulingForm">
+        {% csrf_token %}
+        <input type="hidden" name="problem_type" value="sports_scheduling">
+        <input type="hidden" name="num_teams" value="{{ submitted_num_teams }}">
+        <input type="hidden" name="schedule_type" value="{{ submitted_schedule_type }}">
+        <input type="hidden" name="objective_choice" value="{{ submitted_objective }}">
+        <input type="hidden" name="max_consecutive" value="{{ submitted_max_consecutive }}">
+
+        <div class="accordion mb-4" id="distanceMatrixAccordion">
+            <div class="card">
+                <div class="card-header" id="headingOne">
+                    <h2 class="mb-0">
+                        <button class="btn btn-link btn-block text-left" type="button"
+                                data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                            <strong>참고: 계산에 사용된 팀 간 거리 정보 (km)</strong> (클릭하여 보기/숨기기)
+                        </button>
+                    </h2>
+                </div>
+                <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#distanceMatrixAccordion">
+                    <div class="card-body">
+                        <p class="small text-muted">이 데모는 '총 이동 거리 최소화' 목표 선택 시 아래의 사전 정의된 거리 행렬을 사용합니다.</p>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm distance-matrix-table">
+                                <thead>
+                                    <tr>
+                                        <th>From \ To</th>
+                                        {% for team_name in all_teams_for_matrix %}
+                                            <th>{{ team_name }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in full_distance_matrix %}
+                                    <tr>
+                                        <th class="text-nowrap">{{ all_teams_for_matrix|get_item_simple:forloop.counter0 }}</th>
+                                        {% for dist in row %}
+                                            <td>{{ dist }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>참가 팀 정보</h4>
+            <div class="row">
+                {% for team_name in teams_list %}
+                <div class="col-md-4 col-lg-3">
+                    <div class="form-group">
+                        <label for="team_{{ forloop.counter0 }}_name">팀 {{ forloop.counter }}:</label>
+                        <input type="text" class="form-control form-control-sm" id="team_{{ forloop.counter0 }}_name" name="team_{{ forloop.counter0 }}_name" value="{{ team_name }}">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 대진표 생성</button>
+    </form>
+    {# --- 최적화 입력 데이터 폼 종료 --- #}
+
+    {# 1. 결과 메세지 #}
+    {% if success_save_message%}
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
+    {% endif %}
+    {% if opt_results is not None or error_message or success_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Results ({{ active_submenu }})</h3>
+    {% endif %}
+    {% if error_message %}
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
+    {% endif %}
+
+    {% if results and results.schedule %}
+        {# --- 결과 요약 카드 --- #}
+        <div class="card mt-3">
+            <div class="card-header"><strong>시즌 대진표 요약</strong></div>
+            <div class="card-body">
+                {% if results.total_distance != 'N/A' %}
+                <p><strong>계산된 총 이동 거리:</strong> {{ results.total_distance|floatformat:0 }} km</p>
+                {% endif %}
+                <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
+            </div>
+        </div>
+
+        {# --- 팀별 이동 거리 카드 --- #}
+        {% if results.team_distances %}
+        <div class="card mt-3">
+            <div class="card-header"><strong>팀별 총 이동 거리</strong></div>
+             <div class="table-responsive">
+                <table class="table table-sm table-striped text-center mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            {% for item in results.team_distances %}<th>{{ item.name }}</th>{% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            {% for item in results.team_distances %}<td>{{ item.distance|floatformat:0 }} km</td>{% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {# --- 시즌 대진표 카드 --- #}
+        {% if results.schedule %}
+        <div class="card mt-3">
+            <div class="card-header"><strong>시즌 대진표 (홈팀 vs 원정팀)</strong></div>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered text-center mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>주차 (Week)</th>
+                            {% if results.schedule.0.matchups %}
+                                {% for i in results.schedule.0.matchups|length|get_range %}
+                                <th>경기 {{ i|add:1 }}</th>
+                                {% endfor %}
+                            {% else %}
+                                <!-- DEBUG: No matchups in the first week. -->
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for week in results.schedule %}
+                        <tr>
+                            <td><strong>{{ week.week }}</strong></td>
+                            {% for match in week.matchups %}
+                                <td>
+                                    {% if match.away == 'BYE' %}
+                                        <span class="badge badge-secondary">{{ match.home }} 휴식</span>
+                                    {% else %}
+                                        {{ match.0 }} (H) vs {{ match.1 }} (A)
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if results.has_bye %}
+            <div class="card-footer text-muted small">
+                참고: 팀 수가 홀수이므로, 매주 한 팀은 'BYE'(휴식)를 갖습니다.
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <!-- DEBUG: 'results.schedule' is empty or does not exist. -->
+        {% endif %}
+    {% endif %} {# end if results #}
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    function submitSettingsForm() {
+        console.log("Settings changed, submitting form with current values.");
+
+        const settingsForm = document.getElementById('settingsForm');
+        settingsForm.innerHTML = '';
+
+        // 1. 드롭다운 메뉴의 현재 값들을 숨겨진 필드로 추가
+        const numTeamsSelect = document.getElementById('num_teams_to_show');
+        const scheduleTypeSelect = document.getElementById('schedule_type_get')
+        const numObjectSelect = document.getElementById('objective_choice_get');
+        const maxConsecutiveSelect = document.getElementById('max_consecutive_get');
+
+        let hiddenNumTeams = document.createElement('input');
+        hiddenNumTeams.type = 'hidden';
+        hiddenNumTeams.name = 'num_teams_to_show';
+        hiddenNumTeams.value = numTeamsSelect.value;
+        settingsForm.appendChild(hiddenNumTeams);
+
+        let hiddenScheduleType = document.createElement('input');
+        hiddenScheduleType.type = 'hidden';
+        hiddenScheduleType.name = 'schedule_type';
+        hiddenScheduleType.value = scheduleTypeSelect.value;
+        settingsForm.appendChild(hiddenScheduleType);
+
+        let hiddenObjective = document.createElement('input');
+        hiddenObjective.type = 'hidden';
+        hiddenObjective.name = 'objective_choice_get';
+        hiddenObjective.value = numObjectSelect.value;
+        settingsForm.appendChild(hiddenObjective);
+
+        let hiddenMaxConsecutive = document.createElement('input');
+        hiddenMaxConsecutive.type = 'hidden';
+        hiddenMaxConsecutive.name = 'max_consecutive';
+        hiddenMaxConsecutive.value = maxConsecutiveSelect.value;
+        settingsForm.appendChild(hiddenMaxConsecutive);
+
+        // 2. 현재 테이블의 모든 입력 값을 숨겨진 필드로 추가
+        const numTeamsInTable = {{ submitted_num_teams }};
+        for (let i = 0; i < numTeamsInTable; i++) {
+            const nameElement = document.getElementById(`team_${i}_name`);
+            if(nameElement) {
+                let hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = `team_${i}_name`;
+                hiddenInput.value = nameElement.value;
+                settingsForm.appendChild(hiddenInput);
+            }
+        }
+
+        // 3. GET 방식으로 폼 제출 (페이지 리로드)
+        settingsForm.submit();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const randomizeBtn = document.getElementById('randomizeBtn');
+        if (randomizeBtn) {
+            randomizeBtn.addEventListener('click', function() {
+                const defaultTeams = ["한화", "LG", "롯데", "KIA", "삼성","KT", "SSG", "NC", "두산", "키움"];
+                const numTeams = parseInt(document.getElementById('num_teams_to_show').value);
+
+                // Shuffle and pick
+                const shuffled = defaultTeams.sort(() => 0.5 - Math.random());
+                let selectedTeams = shuffled.slice(0, numTeams);
+
+                for (let i = 0; i < numTeams; i++) {
+                    const nameInput = document.getElementById(`team_${i}_name`);
+                    if(nameInput) nameInput.value = selectedTeams[i];
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

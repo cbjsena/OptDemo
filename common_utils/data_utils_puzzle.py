@@ -33,7 +33,47 @@ preset_diet_foods_data = [
     {'name': '올리브 오일(10g)', 'cost': '100', 'min_intake': '0', 'max_intake': '5',
      'nutrients': ['90', '0', '10', '0', '0']},
 ]
+preset_sport_schedule_max_consecutive=3
+preset_sport_schedule_objective_choice='minimize_travel'
+preset_sport_schedule_type='double'
+preset_sport_schedule_type_options_list = [
+    {'value': 'single', 'name': '싱글 라운드 로빈 (팀당 1경기)'},
+    {'value': 'double', 'name': '더블 라운드 로빈 (팀당 2경기)'},
+]
+preset_sport_schedule_objective_list = [
+    {'value': 'minimize_travel', 'name': '총 이동 거리 최소화'},
+    {'value': 'distance_gap', 'name': '팀간 이동거리 차이 최소화'},
+    # {'value': 'max_profit', 'name': '흥행성'},
+]
+preset_sport_schedule_num_teams = 4
+preset_sport_schedule_team_list = [
+    "한화", "LG", "롯데", "KIA", "삼성",
+    "KT", "SSG", "NC", "두산", "키움"
+]
 
+# 각 팀의 연고지 도시 (거리 계산용, 순서는 위와 동일)
+preset_sport_schedule_cities = ['대전', '서울', '부산', '광주', '대구', '수원', '인천', '창원', '서울', '서울']
+# 도시 간 대략적인 거리 행렬 (km) - 예시 데이터
+preset_sport_schedule_distance_matrix_km = [
+    # 대전, 서울, 부산, 광주, 대구, 수원, 인천, 창원
+    [  0, 160, 200, 140, 100, 130, 200, 150], # 대전
+    [160,   0, 325, 270, 240,  30,  30, 290], # 서울
+    [200, 325,   0, 200,  95, 300, 350,  40], # 부산
+    [140, 270, 200,   0, 150, 240, 300, 160], # 광주
+    [100, 240,  95, 150,   0, 210, 265,  60], # 대구
+    [130,  30, 300, 240, 210,   0,  40, 260], # 수원
+    [200,  30, 350, 300, 265,  40,   0, 320], # 인천
+    [150, 290,  40, 160,  60, 260, 320,   0], # 창원
+]
+
+preset_sport_schedule_dist_map_10 = [[0] * 10 for _ in range(10)]
+preset_sport_schedule_city_map = [0, 1, 2, 3, 4, 5, 6, 7, 1, 1]  # 10개 팀의 도시 인덱스
+for i in range(10):
+    for j in range(10):
+        city_i = preset_sport_schedule_city_map[i]
+        city_j = preset_sport_schedule_city_map[j]
+        if city_i < 8 and city_j < 8:
+            preset_sport_schedule_dist_map_10[i][j] = preset_sport_schedule_distance_matrix_km[city_i][city_j]
 
 def create_diet_json_data(form_data):
     logger.debug("Creating and validating Diet Problem input data from form.")
@@ -132,6 +172,32 @@ def calculate_manual_diet(input_data, manual_intakes):
     return manual_results
 
 
+def create_sports_scheduling_json_data(form_data, num_teams, objective, schedule_type):
+    # 팀 이름 리스트 생성
+    teams_list = [form_data.get(f'team_{i}_name') for i in range(num_teams)]
+    # 선택된 팀에 해당하는 거리 행렬 슬라이싱
+    selected_dist_matrix = [[0] * num_teams for _ in range(num_teams)]
+    for i in range(num_teams):
+        for j in range(num_teams):
+            # default_teams_pool에서의 원래 인덱스를 찾아야 함
+            original_idx_i = preset_sport_schedule_team_list.index(teams_list[i]) if teams_list[i] in preset_sport_schedule_team_list else -1
+            original_idx_j = preset_sport_schedule_team_list.index(teams_list[j]) if teams_list[j] in preset_sport_schedule_team_list else -1
+            if original_idx_i != -1 and original_idx_j != -1:
+                selected_dist_matrix[i][j] = preset_sport_schedule_dist_map_10[original_idx_i][original_idx_j]
+
+    input_data = {
+        'problem_type': 'sports_scheduling',
+        'teams': teams_list,
+        'num_teams': num_teams,
+        'distance_matrix': selected_dist_matrix,  # 거리 행렬 추가
+        'objective_choice': objective,
+        'schedule_type': schedule_type,
+        'max_consecutive': int(form_data.get('max_consecutive'))
+    }
+
+    return input_data
+
+
 def save_puzzle_json_data(input_data):
     problem_type = input_data.get('problem_type')
     dir = f'puzzles_{problem_type}_data'
@@ -141,10 +207,11 @@ def save_puzzle_json_data(input_data):
         num_foods = input_data.get('num_foods')
         num_nutrients = input_data.get('num_nutrients')
         filename_pattern = f"food{num_foods}_nutrient{num_nutrients}"
-    elif "sport_scheduling" == problem_type:
-        num_foods = input_data.get('num_foods')
-        num_nutrients = input_data.get('num_nutrients')
-        filename_pattern = f"food{num_foods}_nutrient{num_nutrients}"
+    elif "sports_scheduling" == problem_type:
+        num_teams = input_data.get('num_teams')
+        objective_choice = input_data.get('objective_choice')
+        schedule_type = input_data.get('schedule_type')
+        filename_pattern = f"{objective_choice}_{schedule_type}_team{num_teams}"
     elif "nurse_rostering" == problem_type:
         num_foods = input_data.get('num_foods')
         num_nutrients = input_data.get('num_nutrients')
