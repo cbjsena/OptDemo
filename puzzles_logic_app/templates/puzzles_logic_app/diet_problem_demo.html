@@ -50,10 +50,10 @@
     {# --- 최적화 실행을 위한 POST 폼 --- #}
     <form method="POST" id="dietForm">
         {% csrf_token %}
+        <input type="hidden" name="problem_type" value="diet_problem">
         <input type="hidden" name="action" value="optimize">
         <input type="hidden" name="num_foods" value="{{ submitted_num_foods }}">
         <input type="hidden" name="num_nutrients" value="{{ submitted_num_nutrients }}">
-        <input type="hidden" name="problem_type" value="diet_problem">
 
         <div class="form-section">
             <h4>1. 영양소 요구사항 (Nutrient Requirements)</h4>
@@ -104,15 +104,22 @@
 
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 식단 계산 실행</button>
     </form>
+    {# --- 최적화 입력 데이터 폼 종료 --- #}
 
-    {# --- 결과 표시 영역 --- #}
-    {% if results or error_message or success_message %}
-        <hr class="my-4"><h3 class="mt-4">Optimization Results</h3>
-        {% if info_message %}<div class="alert alert-info">{{ info_message }}</div>{% endif %}
-        {% if success_message and not error_message %}<div class="alert alert-success">{{ success_message }}</div>{% endif %}
-        {% if error_message %}<div class="alert alert-danger"><strong>오류:</strong> {{ error_message }}</div>{% endif %}
+    {# 1. 결과 메세지 #}
+    {% if success_save_message%}
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
     {% endif %}
-
+    {% if opt_results is not None or error_message or success_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Results ({{ active_submenu }})</h3>
+    {% endif %}
+    {% if error_message %}
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
+    {% endif %}
     {% if results %}
         <div class="row">
             <div class="col-lg-6">

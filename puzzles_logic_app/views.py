@@ -77,7 +77,9 @@ def diet_problem_demo_view(request):
         'active_submenu': 'diet_problem_demo',
         'nutrients_list': nutrients_list,
         'foods_list': foods_list,
-        'results': None, 'manual_results': None, 'error_message': None, 'success_message': None, 'info_message': None,
+        'form_data': form_data,
+        'results': None, 'manual_results': None,
+        'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
         'num_foods_options': range(2, 11),
         'num_nutrients_options': range(2, 6),
@@ -86,18 +88,21 @@ def diet_problem_demo_view(request):
     }
 
     if request.method == 'POST':
-        logger.info("Diet Problem Demo POST request processing.")
         action = form_data.get('action')
         try:
-            input_data = create_diet_json_data(form_data)
+            if action == "optimize":    # 최적화 실행 버튼
+                logger.info(f"Diet Problem Demo  {action} POST request processing.")
+                # 1. 데이터 파일 새성 및 검증
+                input_data = create_diet_json_data(form_data)
 
-            if settings.SAVE_DATA_FILE:
-                success_save_message, save_error = save_puzzle_json_data(input_data)
-                if save_error:
-                    context['error_message'] = save_error
-                elif success_save_message:
-                    context['success_save_message'] = success_save_message
-            if action == "optimize":
+                # 2. 파일 저장
+                if settings.SAVE_DATA_FILE:
+                    success_save_message, save_error = save_puzzle_json_data(input_data)
+                    if save_error:
+                        context['error_message'] = save_error
+                    elif success_save_message:
+                        context['success_save_message'] = success_save_message
+
                 # 3. 최적화 실행
                 results_data, error_msg_opt, processing_time = run_diet_optimizer(input_data)
                 context['processing_time_seconds'] = processing_time
@@ -107,15 +112,29 @@ def diet_problem_demo_view(request):
                 elif results_data:
                     context['results'] = results_data
                     context['success_message'] = f"최적 식단 계산 완료! 최소 비용: {results_data['total_cost']}"
+                    # 다음 수동 조회를 위해 원본 데이터와 결과를 숨겨진 필드로 전달할 수 있도록 저장
+                    context['original_input_json'] = json.dumps(input_data)
+                    context['optimal_results_json'] = json.dumps(results_data)
             elif action == "manual_check":
+                logger.info(f"Flow Shop Demo {action} POST request processing.")
+
+                # 숨겨진 필드에서 원본 데이터와 최적화 결과 로드
+                original_input_str = form_data.get('original_input_json')
+                optimal_results_str = form_data.get('optimal_results_json')
+                if not original_input_str or not optimal_results_str:
+                    raise ValueError("비교를 위한 원본 데이터 또는 최적화 결과가 없습니다.")
+
+                original_input_data = json.loads(original_input_str)
+                optimal_results_data = json.loads(optimal_results_str)
+                context['results'] = optimal_results_data  # 최적 결과 다시 표시
+                context['original_input_json'] = original_input_str
+                context['optimal_results_json'] = optimal_results_str
+
                 manual_intakes = {f'food_{i}_intake': float(form_data.get(f'manual_food_{i}_intake', '0')) for i in
                                   range(submitted_num_foods)}
-                manual_results_data = calculate_manual_diet(input_data, manual_intakes)
+                manual_results_data = calculate_manual_diet(original_input_data, manual_intakes)
                 context['manual_results'] = manual_results_data
                 context['info_message'] = "수동 입력 식단 계산 완료."
-                # 최적화 결과도 함께 표시하기 위해 다시 실행
-                results_data, _, _ = run_diet_optimizer(input_data)
-                context['results'] = results_data
 
         except ValueError as ve:
             context['error_message'] = f"입력값 오류: {str(ve)}"

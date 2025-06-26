@@ -7,10 +7,10 @@ logger = logging.getLogger(__name__)
 preset_diet_nutrient_number = 2
 preset_diet_food_number = 4
 preset_diet_nutrients_data = [
-    {'name': '칼로리(kcal)', 'min': '2000', 'max': '2500'},
-    {'name': '단백질(g)', 'min': '50', 'max': '100'},
-    {'name': '지방(g)', 'min': '40', 'max': '70'},
-    {'name': '탄수화물(g)', 'min': '250', 'max': '350'},
+    {'name': '칼로리(kcal)', 'min': '100', 'max': '2500'},
+    {'name': '단백질(g)', 'min': '20', 'max': '100'},
+    {'name': '지방(g)', 'min': '20', 'max': '70'},
+    {'name': '탄수화물(g)', 'min': '20', 'max': '350'},
     {'name': '나트륨(mg)', 'min': '0', 'max': '2000'}
 ]
 preset_diet_foods_data = [
@@ -40,18 +40,11 @@ def create_diet_json_data(form_data):
     num_foods = int(form_data.get('num_foods', 0))
     num_nutrients = int(form_data.get('num_nutrients', 0))
 
-    input_data = {
-        "problem_type": "diet_problem",
-        "num_foods": num_foods,
-        "num_nutrients": num_nutrients,
-        "food_items": [],
-        "nutrient_reqs": []
-    }
-
+    nutrient_reqs=[]
     # 1. 영양소 요구사항 파싱
     for i in range(num_nutrients):
         try:
-            input_data['nutrient_reqs'].append({
+            nutrient_reqs.append({
                 'name': form_data.get(f'nutrient_{i}_name'),
                 'min': float(form_data.get(f'nutrient_{i}_min')),
                 'max': float(form_data.get(f'nutrient_{i}_max'))
@@ -60,6 +53,7 @@ def create_diet_json_data(form_data):
             raise ValueError(f"영양소 {i + 1}의 최소/최대 요구량 값이 올바른 숫자가 아닙니다.")
 
     # 2. 식품 데이터 파싱
+    food_items=[]
     for i in range(num_foods):
         try:
             food_item = {
@@ -72,11 +66,18 @@ def create_diet_json_data(form_data):
             for j in range(num_nutrients):
                 nutrient_val = float(form_data.get(f'nutrient_val_{i}_{j}'))
                 food_item['nutrients'].append(nutrient_val)
-            input_data['food_items'].append(food_item)
+            food_items.append(food_item)
         except (ValueError, TypeError):
             raise ValueError(f"식품 '{form_data.get(f'food_{i}_name')}'의 입력값이 올바르지 않습니다.")
 
-    logger.debug(input_data)
+    input_data = {
+        "problem_type": "diet_problem",
+        "num_foods": num_foods,
+        "num_nutrients": num_nutrients,
+        "food_items": food_items,
+        "nutrient_reqs": nutrient_reqs
+    }
+
     logger.info("End Diet Problem Demo Input data processing.")
     return input_data
 
@@ -133,8 +134,9 @@ def calculate_manual_diet(input_data, manual_intakes):
 
 def save_puzzle_json_data(input_data):
     problem_type = input_data.get('problem_type')
-    dir = f'puzzle_{problem_type}_data'
+    dir = f'puzzles_{problem_type}_data'
     filename_pattern = ''
+
     if "diet_problem" == problem_type:
         num_foods = input_data.get('num_foods')
         num_nutrients = input_data.get('num_nutrients')
