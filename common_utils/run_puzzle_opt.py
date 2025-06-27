@@ -340,7 +340,7 @@ def run_sports_scheduling_optimizer_gurobi1(input_data):
     num_teams_original = len(teams)
 
     logger.info(
-        f"Running {schedule_type.upper()} Scheduler with Gurobi. Objective: {objective_choice}, Teams: {num_teams_original}")
+        f"Running {schedule_type.upper()} Scheduler with Gurobi-1. Objective: {objective_choice}, Teams: {num_teams_original}")
 
     if num_teams_original < 2:
         return None, "오류: 최소 2개 팀이 필요합니다.", 0.0
@@ -507,7 +507,7 @@ def run_sports_scheduling_optimizer_gurobi2(input_data):
     num_teams_original = len(teams)
 
     logger.info(
-        f"Running {schedule_type.upper()} Scheduler with Gurobi. Objective: {objective_choice}, Teams: {num_teams_original}")
+        f"Running {schedule_type.upper()} Scheduler with Gurobi-2. Objective: {objective_choice}, Teams: {num_teams_original}")
 
     if num_teams_original < 2:
         return None, "오류: 최소 2개 팀이 필요합니다.", 0.0

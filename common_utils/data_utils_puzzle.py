@@ -2,6 +2,8 @@ from common_utils.common_data_utils import save_json_data
 import logging
 import datetime
 
+from django.conf import settings
+
 logger = logging.getLogger(__name__)
 
 preset_diet_nutrient_number = 2
@@ -46,8 +48,8 @@ preset_sport_schedule_objective_list = [
     {'value': 'distance_gap', 'name': '팀간 이동거리 차이 최소화'},
 ]
 preset_sport_schedule_solver_type_options_list = [
-    {'value': 'ortools', 'name': 'OR-Tools(무료)'},
-    {'value': 'gorobi', 'name': 'Gurobi(상용)'},
+    {'value': settings.SOLVER_ORTOOLS, 'name': 'OR-Tools(무료)'},
+    {'value': settings.SOLVER_GUROBI, 'name': 'Gurobi(상용)'},
 ]
 
 preset_sport_schedule_num_teams = 4

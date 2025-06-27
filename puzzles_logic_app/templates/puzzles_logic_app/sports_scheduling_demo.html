@@ -40,6 +40,7 @@
     <p>Sports Scheduling은 대단히 복잡한 문제로 무료 Solver인 OR-tools로는 해결하는데 많은 시간이 필요합니다.<br>
        Demo에서는 Gurobi 무료 버전을 이용하여 4팀까지 목적에 따른 완벽한 모델을 테스트 할 수 있습니다.<br>
        5팀 부터는 무료 버전의 범위를 초과하기 때문에 간단한 모델로 변경하여 목적에 따른 결과가 완벽히 반영되지 않을 수 있습니다.</p>
+
     <div class="mb-3 form-inline">
         <div class="form-group mr-2">
             <label for="num_teams_to_show" class="mr-2">팀 수 (2-8):</label>
@@ -57,7 +58,6 @@
                 {% endfor %}
             </select>
         </div>
-
         <div class="form-group mr-2">
             <label for="objective_choice_get" class="mr-2">최적화 목표:</label>
             <select id="objective_choice_get" class="form-control form-control-sm" onchange="submitSettingsForm()">
@@ -264,24 +264,40 @@
         settingsForm.innerHTML = '';
 
         // 1. 드롭다운 메뉴의 현재 값들을 숨겨진 필드로 추가
-        const selects = {
-            'num_teams_to_show': document.getElementById('num_teams_to_show'),
-            'schedule_type': document.getElementById('schedule_type_get'),
-            'objective_choice': document.getElementById('objective_choice_get'),
-            'max_consecutive': document.getElementById('max_consecutive_get')
-            'solver_type':  document.getElementById('solver_type_get');
-        };
+        const numTeamsSelect = document.getElementById('num_teams_to_show');
+        const hiddenNumTeams = document.createElement('input');
+        hiddenNumTeams.type = 'hidden';
+        hiddenNumTeams.name = 'num_teams_to_show';
+        hiddenNumTeams.value = numTeamsSelect.value;
+        settingsForm.appendChild(hiddenNumTeams);
 
-        for (const name in selects) {
-            const selectElement = selects[name];
-            if (selectElement) {
-                let hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = name;
-                hiddenInput.value = selectElement.value;
-                settingsForm.appendChild(hiddenInput);
-            }
-        }
+        const scheduleTypeSelect = document.getElementById('schedule_type_get')
+        const hiddenScheduleType = document.createElement('input');
+        hiddenScheduleType.type = 'hidden';
+        hiddenScheduleType.name = 'schedule_type';
+        hiddenScheduleType.value = scheduleTypeSelect.value;
+        settingsForm.appendChild(hiddenScheduleType);
+
+        const objectiveChoiceSelect = document.getElementById('objective_choice_get');
+        const hiddenObjective = document.createElement('input');
+        hiddenObjective.type = 'hidden';
+        hiddenObjective.name = 'objective_choice';
+        hiddenObjective.value = objectiveChoiceSelect.value;
+        settingsForm.appendChild(hiddenObjective);
+
+        const maxConsecutiveSelect = document.getElementById('max_consecutive_get');
+        const hiddenMaxConsecutive = document.createElement('input');
+        hiddenMaxConsecutive.type = 'hidden';
+        hiddenMaxConsecutive.name = 'max_consecutive';
+        hiddenMaxConsecutive.value = maxConsecutiveSelect.value;
+        settingsForm.appendChild(hiddenMaxConsecutive);
+
+        const solverTypeSelect = document.getElementById('solver_type_get');
+        const hiddenSolverType = document.createElement('input');
+        hiddenSolverType.type = 'hidden';
+        hiddenSolverType.name = 'solver_type';
+        hiddenSolverType.value = solverTypeSelect.value;
+        settingsForm.appendChild(hiddenSolverType);
 
         // 2. 현재 테이블의 모든 입력 값을 숨겨진 필드로 추가
         const numTeamsInTable = {{ submitted_num_teams }};
