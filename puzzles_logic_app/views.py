@@ -221,7 +221,11 @@ def sports_scheduling_demo_view(request):
                 else:
                     results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_gurobi1(input_data)
             else:
-                results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer(input_data)
+                if submitted_num_teams <= 4:
+                    results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_ortools2(input_data)
+                else:
+                    results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_ortools1(input_data)
+                # results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_ortools1(input_data)
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
