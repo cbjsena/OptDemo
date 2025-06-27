@@ -267,7 +267,7 @@ LOGGING = {
         },
         'matching_assignment_app': { # 우리 앱 로거
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'DEBUG', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'SOLVE', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,
         },
         'resource_allocation_app': { # 우리 앱 로거
@@ -277,12 +277,12 @@ LOGGING = {
         },
         'routing_logistics_app': { # 우리 앱 로거
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'DEBUG', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'SOLVE', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,
         },
         'production_scheduling_app': { # 우리 앱 로거
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'SOLVE', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,
         },
         'puzzles_logic_app': { # 우리 앱 로거
@@ -296,3 +296,6 @@ LOGGING = {
 # 로그 디렉토리 생성 (없으면)
 LOGS_DIR = BASE_DIR / 'logs'
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+ORTOOLS_TIME_LIMIT=180
+GUROBI_TIME_LIMIT=30

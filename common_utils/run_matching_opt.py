@@ -2,7 +2,7 @@ from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 
 import datetime
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('matching_assignment_app')
 
 
 def run_matching_cf_tft_algorithm(cf_panels, tft_panels):

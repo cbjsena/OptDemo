@@ -42,9 +42,14 @@ preset_sport_schedule_type_options_list = [
 ]
 preset_sport_schedule_objective_list = [
     {'value': 'minimize_travel', 'name': '총 이동 거리 최소화'},
+    {'value': 'fairness', 'name': '연속 홈/원정 최소화'},
     {'value': 'distance_gap', 'name': '팀간 이동거리 차이 최소화'},
-    # {'value': 'max_profit', 'name': '흥행성'},
 ]
+preset_sport_schedule_solver_type_options_list = [
+    {'value': 'ortools', 'name': 'OR-Tools(무료)'},
+    {'value': 'gorobi', 'name': 'Gurobi(상용)'},
+]
+
 preset_sport_schedule_num_teams = 4
 preset_sport_schedule_team_list = [
     "한화", "LG", "롯데", "KIA", "삼성",

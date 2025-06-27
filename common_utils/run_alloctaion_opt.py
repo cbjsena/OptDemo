@@ -4,7 +4,7 @@ import logging
 import datetime  # 파일명 생성 등에 사용 가능
 from math import floor
 
-logger = logging.getLogger(__name__)  # settings.py에 정의된 'resource_allocation_app' 로거 사용
+logger = logging.getLogger('resource_allocation_app')
 
 
 def run_budget_allocation_optimizer(input_data):

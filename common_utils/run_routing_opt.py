@@ -4,7 +4,7 @@ import logging
 import datetime  # 파일명 생성 등에 사용 가능
 from math import sqrt
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('routing_logistics_app')
 
 def run_vrp_optimizer(input_data):
     """

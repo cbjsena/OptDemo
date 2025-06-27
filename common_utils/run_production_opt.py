@@ -5,7 +5,7 @@ from ortools.sat.python import cp_model # CP-SAT 솔버 사용
 import datetime
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('production_scheduling_app')
 
 
 # --- Lot Sizing 최적화 실행 함수 ---
