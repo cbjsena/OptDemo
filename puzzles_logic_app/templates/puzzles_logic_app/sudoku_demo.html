@@ -1,12 +1,181 @@
 {% extends "core/base.html" %}
+{% load static %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Sudoku Demo{% endblock %}
+
+{% block styles %}
+    <style>
+        .sudoku-grid {
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+        .sudoku-grid td {
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #ccc;
+        }
+        .sudoku-grid input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 0;
+            background-color: #fff;
+        }
+        .sudoku-grid input.original-value {
+            background-color: #e9ecef; /* 초기값 배경색 */
+            font-weight: bold;
+            color: #333;
+        }
+        .sudoku-grid td:nth-child(3n) {
+            border-right: 2px solid #000;
+        }
+        .sudoku-grid tr:nth-child(3n) {
+            border-bottom: 2px solid #000;
+        }
+        .sudoku-grid tr:first-child { border-top: 2px solid #000; }
+        .sudoku-grid tr:last-child { border-bottom: 2px solid #000; }
+        .sudoku-grid td:first-child { border-left: 2px solid #000; }
+        .sudoku-grid td:last-child { border-right: 2px solid #000; }
+
+        .solved-cell {
+            color: #007bff; /* 결과 값 색상 */
+        }
+    </style>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Optimization Demo Platform</h1>
-    <h2>{{active_model}}</h2>
-    <h3>{{active_submenu}}</h3>
-    <p>준비 중 입니다. </p>
+<div class="container-fluid">
+    <h1 class="h2">Sudoku Demo</h1>
+    <p>스도쿠는 9x9 격자를 숫자로 채우는 논리 퍼즐입니다. 각 행, 각 열, 그리고 각 3x3 서브그리드에 1부터 9까지의 숫자가 중복 없이 한 번씩만 나타나야 합니다.</p>
+    <p>아래에서 난이도를 선택하거나 직접 퍼즐을 수정하고 '스도쿠 풀기' 버튼을 눌러 해답을 찾아보세요.</p>
+
+    <div class="mb-3 form-inline">
+        <div class="form-group mr-2">
+            <label for="difficulty_get" class="mr-2">난이도:</label>
+            <select id="difficulty_get" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                {% for diff in difficulty_options %}
+                    <option value="{{ diff.value }}" {% if diff.value == submitted_difficulty %}selected{% endif %}>{{ diff.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group ml-auto">
+            <button type="button" class="btn btn-sm btn-info mr-2" id="clearBtn">Clear Board</button>
+            <a href="{% url 'puzzles_logic_app:sudoku_demo' %}" class="btn btn-sm btn-warning">Default</a>
+        </div>
+    </div>
+
+    <form method="GET" id="settingsForm" style="display: none;"></form>
+
+    <form method="POST" id="sudokuForm">
+        {% csrf_token %}
+        <input type="hidden" name="problem_type" value="sudoku">
+        <input type="hidden" name="difficulty" value="{{ difficulty_get }}">
+
+        <table class="sudoku-grid">
+            <tbody>
+                {% for row in input_grid %}
+                <tr>
+                    {% for cell in row %}
+                    <td>
+                        <input type="text" name="cell_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}"
+                               value="{% if cell != 0 %}{{ cell }}{% endif %}" maxlength="1"
+                               class="{% if cell != 0 %}original-value{% endif %}">
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">스도쿠 풀기</button>
+    </form>
+    {# --- 입력 폼 종료 --- #}
+
+    {# 1. 결과 메세지 #}
+    {% if error_message or success_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Result</h3>
+    {% endif %}
+    {% if error_message %}
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
+    {% endif %}
+
+    {% if results %}
+        <h4 class="mt-4">해결된 스도쿠</h4>
+        <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
+        <table class="sudoku-grid">
+            <tbody>
+                {% for r in results %}
+                <tr>
+                    {% for c in r %}
+                    <td>
+                        {% with input_val=input_grid|slice:forloop.parentloop.counter0|first|slice:forloop.counter0|first %}
+                            <span class="{% if input_val == 0 %}solved-cell{% endif %}">
+                                {{ c }}
+                            </span>
+                        {% endwith %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %} {# end if results #}
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    function submitSettingsForm() {
+        const settingsForm = document.getElementById('settingsForm');
+        settingsForm.innerHTML = ''; // 폼 초기화
+
+        // 드롭다운 메뉴의 현재 값들을 숨겨진 필드로 추가
+        const difficultySelect = document.getElementById('difficulty_get');
+        const hiddenDifficulty = document.createElement('input');
+        hiddenDifficulty.type = 'hidden';
+        hiddenDifficulty.name = 'difficulty';
+        hiddenDifficulty.value = difficultySelect.value;
+        settingsForm.appendChild(hiddenDifficulty);
+
+        // 현재 그리드의 모든 셀 값을 숨겨진 필드로 추가
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                const cellInput = document.querySelector(`input[name="cell_${r}_${c}"]`);
+                if (cellInput) {
+                    let hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = `cell_${r}_${c}`;
+                    hiddenInput.value = cellInput.value || '0';
+                    settingsForm.appendChild(hiddenInput);
+                }
+            }
+        }
+
+        // GET 방식으로 폼 제출 (페이지 리로드하여 새 퍼즐 로드)
+        settingsForm.submit();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const clearBtn = document.getElementById('clearBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function() {
+                const allCells = document.querySelectorAll('.sudoku-grid input');
+                allCells.forEach(cell => {
+                    cell.value = '';
+                    cell.classList.remove('original-value');
+                });
+            });
+        }
+    });
+</script>
 {% endblock %}

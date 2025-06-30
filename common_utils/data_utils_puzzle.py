@@ -82,6 +82,55 @@ for i in range(10):
         if city_i < 8 and city_j < 8:
             preset_sport_schedule_dist_map_10[i][j] = preset_sport_schedule_distance_matrix_km[city_i][city_j]
 
+preset_sudoku_puzzles = {
+    'easy': [
+        [5, 3, 0, 0, 7, 0, 0, 0, 0],
+        [6, 0, 0, 1, 9, 5, 0, 0, 0],
+        [0, 9, 8, 0, 0, 0, 0, 6, 0],
+        [8, 0, 0, 0, 6, 0, 0, 0, 3],
+        [4, 0, 0, 8, 0, 3, 0, 0, 1],
+        [7, 0, 0, 0, 2, 0, 0, 0, 6],
+        [0, 6, 0, 0, 0, 0, 2, 8, 0],
+        [0, 0, 0, 4, 1, 9, 0, 0, 5],
+        [0, 0, 0, 0, 8, 0, 0, 7, 9],
+    ],
+    'medium': [
+        [0, 2, 0, 6, 0, 8, 0, 0, 0],
+        [5, 8, 0, 0, 0, 9, 7, 0, 0],
+        [0, 0, 0, 0, 4, 0, 0, 0, 0],
+        [3, 7, 0, 0, 0, 0, 5, 0, 0],
+        [6, 0, 0, 0, 0, 0, 0, 0, 4],
+        [0, 0, 8, 0, 0, 0, 0, 1, 3],
+        [0, 0, 0, 0, 2, 0, 0, 0, 0],
+        [0, 0, 9, 8, 0, 0, 0, 3, 6],
+        [0, 0, 0, 3, 0, 6, 0, 9, 0],
+    ],
+    'hard': [
+        [8, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 3, 6, 0, 0, 0, 0, 0],
+        [0, 7, 0, 0, 9, 0, 2, 0, 0],
+        [0, 5, 0, 0, 0, 7, 0, 0, 0],
+        [0, 0, 0, 0, 4, 5, 7, 0, 0],
+        [0, 0, 0, 1, 0, 0, 0, 3, 0],
+        [0, 0, 1, 0, 0, 0, 0, 6, 8],
+        [0, 0, 8, 5, 0, 0, 0, 1, 0],
+        [0, 9, 0, 0, 0, 0, 4, 0, 0],
+    ]
+}
+preset_sudoku_difficulty_options = [
+    {'value': 'easy', 'name': '쉬움 (Easy)'},
+    {'value': 'medium', 'name': '중간 (Medium)'},
+    {'value': 'hard', 'name': '어려움 (Hard)'},
+]
+preset_sudoku_solver_options = [
+    # Gurobi도 추가할 수 있으나, 여기서는 OR-Tools를 기본으로 가정
+    {'value': 'ortools', 'name': 'Google OR-Tools'},
+    {'value': 'gurobi', 'name': 'Gurobi'},
+]
+
+preset_sudoku_difficulty ='easy'
+
+
 def create_diet_json_data(form_data):
     logger.debug("Creating and validating Diet Problem input data from form.")
     num_foods = int(form_data.get('num_foods', 0))

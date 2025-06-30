@@ -288,12 +288,61 @@ def sudoku_introduction_view(request):
     logger.debug("Rendering Sudoku introduction page.")
     return render(request, 'puzzles_logic_app/sudoku_introduction.html', context)
 
+
 def sudoku_demo_view(request):
+    input_grid = []
+    if request.method == 'GET':
+        submitted_difficulty = request.GET.get('difficulty', preset_sudoku_difficulty)
+
+        # GET 요청 시에도 사용자가 수정한 그리드 값을 유지하기 위함
+        for i in range(9):
+            row = []
+            for j in range(9):
+                cell_value_str = request.GET.get(f'cell_{i}_{j}', '0')
+                # 빈 문자열이나 공백은 0으로 처리
+                cell_value = int(cell_value_str) if cell_value_str.strip() else 0
+                row.append(cell_value)
+            input_grid.append(row)
+
+    elif request.method == 'POST':
+        form_data = request.POST
+        for i in range(9):
+            row = []
+            for j in range(9):
+                cell_value_str = form_data.get(f'cell_{i}_{j}', '0')
+                # 빈 문자열이나 공백은 0으로 처리
+                cell_value = int(cell_value_str) if cell_value_str.strip() else 0
+                row.append(cell_value)
+            input_grid.append(row)
+
     context = {
         'active_model': 'Puzzles & Real-World Logic',
-        'active_submenu': 'Sudoku Demo'
+        'active_submenu': 'Sudoku Demo',
+        'results': None, 'error_message': None, 'success_message': None,
+        'processing_time_seconds': "N/A",
+        'difficulty_options': preset_sudoku_difficulty_options,
+        'submitted_difficulty': submitted_difficulty,
+        'input_grid': input_grid,
     }
-    logger.debug("Rendering Sudoku demo page.")
+
+    if request.method == 'POST':
+        try:
+
+            # 2. 최적화 실행
+            solved_grid, error_msg_opt, processing_time = run_sudoku_solver_optimizer(input_grid)
+
+            context['processing_time_seconds'] = processing_time
+
+            if error_msg_opt:
+                context['error_message'] = error_msg_opt
+            elif solved_grid:
+                context['results'] = solved_grid
+                context['success_message'] = "스도쿠 퍼즐을 성공적으로 풀었습니다!"
+
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+            logger.error(f"Unexpected error in sudoku_demo_view: {e}", exc_info=True)
+
     return render(request, 'puzzles_logic_app/sudoku_demo.html', context)
 
 
