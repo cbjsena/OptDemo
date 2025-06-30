@@ -48,8 +48,8 @@ preset_sport_schedule_objective_list = [
     {'value': 'distance_gap', 'name': '팀간 이동거리 차이 최소화'},
 ]
 preset_sport_schedule_solver_type_options_list = [
-    {'value': settings.SOLVER_ORTOOLS, 'name': 'OR-Tools(무료)'},
-    {'value': settings.SOLVER_GUROBI, 'name': 'Gurobi(상용)'},
+    {'value': settings.SOLVER_ORTOOLS, 'name': 'OR-Tools'},
+    {'value': settings.SOLVER_GUROBI, 'name': 'Gurobi'},
 ]
 
 preset_sport_schedule_num_teams = 4

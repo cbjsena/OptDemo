@@ -208,14 +208,14 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
                 f"{constraint_name}: {' + '.join(v.Name() for v in home_games_in_window)} <= {max_consecutive}")
 
     # 제약 4: 같은 팀과 연속으로 경기하지 않음
-    for h in range(num_teams):
-        for a in range(num_teams):
-            if h != a:
-                for s in range(num_slots - 1):
-                    # s주차와 s+1주차에 연속으로 같은 대진이 없도록 함
-                    match_s = plays.get((s, h, a), 0) + plays.get((s, a, h), 0)
-                    match_s_plus_1 = plays.get((s + 1, h, a), 0) + plays.get((s + 1, a, h), 0)
-                    model.Add(match_s + match_s_plus_1 <= 1)
+    # for h in range(num_teams):
+    #     for a in range(num_teams):
+    #         if h != a:
+    #             for s in range(num_slots - 1):
+    #                 # s주차와 s+1주차에 연속으로 같은 대진이 없도록 함
+    #                 match_s = plays.get((s, h, a), 0) + plays.get((s, a, h), 0)
+    #                 match_s_plus_1 = plays.get((s + 1, h, a), 0) + plays.get((s + 1, a, h), 0)
+    #                 model.Add(match_s + match_s_plus_1 <= 1)
 
     # 제약 5: 팀별 이동 거리 계산을 위한 제약
     team_travel_vars = [model.NewIntVar(0, 10000000, f'travel_{i}') for i in range(num_teams_original)]
@@ -328,7 +328,6 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
 
 
 def run_sports_scheduling_optimizer_ortools2(input_data):
-    # TODO: GUROBI와 결과 불일치
     """
     OR-Tools CP-SAT를 사용하여 Sports Scheduling 문제를 해결합니다.
     Gurobi2 모델과 동일한 로직을 구현합니다.
@@ -438,14 +437,14 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
                     f"{constraint_name}: {' + '.join(v.Name() for v in home_games_in_window)} <= {max_consecutive}")
 
         # 제약 4: 같은 팀과 연속으로 경기하지 않음
-        for h in range(num_teams):
-            for a in range(num_teams):
-                if h != a:
-                    for s in range(num_slots - 1):
-                        # s주차와 s+1주차에 연속으로 같은 대진이 없도록 함
-                        match_s = plays.get((s, h, a), 0) + plays.get((s, a, h), 0)
-                        match_s_plus_1 = plays.get((s + 1, h, a), 0) + plays.get((s + 1, a, h), 0)
-                        model.Add(match_s + match_s_plus_1 <= 1)
+        # for h in range(num_teams):
+        #     for a in range(num_teams):
+        #         if h != a:
+        #             for s in range(num_slots - 1):
+        #                 # s주차와 s+1주차에 연속으로 같은 대진이 없도록 함
+        #                 match_s = plays.get((s, h, a), 0) + plays.get((s, a, h), 0)
+        #                 match_s_plus_1 = plays.get((s + 1, h, a), 0) + plays.get((s + 1, a, h), 0)
+        #                 model.Add(match_s + match_s_plus_1 <= 1)
 
         # 제약 4: 팀 위치 결정
         for s in range(num_slots):
@@ -472,29 +471,46 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
         # 동적 이동 거리 계산
         for t in range(num_teams_original):
             slot_travel_dist = []
-            home_city_idx = home_city_of_team[t]
 
             for s in range(num_slots):
-                if s == 0:
-                    # s=0일 때 이전 위치는 무조건 홈 도시
-                    prev_loc_vars = [1 if l == home_city_idx else 0 for l in range(num_cities)]
-                else:
-                    prev_loc_vars = [is_at_loc[t, s - 1, l] for l in range(num_cities)]
-
+                # 현재 슬롯의 위치 변수
                 curr_loc_vars = [is_at_loc[t, s, l] for l in range(num_cities)]
 
-                # 이동을 나타내는 변수 선형화 (Gurobi의 addGenConstrAnd와 동일)
-                travel_arc_vars = {}
-                for l1 in range(num_cities):
-                    for l2 in range(num_cities):
-                        travel_arc_vars[l1, l2] = model.NewBoolVar(f'travel_{t}_{s}_{l1}_{l2}')
-                        model.AddBoolAnd([prev_loc_vars[l1], curr_loc_vars[l2]]).OnlyEnforceIf(travel_arc_vars[l1, l2])
-                        model.AddImplication(travel_arc_vars[l1, l2], prev_loc_vars[l1])
-                        model.AddImplication(travel_arc_vars[l1, l2], curr_loc_vars[l2])
+                # --- 슬롯 0의 이동 거리 계산 ---
+                if s == 0:
+                    # 첫 경기는 무조건 홈에서 시작하므로, 이전 위치는 홈 도시임
+                    home_city_idx = home_city_of_team[t]
+                    # 이 경우 (상수 * 변수) 이므로 이미 선형(linear)임
+                    dist_for_slot = sum(
+                        curr_loc_vars[l2] * distance_matrix[home_city_idx][l2] for l2 in range(num_cities))
+                    slot_travel_dist.append(dist_for_slot)
 
-                dist_for_slot = sum(travel_arc_vars[l1, l2] * distance_matrix[l1][l2]
-                                    for l1 in range(num_cities) for l2 in range(num_cities))
-                slot_travel_dist.append(dist_for_slot)
+                # --- 슬롯 1 이상의 이동 거리 계산 ---
+                else:
+                    # 이전 슬롯의 위치 변수
+                    prev_loc_vars = [is_at_loc[t, s - 1, l] for l in range(num_cities)]
+
+                    # 이동을 나타내는 변수 선형화 (Z <=> X AND Y)
+                    travel_arc_vars_for_slot = {}
+                    dist_expressions = []
+
+                    for l1 in range(num_cities):
+                        for l2 in range(num_cities):
+                            # l1 -> l2 로 이동했으면 1, 아니면 0인 변수
+                            z = model.NewBoolVar(f'travel_{t}_{s}_{l1}_{l2}')
+                            x = prev_loc_vars[l1]
+                            y = curr_loc_vars[l2]
+
+                            # Z <=> (X AND Y) 관계를 강제
+                            # 1. Z => X and Z => Y
+                            model.AddImplication(z, x)
+                            model.AddImplication(z, y)
+                            # 2. (X AND Y) => Z
+                            model.Add(x + y <= z + 1)
+
+                            # 이동이 발생했다면(z=1), 해당 거리를 더함
+                            dist_expressions.append(z * distance_matrix[l1][l2])
+                    slot_travel_dist.append(sum(dist_expressions))
 
             model.Add(team_travel_vars[t] == sum(slot_travel_dist))
 
@@ -505,23 +521,32 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
             model.Minimize(total_travel)
             logger.info("Objective set to: Minimize total travel.")
         elif objective_choice == 'fairness':
-            breaks = []
+            break_vars = []  # break가 발생하면 1이 되는 변수들을 담을 리스트
+
             for t in range(num_teams_original):
                 for s in range(num_slots - 1):
+                    # 슬롯 s와 s+1에서의 홈 경기 여부 (합계로 계산하면 0 또는 1이 됨)
                     is_home_s = sum(plays[s, t, a] for a in range(num_teams) if t != a)
                     is_home_s_plus_1 = sum(plays[s + 1, t, a] for a in range(num_teams) if t != a)
 
+                    # 두 상태의 차이 (-1, 0, 1)
                     diff = model.NewIntVar(-1, 1, f'diff_{t}_{s}')
                     model.Add(diff == is_home_s - is_home_s_plus_1)
 
+                    # 차이의 절댓값. 상태가 바뀌면 1, 유지되면 0. (즉, 'no break' 변수)
                     abs_diff = model.NewBoolVar(f'abs_diff_{t}_{s}')
-                    model.AddAbsEquality(abs_diff, diff)  # Gurobi의 addGenConstrAbs와 동일
+                    model.AddAbsEquality(abs_diff, diff)
 
-                    # break = 1 이면 홈/원정 연속, 0이면 번갈아.
-                    # 우리는 break 최소화를 원하므로 abs_diff 합계를 최소화.
-                    breaks.append(abs_diff)
+                    # [수정된 핵심 로직] break_var를 'break 발생'과 동일하게 정의
+                    # break는 abs_diff가 0일 때 발생하므로, break_var = 1 - abs_diff
+                    break_var = model.NewBoolVar(f'break_{team_names_original[t]}_{s+1}')
+                    model.Add(break_var != abs_diff)  # (break_var = 1 - abs_diff 와 동일)
 
-            model.Minimize(sum(breaks))
+                    break_vars.append(break_var)
+            total_breaks = sum(break_vars)
+            # break 발생 횟수의 총합을 최소화
+            model.Add(total_breaks<=5)
+            model.Minimize(total_breaks)
             logger.debug("Objective set to: Minimize total number of breaks.")
 
         elif objective_choice == 'distance_gap':
@@ -565,6 +590,10 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
             for key, var in plays.items():
                 if solver.Value(var) == 1:
                     logger.solve(var.Name())
+            if objective_choice == 'fairness':
+                for var in break_vars:
+                    if solver.Value(var) == 1:
+                        logger.solve(var.Name())
 
             # 결과 지표 계산
             total_dist_calc = 0
@@ -601,6 +630,7 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
         processing_time_ms = 0
 
     return results, error_msg, processing_time_ms
+
 
 def run_sports_scheduling_optimizer_gurobi1(input_data):
     """
@@ -874,6 +904,7 @@ def run_sports_scheduling_optimizer_gurobi2(input_data):
                 travel_arc_vars = model.addVars(num_cities, num_cities, vtype=GRB.BINARY, name=f"travel_{t}_{s}")
                 for l1 in range(num_cities):
                     for l2 in range(num_cities):
+                        # Z = X AND Y
                         model.addGenConstrAnd(travel_arc_vars[l1, l2], [prev_loc_vars[l1], curr_loc_vars[l2]])
 
                 dist_for_slot = quicksum(
@@ -906,7 +937,7 @@ def run_sports_scheduling_optimizer_gurobi2(input_data):
                     # breaks[t,s]는 abs_diff의 반대. breaks = 1 - abs_diff
                     model.addConstr(breaks[t, s] == 1 - abs_diff)
 
-            model.setObjective(quicksum(breaks), GRB.MINIMIZE)
+            model.setObjective(quicksum(breaks.values()), GRB.MINIMIZE)
             logger.debug("Objective set to: Minimize total number of breaks.")
 
         elif objective_choice == 'distance_gap':
@@ -940,9 +971,13 @@ def run_sports_scheduling_optimizer_gurobi2(input_data):
                 schedule.append({'week': s + 1, 'matchups': weekly_matchups})
             results['schedule'] = schedule
 
-            # for key, var in plays.items():
-            #     if var.X > 0.5:
-            #         logger.solve(var.VarName)
+            for key, var in plays.items():
+                if var.X > 0.5:
+                    logger.solve(f'plays_{key[0] + 1}_{team_names_original[key[1]]}_{team_names_original[key[2]]}')
+            if objective_choice == 'fairness':
+                for key, var in breaks.items():
+                    if var.X > 0.5:
+                        logger.solve(f'breaks_{key[0] + 1}_{team_names_original[key[1]]}')
 
             # 결과 지표 계산
             total_dist_calc = 0

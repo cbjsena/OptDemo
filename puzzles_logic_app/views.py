@@ -216,12 +216,12 @@ def sports_scheduling_demo_view(request):
             logger.info(submitted_solver_type)
             # 3. 최적화 실행
             if submitted_solver_type == settings.SOLVER_GUROBI:
-                if submitted_num_teams <= 4:
+                if submitted_num_teams <= 5:
                     results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_gurobi2(input_data)
                 else:
                     results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_gurobi1(input_data)
             else:
-                if submitted_num_teams <= 4:
+                if submitted_num_teams <= 5:
                     results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_ortools2(input_data)
                 else:
                     results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_ortools1(input_data)
