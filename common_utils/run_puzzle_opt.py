@@ -1081,7 +1081,7 @@ def run_sudoku_solver_optimizer(input_data):
         solved_grid = [[solver.Value(grid[(i, j)]) for j in range(num_size)] for i in range(num_size)]
     else:
         error_message = "스도쿠 퍼즐의 해를 찾을 수 없습니다. 입력된 퍼즐이 유효한지 확인해주세요."
-    logger.info(f'------------{solved_grid}')
+
     return solved_grid, error_message, processing_time
 
 
