@@ -1,5 +1,7 @@
 import logging
 import datetime
+import random
+
 from common_utils.common_data_utils import save_json_data
 logger = logging.getLogger(__name__)
 
@@ -36,6 +38,36 @@ preset_datacenter_services = [
             {'id': 'BatchProc', 'revenue_per_unit': '150', 'req_cpu_cores': '16', 'req_ram_gb': '32',
              'req_storage_tb': '0.2', 'max_units': '30'}
 ]
+
+preset_nurse_rostering_num_nurses = 15
+preset_nurse_rostering_days = 14
+preset_nurse_rostering_shifts = ['주간(D)', '오후(E)', '야간(N)']
+preset_nurse_rostering_requests = {'D': 4, 'E': 3, 'N': 2}
+preset_nurse_rostering_min_shifts = 5
+preset_nurse_rostering_max_shifts = 8
+preset_nurse_rostering_nurses_data = [
+        {'id': 0, 'name': '간호사_A', 'skill': '중'},
+        {'id': 1, 'name': '간호사_B', 'skill': '중'},
+        {'id': 2, 'name': '간호사_C', 'skill': '상'},
+        {'id': 3, 'name': '간호사_D', 'skill': '상'},
+        {'id': 4, 'name': '간호사_E', 'skill': '상'},
+        {'id': 5, 'name': '간호사_F', 'skill': '상'},
+        {'id': 6, 'name': '간호사_G', 'skill': '상'},
+        {'id': 7, 'name': '간호사_H', 'skill': '중'},
+        {'id': 8, 'name': '간호사_I', 'skill': '중'},
+        {'id': 9, 'name': '간호사_J', 'skill': '하'},
+        {'id': 10, 'name': '간호사_K', 'skill': '하'},
+        {'id': 11, 'name': '간호사_L', 'skill': '하'},
+        {'id': 12, 'name': '간호사_M', 'skill': '상'},
+        {'id': 13, 'name': '간호사_N', 'skill': '상'},
+        {'id': 14, 'name': '간호사_O', 'skill': '하'},
+    # {'id': i, 'name': f'간호사_{chr(65+i)}', 'skill': random.choice(['상', '중', '하'])} for i in range(15)
+]
+preset_nurse_rostering_shift_requirements = {
+    '주간(D)': {'상': 1, '중': 2, '하': 1},
+    '오후(E)': {'상': 1, '중': 1, '하': 1},
+    '야간(N)': {'상': 1, '하': 1}
+}
 
 def create_budjet_allocation_json_data(form_data, num_items):
     total_budget_str = form_data.get('total_budget')
@@ -225,6 +257,35 @@ def set_datacenter_chart_data(results_data, parsed_global_constraints):
     return chart_data
 
 
+def create_nurse_rostering(form_data):
+    num_nurses = int(form_data.get('num_nurses'))
+    num_days = int(form_data.get('num_days'))
+    min_shifts = int(form_data.get('min_shifts'))
+    max_shifts = int(form_data.get('max_shifts'))
+
+    shift_requests_parsed = {}
+    for s_idx, s_name in enumerate(preset_nurse_rostering_shifts):
+        required = int(form_data.get(f'shift_{s_idx}_req'))
+        for d in range(num_days):
+            shift_requests_parsed[(d, s_idx)] = required
+
+    schedule_weekdays = get_schedule_weekdays(num_days)
+    weekend_days = [i for i, day_name in enumerate(schedule_weekdays) if day_name in ['토', '일']]
+
+    input_data = {
+        "problem_type": form_data.get('problem_type'),
+        'num_nurses': num_nurses,
+        'num_days': num_days,
+        'shifts': preset_nurse_rostering_shifts,
+        'shift_requests': shift_requests_parsed,
+        'min_shifts_per_nurse': min_shifts,
+        'max_shifts_per_nurse': max_shifts,
+        'schedule_weekdays': schedule_weekdays,
+        'weekend_days': weekend_days
+    }
+
+    return input_data
+
 def save_allocation_json_data(input_data):
     problem_type = input_data.get('problem_type')
     dir=f'allocation_{problem_type}_data'
@@ -236,5 +297,17 @@ def save_allocation_json_data(input_data):
         num_server_types =input_data.get('num_server_types')
         num_services = input_data.get('num_services')
         filename_pattern = f"svr{num_server_types}_svc{num_services}"
+    elif "nurse rostering" == problem_type:
+        num_nurses =input_data.get('num_nurses')
+        num_days = input_data.get('num_days')
+        filename_pattern = f"nurse{num_nurses}_day{num_days}"
 
     return save_json_data(input_data, dir, filename_pattern)
+
+def get_schedule_weekdays(num_days):
+    today = datetime.date.today()
+    schedule_dates = [today + datetime.timedelta(days=i) for i in range(num_days)]
+    weekdays = ["월", "화", "수", "목", "금", "토", "일"]
+    schedule_weekdays = [weekdays[d.weekday()] for d in schedule_dates]
+
+    return schedule_weekdays

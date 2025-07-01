@@ -20,6 +20,7 @@ urlpatterns = [
     # 3. Nurse Rostering Problem
     path('nurse-rostering/introduction/', views.nurse_rostering_introduction_view, name='nurse_rostering_introduction'),
     path('nurse-rostering/demo/', views.nurse_rostering_demo_view, name='nurse_rostering_demo'),
+    path('nurse-rostering/advanced-demo/', views.nurse_rostering_advanced_demo_view, name='nurse_rostering_advanced_demo'),
 
     # Financial Portfolio
     path('financial-portfolio/introduction/', views.financial_portfolio_introduction_view,

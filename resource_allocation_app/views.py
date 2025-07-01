@@ -345,9 +345,155 @@ def nurse_rostering_introduction_view(request):
     return render(request, 'resource_allocation_app/nurse_rostering_introduction.html', context)
 
 def nurse_rostering_demo_view(request):
+    form_data = {}
+    shift_requests = {}
+    if request.method == 'GET':
+        form_data['total_budget'] = preset_total_budget
+        submitted_num_nurses = int(request.GET.get('num_nurses', preset_budjet_num_item))
+        submitted_num_days = int(request.GET.get('min_shifts', preset_budjet_num_item))
+        submitted_min_shifts = int(request.GET.get('max_shifts', preset_budjet_num_item))
+        submitted_max_shifts = int(request.GET.get('num_items_to_show', preset_budjet_num_item))
+        shift_requests = preset_nurse_rostering_requests
+
+    elif request.method == 'POST':
+        form_data = request.POST.copy()
+        submitted_num_nurses = int(form_data.get('num_nurses'))
+        submitted_num_days = int(form_data.get('num_days'))
+        submitted_min_shifts = int(form_data.get('min_shifts'))
+        submitted_max_shifts = int(form_data.get('max_shifts'))
+
+        shift_requests = {}
+        for s_idx, s_name in enumerate(preset_nurse_rostering_shifts):
+            required = int(request.POST.get(f'shift_{s_idx}_req'))
+            for d in range(submitted_num_days):
+                shift_requests[(d, s_idx)] = required
+
+
+
+    schedule_weekdays = get_schedule_weekdays(preset_nurse_rostering_days)
     context = {
         'active_model': 'Resource Allocation',
-        'active_submenu': 'Nurse Rostering Demo'
+        'active_submenu': 'Nurse Rostering Demo',
+        'num_nurses': submitted_num_nurses,
+        'num_days': submitted_num_days,
+        'shifts': preset_nurse_rostering_shifts,
+        'shift_requests': shift_requests,
+        'min_shifts_per_nurse': submitted_min_shifts,
+        'max_shifts_per_nurse': submitted_max_shifts,
+        'schedule_weekdays': schedule_weekdays,
+        'results': None, 'error_message': None, 'success_message': None,
+        'processing_time_seconds': "N/A",
     }
+
+    if request.method == 'POST':
+        try:
+            input_data = create_nurse_rostering(form_data)
+
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_allocation_json_data(input_data)
+                if save_error:
+                    context['error_message'] = (
+                                context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
+
+            # 최적화 실행
+            results_data, error_msg, processing_time = run_nurse_rostering_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
+
+            if error_msg:
+                context['error_message'] = error_msg
+            elif results_data:
+                context['results'] = results_data
+                context['success_message'] = f"최적의 근무표를 생성했습니다! (총 페널티: {results_data['total_penalty']})"
+
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
     logger.debug("Rendering Nurse Rostering demo page.")
     return render(request, 'resource_allocation_app/nurse_rostering_demo.html', context)
+
+
+def nurse_rostering_advanced_demo_view(request):
+    logger.info(f"Start nurse_rostering_advanced_demo_view.")
+
+    schedule_weekdays = get_schedule_weekdays(preset_nurse_rostering_days)
+
+    context = {
+        'active_model': 'Resource Allocation',
+        'active_submenu': 'Nurse Rostering Advanced Demo',
+        'nurses_data': preset_nurse_rostering_nurses_data,
+        'num_days': preset_nurse_rostering_days,
+        'shifts': preset_nurse_rostering_shifts,
+        'skill_requirements': preset_nurse_rostering_shift_requirements,
+        'schedule_weekdays': schedule_weekdays,
+        'results': None, 'error_message': None, 'success_message': None,
+    }
+
+    if request.method == 'POST':
+        logger.info(f"Start nurse_rostering_advanced_demo_view - POST.")
+        try:
+            form_data = request.POST.copy()
+            num_days = int(form_data.get('num_days', preset_nurse_rostering_num_nurses))
+            # 간호사 정보
+            nurses_data = []
+            num_nurses = int(form_data.get('num_nurses', 0))
+            for i in range(num_nurses):
+                nurses_data.append({
+                    'id': i,
+                    'name': form_data.get(f'nurse_{i}_name'),
+                    'skill': form_data.get(f'nurse_{i}_skill')
+                })
+
+            # 시프트별 필요인원
+            skill_reqs = {}
+            for s_name in preset_nurse_rostering_shifts:
+                skill_reqs[s_name] = {}
+                for skill in ['상', '중', '하']:
+                    skill_reqs[s_name][skill] = int(form_data.get(f'req_{s_name}_{skill}', 0))
+
+            # 휴가 요청
+            vacation_reqs = {}
+            for i in range(num_nurses):
+                off_days_str = form_data.get(f'nurse_{i}_vacation', '')
+                if off_days_str:
+                    # 콤마로 구분된 날짜(1-based)를 0-based 인덱스로 변환
+                    vacation_reqs[i] = [int(d.strip()) - 1 for d in off_days_str.split(',') if d.strip().isdigit()]
+
+            # 활성화된 공정성 제약
+            enabled_fairness = request.POST.getlist('fairness_options')
+
+            # 주말 인덱스
+            weekend_days = [i for i, day_name in enumerate(schedule_weekdays) if day_name in ['토', '일']]
+
+            # 솔버 입력 데이터 생성
+            input_data = {
+                'nurses_data': nurses_data, 'num_days': num_days, 'shifts': preset_nurse_rostering_shifts,
+                'skill_requirements': skill_reqs, 'vacation_requests': vacation_reqs,
+                'enabled_fairness': enabled_fairness, 'weekend_days': weekend_days
+            }
+
+
+            # context 업데이트
+            context.update({
+                'nurses_data': nurses_data,
+                'skill_requirements': skill_reqs,
+                'submitted_vacations': {i: request.POST.get(f'nurse_{i}_vacation', '') for i in range(num_nurses)},
+                'submitted_fairness': enabled_fairness
+            })
+
+            # 최적화 실행
+            results_data, error_msg, processing_time = run_nurse_roster_advanced_optimizer(input_data)
+            context['processing_time_seconds'] = processing_time
+
+            if error_msg:
+                context['error_message'] = error_msg
+            elif results_data:
+                context['results'] = results_data
+                context['success_message'] = "최적의 근무표를 생성했습니다!"
+
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+
+    return render(request, 'resource_allocation_app/nurse_rostering_advanced_demo.html', context)
+
+

@@ -25,23 +25,23 @@ if not os.path.exists(MEDIA_ROOT):
 
 DEMO_DIR = MEDIA_ROOT/ 'demo'
 DEMO_DIR_MAP ={'matching_cf_tft_data':DEMO_DIR/'match_cf_tft_data',
-               'matching_transport assignment_data':DEMO_DIR/'matching_transport assignment_data',
-               'matching_resource skill_data':DEMO_DIR/'matching_resource skill_data',
-               'allocation_datacenter_data':DEMO_DIR/'allocation_datacenter_data',
-               'allocation_budjet_data':DEMO_DIR/'allocation_budjet_data',
-               'routing_vrp_data':DEMO_DIR/'routing_vrp_data',
-               'routing_cvrp_data':DEMO_DIR/'routing_cvrp_data',
-               'routing_pdp_data':DEMO_DIR/'routing_pdp_data',
-               'production_lot_sizing_data':DEMO_DIR/'production_lot_sizing_data',
-               'production_single_machine_data':DEMO_DIR/'production_single_machine_data',
-               'production_flow_shop_data':DEMO_DIR/'production_flow_shop_data',
-               'production_job_shop_data':DEMO_DIR/'production_job_shop_data',
-               'production_rcpsp_data':DEMO_DIR/'production_rcpsp_data',
-               'puzzles_diet_problem_data':DEMO_DIR/'puzzles_diet_problem_data',
-               'puzzles_sports_scheduling_data':DEMO_DIR/'puzzles_sports_scheduling_data',
-               'puzzles_nurse_rostering':DEMO_DIR/'puzzles_nurse_rostering',
-               'puzzles_tsp_data':DEMO_DIR/'puzzles_tsp_data',
-               'puzzles_sudoku_data':DEMO_DIR/'puzzles_sudoku_data'
+            'matching_transport assignment_data':DEMO_DIR/'matching_transport assignment_data',
+            'matching_resource skill_data':DEMO_DIR/'matching_resource skill_data',
+            'allocation_datacenter_data':DEMO_DIR/'allocation_datacenter_data',
+            'allocation_budjet_data':DEMO_DIR/'allocation_budjet_data',
+            'allocation_nurse_rostering_data':DEMO_DIR/'allocation_nurse_rostering_data',
+            'routing_vrp_data':DEMO_DIR/'routing_vrp_data',
+            'routing_cvrp_data':DEMO_DIR/'routing_cvrp_data',
+            'routing_pdp_data':DEMO_DIR/'routing_pdp_data',
+            'production_lot_sizing_data':DEMO_DIR/'production_lot_sizing_data',
+            'production_single_machine_data':DEMO_DIR/'production_single_machine_data',
+            'production_flow_shop_data':DEMO_DIR/'production_flow_shop_data',
+            'production_job_shop_data':DEMO_DIR/'production_job_shop_data',
+            'production_rcpsp_data':DEMO_DIR/'production_rcpsp_data',
+            'puzzles_diet_problem_data':DEMO_DIR/'puzzles_diet_problem_data',
+            'puzzles_sports_scheduling_data':DEMO_DIR/'puzzles_sports_scheduling_data',
+            'puzzles_tsp_data':DEMO_DIR/'puzzles_tsp_data',
+            'puzzles_sudoku_data':DEMO_DIR/'puzzles_sudoku_data'
             }
 
 # DEMO_DIR_MAP에 정의된 모든 디렉토리 생성 (없으면)

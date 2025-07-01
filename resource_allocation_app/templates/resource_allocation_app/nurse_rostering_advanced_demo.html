@@ -1,0 +1,73 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load resource_allocation_filters %}
+
+{% block title %}Advanced Nurse Rostering Demo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h2">Advanced Nurse Rostering Demo</h1>
+    <p>간호사별 숙련도, 휴가 요청, 시프트별 필요 인원 및 다양한 공정성 제약을 고려하여 2주간의 최적 근무표를 생성합니다.</p>
+
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="num_nurses" value="{{ nurses_data|length }}">
+
+        <div class="row">
+            <div class="col-lg-7">
+                <div class="card mb-4">
+                    <div class="card-header"><strong>간호사 정보 및 휴가 설정</strong></div>
+                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead><tr><th>이름</th><th>숙련도</th><th>휴가 요청일 (예: 3,4,10)</th></tr></thead>
+                            <tbody>
+                            {% for nurse in nurses_data %}
+                                <tr>
+                                    <td><input type="text" name="nurse_{{ forloop.counter0 }}_name" value="{{ nurse.name }}" class="form-control form-control-sm"></td>
+                                    <td>
+                                        <select name="nurse_{{ forloop.counter0 }}_skill" class="form-control form-control-sm">
+                                            {% for skill_option in "상,중,하"|make_list %}
+                                            <option value="{{ skill_option }}" {% if nurse.skill == skill_option %}selected{% endif %}>{{ skill_option }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input type="text" name="nurse_{{ forloop.counter0 }}_vacation" value="{{ submitted_vacations|get_item:forloop.counter0 }}" class="form-control form-control-sm" placeholder="쉼표로 구분"></td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card mb-4">
+                    <div class="card-header"><strong>시프트 및 공정성 제약</strong></div>
+                    <div class="card-body">
+                        <h6>시프트별 최소 필요 인원 (숙련도)</h6>
+                        {% for s_name, reqs in skill_requirements.items %}
+                            <strong>{{ s_name }}:</strong>
+                            <div class="form-row">
+                            {% for skill, count in reqs.items %}
+                                <div class="col form-group">
+                                    <label class="small">{{ skill }}</label>
+                                    <input type="number" name="req_{{ s_name }}_{{ skill }}" value="{{ count }}" class="form-control form-control-sm" min="0">
+                                </div>
+                            {% endfor %}
+                            </div>
+                        {% endfor %}
+                        <hr>
+                        <h6>적용할 공정성 목표</h6>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="fairness_options" value="fair_weekends" id="f_w" {% if 'fair_weekends' in submitted_fairness|default_if_none:'' or not submitted_fairness %}checked{% endif %}><label class="form-check-label" for="f_w">주말 근무 공평 분배</label></div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="fairness_options" value="fair_nights" id="f_n" {% if 'fair_nights' in submitted_fairness|default_if_none:'' or not submitted_fairness %}checked{% endif %}><label class="form-check-label" for="f_n">야간 근무 공평 분배</label></div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="fairness_options" value="fair_offs" id="f_o" {% if 'fair_offs' in submitted_fairness|default_if_none:'' or not submitted_fairness %}checked{% endif %}><label class="form-check-label" for="f_o">총 휴무일 공평 분배</label></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">고급 근무표 생성</button>
+    </form>
+    
+    {% if results %}
+        {% endif %}
+</div>
+{% endblock %}
