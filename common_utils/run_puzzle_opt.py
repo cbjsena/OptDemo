@@ -1,3 +1,5 @@
+import random
+
 from django.conf import settings
 
 from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 LP 솔버 사용)
@@ -1016,48 +1018,51 @@ def run_sports_scheduling_optimizer_gurobi2(input_data):
     return results, error_msg, processing_time_ms
 
 
-def run_sudoku_solver_optimizer(initial_grid):
+def run_sudoku_solver_optimizer(input_data):
     """
     OR-Tools CP-SAT를 사용하여 스도쿠 퍼즐을 해결합니다.
 
     Args:
-        initial_grid (list of list of int): 9x9 스도쿠 퍼즐. 빈 칸은 0으로 표시.
+        initial_grid (list of list of int): num_size x num_size 스도쿠 퍼즐. 빈 칸은 0으로 표시.
 
     Returns:
         tuple: (solved_grid, error_message, processing_time)
     """
+    input_grid = input_data.get('input_grid')
+    num_size =  input_data.get('num_size')
+    subgrid_size = input_data.get('subgrid_size')
     model = cp_model.CpModel()
 
     # 1. 결정 변수 생성
-    # 각 셀은 1에서 9 사이의 정수 값을 가집니다.
+    # 각 셀은 1에서 num_size 사이의 정수 값을 가집니다.
     grid = {}
-    for i in range(9):
-        for j in range(9):
-            grid[(i, j)] = model.NewIntVar(1, 9, f'cell_{i}_{j}')
+    for i in range(num_size):
+        for j in range(num_size):
+            grid[(i, j)] = model.NewIntVar(1, num_size, f'cell_{i}_{j}')
 
     # 2. 제약 조건 추가
     # 각 행(row)의 모든 숫자는 달라야 합니다.
-    for i in range(9):
-        model.AddAllDifferent([grid[(i, j)] for j in range(9)])
+    for i in range(num_size):
+        model.AddAllDifferent([grid[(i, j)] for j in range(num_size)])
 
     # 각 열(column)의 모든 숫자는 달라야 합니다.
-    for j in range(9):
-        model.AddAllDifferent([grid[(i, j)] for i in range(9)])
+    for j in range(num_size):
+        model.AddAllDifferent([grid[(i, j)] for i in range(num_size)])
 
-    # 3x3 각 서브그리드의 모든 숫자는 달라야 합니다.
-    for i in range(0, 9, 3):
-        for j in range(0, 9, 3):
+    # 각 서브그리드의 모든 숫자는 달라야 합니다.
+    for i in range(0, num_size, subgrid_size):
+        for j in range(0, num_size, subgrid_size):
             subgrid_vars = []
-            for row in range(i, i + 3):
-                for col in range(j, j + 3):
+            for row in range(i, i + subgrid_size):
+                for col in range(j, j + subgrid_size):
                     subgrid_vars.append(grid[(row, col)])
             model.AddAllDifferent(subgrid_vars)
 
     # 초기 퍼즐의 주어진 숫자들을 제약으로 추가합니다.
-    for i in range(9):
-        for j in range(9):
-            if initial_grid[i][j] != 0:
-                model.Add(grid[(i, j)] == initial_grid[i][j])
+    for i in range(num_size):
+        for j in range(num_size):
+            if input_grid[i][j] != 0:
+                model.Add(grid[(i, j)] == input_grid[i][j])
 
     # 3. 문제 해결
     solver = cp_model.CpSolver()
@@ -1073,11 +1078,156 @@ def run_sudoku_solver_optimizer(initial_grid):
     error_message = None
 
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-        solved_grid = [[solver.Value(grid[(i, j)]) for j in range(9)] for i in range(9)]
+        solved_grid = [[solver.Value(grid[(i, j)]) for j in range(num_size)] for i in range(num_size)]
     else:
         error_message = "스도쿠 퍼즐의 해를 찾을 수 없습니다. 입력된 퍼즐이 유효한지 확인해주세요."
-
+    logger.info(f'------------{solved_grid}')
     return solved_grid, error_message, processing_time
+
+
+class VarArraySolutionPrinter(cp_model.CpSolverSolutionCallback):
+    """솔버의 해를 세는 콜백 클래스"""
+
+    def __init__(self, variables):
+        cp_model.CpSolverSolutionCallback.__init__(self)
+        self.__variables = variables
+        self.__solution_count = 0
+        self.solutions = []
+
+    def on_solution_callback(self):
+        self.__solution_count += 1
+        # 2개 이상의 해를 찾으면 더 이상 탐색할 필요 없음
+        if self.__solution_count >= 2:
+            self.StopSearch()
+
+        # 첫 번째 해는 저장해둠
+        if self.__solution_count == 1:
+            solution = {}
+            for v in self.__variables:
+                solution[v] = self.Value(v)
+            self.solutions.append(solution)
+
+    def solution_count(self):
+        return self.__solution_count
+
+
+def has_unique_solution(board):
+    """주어진 스도쿠 퍼즐의 해가 유일한지 검사합니다."""
+    N = len(board)
+    model = cp_model.CpModel()
+    grid = {}
+    for i in range(N):
+        for j in range(N):
+            grid[(i, j)] = model.NewIntVar(1, N, f'grid_{i}_{j}')
+
+    # 기존 제약 조건 추가
+    for i in range(N):
+        for j in range(N):
+            if board[i][j] != 0:
+                model.Add(grid[(i, j)] == board[i][j])
+    for i in range(N):
+        model.AddAllDifferent([grid[(i, j)] for j in range(N)])
+        model.AddAllDifferent([grid[(j, i)] for j in range(N)])
+
+    subgrid_size = int(N ** 0.5)
+    for row_idx in range(0, N, subgrid_size):
+        for col_idx in range(0, N, subgrid_size):
+            subgrid_vars = [grid[(row_idx + i, col_idx + j)] for i in range(subgrid_size) for j in range(subgrid_size)]
+            model.AddAllDifferent(subgrid_vars)
+
+    solver = cp_model.CpSolver()
+    # 해를 2개까지만 찾도록 설정
+    solution_printer = VarArraySolutionPrinter(list(grid.values()))
+    solver.parameters.enumerate_all_solutions = True
+    status = solver.Solve(model, solution_printer)
+
+    return solution_printer.solution_count() == 1
+
+
+def generate_sudoku(difficulty='medium', num_size=9):
+    """
+    주어진 난이도에 맞춰 새로운 스도쿠 퍼즐을 생성합니다.
+    """
+    # 1. 완전한 정답 그리드 생성
+    # 빈 그리드에서 시작하여 OR-Tools가 하나의 해를 찾도록 함
+    subgrid_size = int(math.sqrt(num_size))
+    total_cell_size = num_size*num_size
+    first_row = random.sample(range(1, 10), 9)
+    randomized_start_board = [first_row] + [[0] * 9 for _ in range(8)]
+    empty_board = [[0] * num_size for _ in range(num_size)]
+    input_data = {
+        'problem_type': 'sudoku',
+        'input_grid': randomized_start_board,
+        'difficulty': difficulty,
+        'num_size': num_size,
+        'subgrid_size': subgrid_size
+    }
+    solution_board, _, _ = run_sudoku_solver_optimizer(input_data)  # 이전에 만든 스도쿠 솔버 재활용
+
+    puzzle = [row[:] for row in solution_board]
+
+    # 난이도별 제거할 셀의 개수 설정
+    if difficulty == 'easy':
+        # 36-45 clues
+        cells_to_remove = total_cell_size - random.randint(int(total_cell_size*0.4), int(total_cell_size*0.5))
+    elif difficulty == 'hard':
+        # 22-27 clues
+        cells_to_remove = total_cell_size - random.randint(int(total_cell_size*0.2), int(total_cell_size*0.3))
+    else:  # medium
+        # 28-35 clues
+        cells_to_remove = total_cell_size - random.randint(int(total_cell_size*0.3), int(total_cell_size*0.4))
+
+    # 2. 유일해를 유지하며 숫자 제거
+    coords = [(r, c) for r in range(num_size) for c in range(num_size)]
+    random.shuffle(coords)
+
+    removed_count = 0
+    for r, c in coords:
+        if removed_count >= cells_to_remove:
+            break
+
+        original_value = puzzle[r][c]
+        puzzle[r][c] = 0
+
+        if not has_unique_solution(puzzle):
+            # 해가 유일하지 않으면 숫자를 다시 복원
+            puzzle[r][c] = original_value
+        else:
+            removed_count += 1
+
+    return puzzle
+
+
+def create_puzzle_from_solution(solution_grid, difficulty='medium'):
+    """
+    완성된 정답 그리드에서 난이도에 따라 무작위로 숫자를 제거하여
+    새로운 퍼즐을 생성합니다.
+    """
+    if not solution_grid:
+        return []
+
+    N = len(solution_grid)
+    puzzle = [row[:] for row in solution_grid]  # 정답 그리드 복사
+
+    # 난이도에 따라 남길 숫자의 비율(%) 설정
+    if difficulty == 'easy':
+        reveal_ratio = 0.45
+    elif difficulty == 'hard':
+        reveal_ratio = 0.25
+    else:  # medium
+        reveal_ratio = 0.35
+
+    total_cells = N * N
+    cells_to_reveal = int(total_cells * reveal_ratio)
+
+    all_coords = [(r, c) for r in range(N) for c in range(N)]
+    random.shuffle(all_coords)
+
+    coords_to_blank = all_coords[cells_to_reveal:]
+    for r, c in coords_to_blank:
+        puzzle[r][c] = 0
+
+    return puzzle
 
 
 def get_solving_time_sec(processing_time):

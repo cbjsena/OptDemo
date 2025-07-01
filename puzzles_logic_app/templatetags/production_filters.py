@@ -45,7 +45,7 @@ def get_item_simple(collection, key):
 # get_cell_value는 이제 필터가 아니라 simple_tag로 만듭니다.
 @register.simple_tag(name='get_cell_value_tag') # 태그 이름 변경 (선택 사항)
 def get_cell_value_tag(matrix, row_idx, col_idx):
-    # logger.debug(
+    # logger.info(
     #     f"get_cell_value_tag: matrix type = {type(matrix)}, matrix_preview = {str(matrix)[:50]}..., "
     #     f"row_idx = {row_idx} (type: {type(row_idx)}), "
     #     f"col_idx = {col_idx} (type: {type(col_idx)})"

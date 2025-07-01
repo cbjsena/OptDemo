@@ -1,6 +1,9 @@
+from collections import Counter
+
 from common_utils.common_data_utils import save_json_data
 import logging
 import datetime
+import math
 
 from django.conf import settings
 
@@ -82,54 +85,66 @@ for i in range(10):
         if city_i < 8 and city_j < 8:
             preset_sport_schedule_dist_map_10[i][j] = preset_sport_schedule_distance_matrix_km[city_i][city_j]
 
-preset_sudoku_puzzles = {
-    'easy': [
-        [5, 3, 0, 0, 7, 0, 0, 0, 0],
-        [6, 0, 0, 1, 9, 5, 0, 0, 0],
-        [0, 9, 8, 0, 0, 0, 0, 6, 0],
-        [8, 0, 0, 0, 6, 0, 0, 0, 3],
-        [4, 0, 0, 8, 0, 3, 0, 0, 1],
-        [7, 0, 0, 0, 2, 0, 0, 0, 6],
-        [0, 6, 0, 0, 0, 0, 2, 8, 0],
-        [0, 0, 0, 4, 1, 9, 0, 0, 5],
-        [0, 0, 0, 0, 8, 0, 0, 7, 9],
+preset_sudoku_size_options = [9, 16, 25]
+preset_sudoku_examples = {
+    16: [
+        [ 1,  2,  3,  4,   5,  6,  7,  8,   9, 10, 11, 12,  13, 14, 15, 16],
+        [ 5,  6,  7,  8,   9, 10, 11, 12,  13, 14, 15, 16,   1,  2,  3,  4],
+        [ 9, 10, 11, 12,  13, 14, 15, 16,   1,  2,  3,  4,    5,  6,  7,  8],
+        [13, 14, 15, 16,   1,  2,  3,  4,    5,  6,  7,  8,    9, 10, 11, 12],
+
+        [ 2,  1,  4,  3,   6,  5,  8,  7,  10,  9, 12, 11,  14, 13, 16, 15],
+        [ 6,  5,  8,  7,  10,  9, 12, 11,  14, 13, 16, 15,   2,  1,  4,  3],
+        [10,  9, 12, 11,  14, 13, 16, 15,   2,  1,  4,  3,    6,  5,  8,  7],
+        [14, 13, 16, 15,   2,  1,  4,  3,    6,  5,  8,  7,  10,  9, 12, 11],
+
+        [ 3,  4,  1,  2,   7,  8,  5,  6,  11, 12,  9, 10,  15, 16, 13, 14],
+        [ 7,  8,  5,  6,  11, 12,  9, 10,  15, 16, 13, 14,   3,  4,  1,  2],
+        [11, 12,  9, 10,  15, 16, 13, 14,   3,  4,  1,  2,    7,  8,  5,  6],
+        [15, 16, 13, 14,   3,  4,  1,  2,    7,  8,  5,  6,  11, 12,  9, 10],
+
+        [ 4,  3,  2,  1,   8,  7,  6,  5,  12, 11, 10,  9,  16, 15, 14, 13],
+        [ 8,  7,  6,  5,  12, 11, 10,  9,  16, 15, 14, 13,   4,  3,  2,  1],
+        [12, 11, 10,  9,  16, 15, 14, 13,   4,  3,  2,  1,    8,  7,  6,  5],
+        [16, 15, 14, 13,   4,  3,  2,  1,    8,  7,  6,  5,  12, 11, 10,  9]
     ],
-    'medium': [
-        [0, 2, 0, 6, 0, 8, 0, 0, 0],
-        [5, 8, 0, 0, 0, 9, 7, 0, 0],
-        [0, 0, 0, 0, 4, 0, 0, 0, 0],
-        [3, 7, 0, 0, 0, 0, 5, 0, 0],
-        [6, 0, 0, 0, 0, 0, 0, 0, 4],
-        [0, 0, 8, 0, 0, 0, 0, 1, 3],
-        [0, 0, 0, 0, 2, 0, 0, 0, 0],
-        [0, 0, 9, 8, 0, 0, 0, 3, 6],
-        [0, 0, 0, 3, 0, 6, 0, 9, 0],
-    ],
-    'hard': [
-        [8, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 3, 6, 0, 0, 0, 0, 0],
-        [0, 7, 0, 0, 9, 0, 2, 0, 0],
-        [0, 5, 0, 0, 0, 7, 0, 0, 0],
-        [0, 0, 0, 0, 4, 5, 7, 0, 0],
-        [0, 0, 0, 1, 0, 0, 0, 3, 0],
-        [0, 0, 1, 0, 0, 0, 0, 6, 8],
-        [0, 0, 8, 5, 0, 0, 0, 1, 0],
-        [0, 9, 0, 0, 0, 0, 4, 0, 0],
+    25: [
+        [1, 16, 17, 15, 18, 7, 13, 2, 19, 25, 3, 4, 22, 6, 14, 12, 21, 24, 8, 10, 11, 9, 20, 23, 5],
+        [8, 7, 13, 23, 25, 1, 5, 24, 21, 12, 18, 10, 20, 19, 17, 6, 15, 14, 11, 9, 2, 22, 3, 4, 16],
+        [22, 5, 4, 20, 24, 9, 14, 15, 11, 8, 2, 12, 25, 1, 23, 13, 3, 17, 19, 16, 6, 21, 7, 10, 18],
+        [2, 14, 11, 19, 6, 3, 17, 4, 10, 23, 15, 9, 21, 16, 24, 7, 22, 5, 18, 20, 13, 1, 12, 25, 8],
+        [3, 9, 10, 21, 12, 18, 16, 22, 6, 20, 7, 5, 11, 8, 13, 1, 25, 2, 4, 23, 14, 17, 24, 19, 15],
+        [10, 3, 21, 14, 4, 15, 2, 16, 12, 1, 9, 6, 8, 25, 5, 18, 11, 19, 24, 7, 23, 13, 22, 17, 20],
+        [15, 20, 16, 7, 11, 4, 3, 6, 5, 22, 10, 21, 13, 14, 12, 23, 2, 1, 17, 25, 8, 19, 18, 9, 24],
+        [17, 2, 5, 18, 8, 11, 9, 10, 23, 19, 22, 3, 1, 24, 7, 14, 6, 21, 20, 13, 16, 25, 15, 12, 4],
+        [9, 6, 22, 25, 13, 8, 7, 17, 20, 24, 4, 2, 18, 23, 19, 3, 16, 12, 15, 5, 21, 14, 10, 11, 1],
+        [12, 23, 1, 24, 19, 14, 21, 25, 18, 13, 11, 17, 15, 20, 16, 8, 4, 10, 9, 22, 7, 6, 5, 3, 2],
+        [7, 10, 14, 8, 9, 16, 18, 11, 25, 21, 1, 24, 4, 13, 2, 5, 17, 15, 6, 12, 22, 3, 19, 20, 23],
+        [16, 22, 12, 11, 1, 13, 20, 7, 2, 15, 17, 25, 5, 9, 21, 19, 23, 18, 14, 3, 24, 10, 4, 8, 6],
+        [19, 21, 18, 17, 2, 22, 4, 5, 24, 6, 8, 7, 23, 10, 3, 16, 9, 20, 25, 1, 12, 15, 14, 13, 11],
+        [5, 24, 20, 3, 23, 10, 1, 12, 8, 17, 14, 19, 6, 15, 22, 2, 7, 11, 13, 4, 25, 16, 9, 18, 21],
+        [25, 4, 6, 13, 15, 19, 23, 3, 9, 14, 16, 11, 12, 18, 20, 21, 24, 22, 10, 8, 5, 2, 1, 7, 17],
+        [13, 11, 8, 10 ,14, 23, 12, 21, 15, 7, 5, 20, 17, 3, 6, 4, 19, 16, 2, 18, 1, 24, 25, 22, 9],
+        [4, 1, 15, 2, 3, 6, 11, 9, 13, 5, 25, 8, 7, 22, 10, 24, 12, 23, 21, 14, 20, 18, 17, 16, 19],
+        [6, 19, 7, 5, 16, 2, 8, 1, 4, 10, 23, 18, 24, 21, 9, 25, 20, 3, 22, 17, 15, 12, 11, 14, 13],
+        [20, 18, 23, 12, 17, 24, 25, 14, 22, 3, 19, 16, 2, 4, 1, 15, 13, 9, 5, 11, 10, 8, 6, 21, 7],
+        [24, 25, 9, 22, 21, 20, 19, 18, 17, 16, 13, 15, 14, 12, 11, 10, 8, 7, 1, 6, 4, 5, 23, 2, 3],
+        [21, 13, 2, 6, 22, 12, 10, 8, 1, 18, 24, 23, 9, 7, 25, 11, 5, 4, 3, 19, 17, 20, 16, 15, 14],
+        [11, 15, 3, 4, 10, 5, 24, 13, 7, 9, 6, 14, 16, 17, 8, 20, 18, 25, 12, 21, 19, 23, 2, 1, 22],
+        [14, 12, 25, 9, 7, 21, 6, 23, 3, 4, 20, 22, 19, 5, 15, 17, 1, 8, 16, 2, 18, 11, 13, 24, 10],
+        [18, 17, 19, 16, 5, 25, 15, 20, 14, 11, 21, 1, 3, 2, 4, 22, 10, 13, 23, 24, 9, 7, 8, 6, 12],
+        [23, 8, 24, 1, 20, 17, 22, 19, 16, 2, 12, 13, 10, 11, 18, 9, 14, 6, 7, 15, 3, 4, 21, 5, 25]
     ]
 }
+
 preset_sudoku_difficulty_options = [
     {'value': 'easy', 'name': '쉬움 (Easy)'},
     {'value': 'medium', 'name': '중간 (Medium)'},
     {'value': 'hard', 'name': '어려움 (Hard)'},
 ]
-preset_sudoku_solver_options = [
-    # Gurobi도 추가할 수 있으나, 여기서는 OR-Tools를 기본으로 가정
-    {'value': 'ortools', 'name': 'Google OR-Tools'},
-    {'value': 'gurobi', 'name': 'Gurobi'},
-]
 
 preset_sudoku_difficulty ='easy'
-
+preset_sudoku_size ='9'
 
 def create_diet_json_data(form_data):
     logger.debug("Creating and validating Diet Problem input data from form.")
@@ -254,6 +269,83 @@ def create_sports_scheduling_json_data(form_data, num_teams, objective, schedule
     return input_data
 
 
+def create_sudoku_json_data(form_data):
+    input_grid = []
+    num_size = int(form_data.get('size', preset_sudoku_size))
+    for i in range(num_size):
+        row = []
+        for j in range(num_size):
+            cell_value = form_data.get(f'cell_{i}_{j}', '0')
+            row.append(int(cell_value) if cell_value.isdigit() else 0)
+        input_grid.append(row)
+
+    num_size = len(input_grid)  # 그리드 크기를 입력에서 직접 가져옴
+    subgrid_size = int(math.sqrt(num_size))
+    # N이 완전 제곱수가 아니면 에러 처리
+    if subgrid_size * subgrid_size != num_size:
+        raise ValueError(f"{num_size}x{num_size}는 유효한 스도쿠 크기가 아닙니다.")
+
+    # 사용자 입력 유효성 검사
+    validation_error_msg = validate_sudoku_input(input_grid)
+
+    input_data = {
+        'problem_type': 'sudoku',
+        'input_grid': input_grid,
+        'difficulty': form_data.get('difficulty'),
+        'num_size': num_size,
+        'subgrid_size': subgrid_size
+    }
+
+    return validation_error_msg, input_data
+
+
+def validate_sudoku_input(board):
+    """
+    사용자가 입력한 스도쿠 그리드의 유효성을 검사하고,
+    오류가 있을 경우 HTML 형식의 문자열로 상세 내용을 반환합니다.
+    """
+    N = len(board)
+    subgrid_size = int(math.sqrt(N))
+    error_messages = []
+
+    def find_duplicates(name, index, values):
+        # 0을 제외한 값들만 필터링
+        filtered = [v for v in values if v != 0]
+        # 중복된 숫자 찾기
+        counter = Counter(filtered)
+        duplicates = sorted([num for num, count in counter.items() if count > 1])
+        if duplicates:
+            # 오류 메시지를 리스트에 추가
+            msg = (
+                f"<b>❌ {name} {index}</b>에 중복된 숫자가 있습니다.<br>"
+                f"&nbsp;&nbsp;▶ 중복된 숫자: {duplicates}"
+            )
+            error_messages.append(msg)
+
+    # 1. 행 검사
+    for i, row in enumerate(board):
+        find_duplicates("행", i + 1, row)
+
+    # 2. 열 검사
+    for j in range(N):
+        col = [board[i][j] for i in range(N)]
+        find_duplicates("열", j + 1, col)
+
+    # 3. 서브그리드(박스) 검사
+    for box_row in range(0, N, subgrid_size):
+        for box_col in range(0, N, subgrid_size):
+            square = [board[box_row + i][box_col + j] for i in range(subgrid_size) for j in range(subgrid_size)]
+            box_label = f"(행 {box_row + 1}~{box_row + subgrid_size}, 열 {box_col + 1}~{box_col + subgrid_size})"
+            find_duplicates("박스", box_label, square)
+
+    if error_messages:
+        # 오류가 하나라도 있으면, 모든 오류 메시지를 합쳐서 반환
+        header = "입력한 퍼즐에 다음과 같은 오류가 있어 해결할 수 없습니다:<br><br>"
+        return header + "<br>".join(error_messages)
+
+    # 오류가 없으면 유효함
+    return None
+
 def save_puzzle_json_data(input_data):
     problem_type = input_data.get('problem_type')
     dir = f'puzzles_{problem_type}_data'
@@ -277,8 +369,8 @@ def save_puzzle_json_data(input_data):
         num_nutrients = input_data.get('num_nutrients')
         filename_pattern = f"food{num_foods}_nutrient{num_nutrients}"
     elif "sudoku" == problem_type:
-        num_foods = input_data.get('num_foods')
-        num_nutrients = input_data.get('num_nutrients')
-        filename_pattern = f"food{num_foods}_nutrient{num_nutrients}"
+        num_size = input_data.get('num_size')
+        difficulty = input_data.get('difficulty')
+        filename_pattern = f"{num_size}_{difficulty}"
 
     return save_json_data(input_data, dir, filename_pattern)

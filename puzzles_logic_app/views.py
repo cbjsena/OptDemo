@@ -291,24 +291,23 @@ def sudoku_introduction_view(request):
 
 def sudoku_demo_view(request):
     input_grid = []
+    form_data ={}
     if request.method == 'GET':
         submitted_difficulty = request.GET.get('difficulty', preset_sudoku_difficulty)
-
-        # GET 요청 시에도 사용자가 수정한 그리드 값을 유지하기 위함
-        for i in range(9):
-            row = []
-            for j in range(9):
-                cell_value_str = request.GET.get(f'cell_{i}_{j}', '0')
-                # 빈 문자열이나 공백은 0으로 처리
-                cell_value = int(cell_value_str) if cell_value_str.strip() else 0
-                row.append(cell_value)
-            input_grid.append(row)
+        submitted_size = int(request.GET.get('size', preset_sudoku_size))
+        if submitted_size == 9:
+            input_grid = generate_sudoku(submitted_difficulty, submitted_size)
+        else:
+            solution_grid = preset_sudoku_examples[submitted_size]
+            input_grid = create_puzzle_from_solution(solution_grid, submitted_difficulty)
 
     elif request.method == 'POST':
         form_data = request.POST
-        for i in range(9):
+        submitted_difficulty = form_data.get('difficulty', preset_sudoku_difficulty)
+        submitted_size = int(form_data.get('size', preset_sudoku_size))
+        for i in range(submitted_size):
             row = []
-            for j in range(9):
+            for j in range(submitted_size):
                 cell_value_str = form_data.get(f'cell_{i}_{j}', '0')
                 # 빈 문자열이나 공백은 0으로 처리
                 cell_value = int(cell_value_str) if cell_value_str.strip() else 0
@@ -320,28 +319,43 @@ def sudoku_demo_view(request):
         'active_submenu': 'Sudoku Demo',
         'results': None, 'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
+        'size_options': preset_sudoku_size_options,
+        'submitted_size': submitted_size,
         'difficulty_options': preset_sudoku_difficulty_options,
         'submitted_difficulty': submitted_difficulty,
         'input_grid': input_grid,
+        'cell_indices': range(submitted_size),
+        'cell_subgrid_size': int(math.sqrt(submitted_size)),
     }
 
     if request.method == 'POST':
         try:
+            # 1. 데이터 파일 새성 및 검증
+            validation_error_msg, input_data = create_sudoku_json_data(form_data)
 
-            # 2. 최적화 실행
-            solved_grid, error_msg_opt, processing_time = run_sudoku_solver_optimizer(input_grid)
+            # 2. 파일 저장
+            if settings.SAVE_DATA_FILE:
+                success_save_message, save_error = save_puzzle_json_data(input_data)
+                if save_error:
+                    context['error_message'] = save_error
+                elif success_save_message:
+                    context['success_save_message'] = success_save_message
+            if validation_error_msg:
+                context['error_message'] = validation_error_msg
+            else:
+                # 3. 최적화 실행
+                solved_grid, error_msg_opt, processing_time = run_sudoku_solver_optimizer(input_data)
+                context['processing_time_seconds'] = processing_time
 
-            context['processing_time_seconds'] = processing_time
-
-            if error_msg_opt:
-                context['error_message'] = error_msg_opt
-            elif solved_grid:
-                context['results'] = solved_grid
-                context['success_message'] = "스도쿠 퍼즐을 성공적으로 풀었습니다!"
+                if error_msg_opt:
+                    context['error_message'] = error_msg_opt
+                elif solved_grid:
+                    context['results'] = solved_grid
+                    context['success_message'] = "스도쿠 퍼즐을 성공적으로 풀었습니다!"
 
         except Exception as e:
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"
-            logger.error(f"Unexpected error in sudoku_demo_view: {e}", exc_info=True)
+            logger.error(f"Unexpected error in sports_scheduling_demo_view: {e}", exc_info=True)
 
     return render(request, 'puzzles_logic_app/sudoku_demo.html', context)
 
