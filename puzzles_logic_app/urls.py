@@ -15,15 +15,11 @@ urlpatterns = [
          name='sports_scheduling_introduction'),
     path('sports-scheduling/demo/', views.sports_scheduling_demo_view, name='sports_scheduling_demo'),
 
-    # 3. Nurse Rostering Problem
-    path('nurse-rostering/introduction/', views.nurse_rostering_introduction_view, name='nurse_rostering_introduction'),
-    path('nurse-rostering/demo/', views.nurse_rostering_demo_view, name='nurse_rostering_demo'),
-
-    # 4. Traveling Salesman Problem (TSP)
+    # 3. Traveling Salesman Problem (TSP)
     path('tsp/introduction/', views.tsp_introduction_view, name='tsp_introduction'),
     path('tsp/demo/', views.tsp_demo_view, name='tsp_demo'),
 
-    # 5. Sudoku Solver
+    # 4. Sudoku Solver
     path('sudoku/introduction/', views.sudoku_introduction_view, name='sudoku_introduction'),
     path('sudoku/demo/', views.sudoku_demo_view, name='sudoku_demo'),
 ]

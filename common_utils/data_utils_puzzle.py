@@ -85,6 +85,33 @@ for i in range(10):
         if city_i < 8 and city_j < 8:
             preset_sport_schedule_dist_map_10[i][j] = preset_sport_schedule_distance_matrix_km[city_i][city_j]
 
+preset_tsp_all_cities= [
+    {'name': '서울', 'lat': 37.5665, 'lon': 126.9780}, {'name': '부산', 'lat': 35.1796, 'lon': 129.0756},
+    {'name': '대구', 'lat': 35.8714, 'lon': 128.6014}, {'name': '인천', 'lat': 37.4563, 'lon': 126.7052},
+    {'name': '광주', 'lat': 35.1595, 'lon': 126.8526}, {'name': '대전', 'lat': 36.3504, 'lon': 127.3845},
+    {'name': '울산', 'lat': 35.5384, 'lon': 129.3114}, {'name': '수원', 'lat': 37.2636, 'lon': 127.0286},
+    {'name': '창원', 'lat': 35.2283, 'lon': 128.6811}, {'name': '고양', 'lat': 37.6584, 'lon': 126.8320},
+    {'name': '포항', 'lat': 36.0320, 'lon': 129.3648}, {'name': '강릉', 'lat': 37.7519, 'lon': 128.8761},
+    {'name': '춘천', 'lat': 37.8813, 'lon': 127.7298}
+]
+
+preset_tsp_cities=['서울', '부산', '광주', '대전', '강릉']
+preset_tsp_distance_matrix = [
+    [  0, 400, 295,  40, 330, 160, 360,  35, 390,  25, 330, 215, 105], # 서울
+    [400,   0,  95, 430, 100, 240,  60, 410,  30, 440,  90, 340, 450], # 부산
+    [295,  95,   0, 325, 195, 135,  70, 305,  85, 335,  65, 270, 360], # 대구
+    [ 40, 430, 325,   0, 350, 180, 400,  45, 420,  20, 370, 240, 130], # 인천
+    [330, 100, 195, 350,   0, 170, 160, 340,  90, 370, 260, 480, 410], # 광주
+    [160, 240, 135, 180, 170,   0, 200, 170, 230, 180, 230, 290, 235], # 대전
+    [360,  60,  70, 400, 160, 200,   0, 380,  50, 410,  40, 290, 400], # 울산
+    [ 35, 410, 305,  45, 340, 170, 380,   0, 400,  40, 360, 230, 120], # 수원
+    [390,  30,  85, 420,  90, 230,  50, 400,   0, 430,  80, 360, 440], # 창원
+    [ 25, 440, 335,  20, 370, 180, 410,  40, 430,   0, 355, 220, 100], # 고양
+    [330,  90,  65, 370, 260, 230,  40, 360,  80, 355,   0, 225, 350], # 포항
+    [215, 340, 270, 240, 480, 290, 290, 230, 360, 220, 225,   0, 150], # 강릉
+    [105, 450, 360, 130, 410, 235, 400, 120, 440, 100, 350, 150,   0]  # 춘천
+]
+
 preset_sudoku_size_options = [9, 16, 25]
 preset_sudoku_examples = {
     16: [
@@ -269,6 +296,21 @@ def create_sports_scheduling_json_data(form_data, num_teams, objective, schedule
     return input_data
 
 
+def create_tsp_json_data(selected_cities_data):
+    # 선택된 도시의 전체 데이터(이름, 좌표)를 추출
+    all_city_names = [city['name'] for city in preset_tsp_all_cities]
+    selected_indices = [all_city_names.index(city['name']) for city in selected_cities_data]
+    sub_matrix = [[preset_tsp_distance_matrix[i][j] for j in selected_indices] for i in selected_indices]
+    num_cities = len(selected_cities_data)
+    input_data = {
+        'problem_type': 'tsp',
+        'sub_matrix': sub_matrix,
+        'num_cities': num_cities
+    }
+
+    return  input_data
+
+
 def create_sudoku_json_data(form_data):
     input_grid = []
     num_size = int(form_data.get('size', preset_sudoku_size))
@@ -365,9 +407,8 @@ def save_puzzle_json_data(input_data):
         num_nutrients = input_data.get('num_nutrients')
         filename_pattern = f"food{num_foods}_nutrient{num_nutrients}"
     elif "tsp" == problem_type:
-        num_foods = input_data.get('num_foods')
-        num_nutrients = input_data.get('num_nutrients')
-        filename_pattern = f"food{num_foods}_nutrient{num_nutrients}"
+        num_cities = input_data.get('num_cities')
+        filename_pattern = f"{num_cities}_cities"
     elif "sudoku" == problem_type:
         num_size = input_data.get('num_size')
         difficulty = input_data.get('difficulty')

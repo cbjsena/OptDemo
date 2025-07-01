@@ -1,7 +1,7 @@
 import random
 
-from django.conf import settings
-
+from ortools.constraint_solver import routing_enums_pb2
+from ortools.constraint_solver import pywrapcp
 from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 LP 솔버 사용)
 from ortools.sat.python import cp_model
 from gurobipy import Model, GRB, quicksum
@@ -46,7 +46,7 @@ def run_diet_optimizer(input_data):
 
     # 해결
     status = solver.Solve()
-    logger.info(f"Solver status: {status}, Time: {solver.WallTime():.2f} ms")
+    logger.info(f"Solver status: {status}, Time: {solver.WallTime()} ms")
 
     # 결과 추출
     results = {'diet_plan': [], 'total_cost': 0, 'nutrient_summary': []}
@@ -276,9 +276,9 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
     # --- 4. 문제 해결 ---
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = settings.ORTOOLS_TIME_LIMIT
-    logger.info("Solving the Sports Scheduling model...")
     status = solver.Solve(model)
-    logger.info(f"Solver status: {status}, Time: {solver.WallTime():.2f} sec")
+    processing_time = solver.WallTime()
+    logger.info(f"Solver status: {status}, Time: {processing_time} sec")
 
     # --- 5. 결과 추출 ---
     results = {'schedule': [], 'has_bye': has_bye, 'total_distance': 'N/A', 'team_distances': []}
@@ -568,10 +568,9 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
         # Gurobi: model.setParam('TimeLimit', ...)
         solver.parameters.max_time_in_seconds = settings.ORTOOLS_TIME_LIMIT
 
-        solve_start_time = datetime.datetime.now()
         status = solver.Solve(model)
-        solve_end_time = datetime.datetime.now()
-        processing_time_ms = (solve_end_time - solve_start_time).total_seconds()
+        processing_time = solver.WallTime()
+        logger.info(f"Solver status: {status}, Time: {processing_time} sec")
 
         # --- 6. 결과 추출 ---
         results = {'schedule': [], 'has_bye': has_bye, 'total_distance': 0, 'team_distances': [], 'total_breaks': 0,
@@ -629,9 +628,8 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
     except Exception as e:
         logger.error(f"Error using OR-Tools: {e}", exc_info=True)
         error_msg = "OR-Tools 솔버 사용 중 오류가 발생했습니다."
-        processing_time_ms = 0
 
-    return results, error_msg, processing_time_ms
+    return results, error_msg, processing_time
 
 
 def run_sports_scheduling_optimizer_gurobi1(input_data):
@@ -1018,6 +1016,170 @@ def run_sports_scheduling_optimizer_gurobi2(input_data):
     return results, error_msg, processing_time_ms
 
 
+def run_nurse_rostering_optimizer(input_data):
+    """
+    OR-Tools CP-SAT를 사용하여 간호사 스케줄링 문제를 해결합니다.
+    """
+
+    # 입력 데이터 파싱
+    num_nurses = input_data['num_nurses']
+    num_days = input_data['num_days']
+    shifts = input_data['shifts']  # 예: ['Morning', 'Evening', 'Night']
+
+    # 각 날짜, 각 시프트별 필요 인원
+    shift_requests = input_data['shift_requests']  # 예: {(day, shift_idx): count, ...}
+
+    # 각 간호사의 최소/최대 근무일 수 (연성 제약)
+    min_shifts_per_nurse = input_data['min_shifts_per_nurse']
+    max_shifts_per_nurse = input_data['max_shifts_per_nurse']
+
+    all_nurses = range(num_nurses)
+    all_days = range(num_days)
+    all_shifts = range(len(shifts))
+
+    try:
+        model = cp_model.CpModel()
+
+        # --- 1. 결정 변수 생성 ---
+        # assigns[n, d, s] = 1 이면, 간호사 n이 d일에 시프트 s에 배정됨
+        assigns = {}
+        for n in all_nurses:
+            for d in all_days:
+                for s in all_shifts:
+                    assigns[(n, d, s)] = model.NewBoolVar(f'assigns_n{n}_d{d}_s{s}')
+
+        # --- 2. 강성 제약 조건 (Hard Constraints) ---
+
+        # 제약 1: 각 간호사는 하루에 최대 하나의 시프트만 근무 가능
+        for n in all_nurses:
+            for d in all_days:
+                model.AddAtMostOne(assigns[(n, d, s)] for s in all_shifts)
+
+        # 제약 2: 각 날짜, 각 시프트의 필요 인원 충족
+        for d in all_days:
+            for s in all_shifts:
+                required_nurses = shift_requests.get((d, s), 0)
+                model.Add(sum(assigns[(n, d, s)] for n in all_nurses) == required_nurses)
+
+        # --- 3. 연성 제약 조건 (Soft Constraints) ---
+        # 목표: 모든 간호사의 총 근무일 수가 min/max 범위에서 벗어나는 정도를 최소화
+
+        # 각 간호사의 총 근무일 수 계산
+        total_shifts_worked = [
+            sum(assigns[(n, d, s)] for d in all_days for s in all_shifts)
+            for n in all_nurses
+        ]
+
+        # 페널티 변수: 근무일 수가 범위를 벗어나는 양
+        penalties = []
+        for n in all_nurses:
+            num_shifts = total_shifts_worked[n]
+
+            # 최소 근무일 수보다 적게 일하는 경우의 페널티
+            under_penalty = model.NewIntVar(0, min_shifts_per_nurse, f'under_penalty_n{n}')
+            model.Add(min_shifts_per_nurse - num_shifts <= under_penalty)
+
+            # 최대 근무일 수를 초과하여 일하는 경우의 페널티
+            over_penalty = model.NewIntVar(0, num_days, f'over_penalty_n{n}')
+            model.Add(num_shifts - max_shifts_per_nurse <= over_penalty)
+
+            penalties.append(under_penalty)
+            penalties.append(over_penalty)
+
+        # --- 4. 목표 함수 설정 ---
+        # 페널티의 총합을 최소화
+        model.Minimize(sum(penalties))
+
+        # --- 5. 문제 해결 ---
+        solver = cp_model.CpSolver()
+        solver.parameters.max_time_in_seconds = settings.ORTOOLS_TIME_LIMIT
+        status = solver.Solve(model)
+        processing_time = solver.WallTime()
+        logger.info(f"Solver status: {status}, Time: {processing_time} sec")
+
+        # --- 6. 결과 추출 ---
+        if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+            schedule = {}
+            for d in all_days:
+                schedule[d] = {}
+                for s in all_shifts:
+                    schedule[d][s] = []
+                    for n in all_nurses:
+                        if solver.Value(assigns[(n, d, s)]) == 1:
+                            schedule[d][s].append(n)
+
+            # 각 간호사별 총 근무일 수 계산
+            nurse_work_days = [solver.Value(s) for s in total_shifts_worked]
+
+            results_data = {
+                'schedule': schedule,
+                'nurse_work_days': nurse_work_days,
+                'total_penalty': solver.ObjectiveValue()
+            }
+            return results_data, None, processing_time
+        else:
+            return None, "해를 찾을 수 없었습니다. 제약 조건이 너무 엄격할 수 있습니다.", processing_time
+
+    except Exception as e:
+        return None, f"오류 발생: {str(e)}", None
+
+def run_tsp_optimizer(input_data):
+    """OR-Tools Routing 라이브러리를 사용하여 TSP를 해결합니다."""
+
+    try:
+        # 1. 데이터 모델 생성
+        distance_matrix = input_data.get('sub_matrix')
+        num_nodes =  input_data.get('num_cities')
+        logger.info(f"Running TSP Problem: {num_nodes} cities")
+
+        manager = pywrapcp.RoutingIndexManager(num_nodes, 1, 0)  # 노드 수, 차량 수, 출발/종료 노드
+        routing = pywrapcp.RoutingModel(manager)
+
+        # 2. 거리 콜백 함수 정의
+        def distance_callback(from_index, to_index):
+            """두 노드 간의 거리를 반환하는 함수"""
+            from_node = manager.IndexToNode(from_index)
+            to_node = manager.IndexToNode(to_index)
+            return distance_matrix[from_node][to_node]
+
+        transit_callback_index = routing.RegisterTransitCallback(distance_callback)
+        routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+
+        # 3. 검색 파라미터 설정
+        search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+        search_parameters.first_solution_strategy = (
+            routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+        search_parameters.time_limit.FromSeconds(10)  # 타임아웃 설정
+
+        # 4. 문제 해결
+        solve_start_time = datetime.datetime.now()
+        solution = routing.SolveWithParameters(search_parameters)
+        solve_end_time = datetime.datetime.now()
+        processing_time = (solve_end_time - solve_start_time).total_seconds()
+
+        # 5. 결과 추출
+        results_data = {}
+        if solution:
+            index = routing.Start(0)
+            tour = []
+            while not routing.IsEnd(index):
+                node_index = manager.IndexToNode(index)
+                tour.append(node_index)
+                index = solution.Value(routing.NextVar(index))
+            # 마지막으로 출발지로 돌아오는 경로 추가
+            tour.append(manager.IndexToNode(index))
+
+            results_data = {
+                'tour_indices': tour,
+                'total_distance': solution.ObjectiveValue()
+            }
+            return results_data, None, None
+        else:
+            return None, "해를 찾을 수 없었습니다.", None
+
+    except Exception as e:
+        return None, f"오류 발생: {str(e)}", None
+
 def run_sudoku_solver_optimizer(input_data):
     """
     OR-Tools CP-SAT를 사용하여 스도쿠 퍼즐을 해결합니다.
@@ -1068,10 +1230,9 @@ def run_sudoku_solver_optimizer(input_data):
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = settings.ORTOOLS_TIME_LIMIT
 
-    solve_start_time = datetime.datetime.now()
     status = solver.Solve(model)
-    solve_end_time = datetime.datetime.now()
-    processing_time = (solve_end_time - solve_start_time).total_seconds()
+    processing_time = solver.WallTime()
+    logger.info(f"Solver status: {status}, Time: {processing_time} sec")
 
     # 4. 결과 추출
     solved_grid = None
@@ -1140,6 +1301,8 @@ def has_unique_solution(board):
     solution_printer = VarArraySolutionPrinter(list(grid.values()))
     solver.parameters.enumerate_all_solutions = True
     status = solver.Solve(model, solution_printer)
+    processing_time = solver.WallTime()
+    logger.info(f"Solver status: {status}, Time: {processing_time} sec")
 
     return solution_printer.solution_count() == 1
 
@@ -1233,10 +1396,10 @@ def create_puzzle_from_solution(solution_grid, difficulty='medium'):
 def get_solving_time_sec(processing_time):
     # solver.WallTime(): if solver is CP-SAT then, sec else ms
     processing_time = processing_time / 1000
-    return f"{processing_time:.3f}" if processing_time is not None else "N/A"
+    return f"{processing_time:.2f}" if processing_time is not None else "N/A"
 
 
 def get_solving_time_cp_sec(processing_time):
     # solver.WallTime(): if solver is CP-SAT then, sec else ms
     processing_time = processing_time
-    return f"{processing_time:.3f}" if processing_time is not None else "N/A"
+    return f"{processing_time:.2f}" if processing_time is not None else "N/A"

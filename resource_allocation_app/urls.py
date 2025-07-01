@@ -7,18 +7,23 @@ urlpatterns = [
     # General Introduction Page
     path('', views.resource_allocation_introduction_view, name='resource_allocation_introduction'),
 
-    # Budget Allocation
+    # 1. Budget Allocation
     path('budget-allocation/introduction/', views.budget_allocation_introduction_view, name='budget_allocation_introduction'),
     # path('budget-allocation/data/', views.budget_allocation_data_view, name='budget_allocation_data'),
     path('budget-allocation/demo/', views.budget_allocation_demo_view, name='budget_allocation_demo'),
 
-    # Financial Portfolio
-    path('financial-portfolio/introduction/', views.financial_portfolio_introduction_view, name='financial_portfolio_introduction'),
-    path('financial-portfolio/demo/', views.financial_portfolio_demo_view, name='financial_portfolio_demo'),
-
-    # Data Center Capacity Planning
+    # 2.Data Center Capacity Planning
     path('data-center-capacity/introduction/', views.data_center_capacity_introduction_view,
          name='data_center_capacity_introduction'),
-    path('data-center-capacity/demo/', views.data_center_capacity_demo_view, name='data_center_capacity_demo')
+    path('data-center-capacity/demo/', views.data_center_capacity_demo_view, name='data_center_capacity_demo'),
+
+    # 3. Nurse Rostering Problem
+    path('nurse-rostering/introduction/', views.nurse_rostering_introduction_view, name='nurse_rostering_introduction'),
+    path('nurse-rostering/demo/', views.nurse_rostering_demo_view, name='nurse_rostering_demo'),
+
+    # Financial Portfolio
+    path('financial-portfolio/introduction/', views.financial_portfolio_introduction_view,
+         name='financial_portfolio_introduction'),
+    path('financial-portfolio/demo/', views.financial_portfolio_demo_view, name='financial_portfolio_demo'),
 
 ]

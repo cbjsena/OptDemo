@@ -39,11 +39,11 @@
         <div class="col-md-6 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">1. 다이어트 문제 (The Diet Problem)</h5>
+                    <h4><a href="{% url 'puzzles_logic_app:diet_problem_introduction' %}">다이어트 문제 (The Diet Problem)</a></h4>
                     <p class="card-text">
                         다양한 음식의 영양 성분과 가격 정보가 주어졌을 때, 일일 최소/최대 영양 섭취 기준을 만족시키면서 가장 저렴한 비용으로 식단을 구성하는 고전적인 선형 계획법 문제입니다.
                     </p>
-                    <a href="{% url 'puzzles_logic_app:diet_problem_introduction' %}" class="btn btn-primary">소개 페이지로 이동</a>
+                    <p><strong>주요 목표:</strong> 총비용 최소화</p>
                 </div>
             </div>
         </div>
@@ -51,11 +51,11 @@
         <div class="col-md-6 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">2. 스포츠 스케줄링 (Sports Scheduling)</h5>
+                    <h4><a href="{% url 'puzzles_logic_app:sports_scheduling_introduction' %}">스포츠 스케줄링 (Sports Scheduling)</a></h4>
                     <p class="card-text">
                         프로 스포츠 리그의 전체 시즌 경기 일정을 생성하는 문제입니다. 홈/원정 균형, 이동 거리, 라이벌전 등 수많은 제약 조건을 고려하여 가장 공정하고 흥미로운 대진표를 계획합니다.
                     </p>
-                    <a href="{% url 'puzzles_logic_app:sports_scheduling_introduction' %}" class="btn btn-primary">소개 페이지로 이동</a>
+                    <p><strong>주요 목표:</strong> 총 이동 거리 최소화</p>
                 </div>
             </div>
         </div>
@@ -65,37 +65,24 @@
         <div class="col-md-6 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">3. 간호사 스케줄링 (Nurse Rostering)</h5>
-                    <p class="card-text">
-                        병원의 24시간 3교대 근무를 위해, 각 간호사의 선호와 규정을 모두 만족시키면서 공정하고 효율적인 월간 근무표를 작성하는 현실적인 스케줄링 문제입니다.
-                    </p>
-                    <a href="{% url 'puzzles_logic_app:nurse_rostering_introduction' %}" class="btn btn-primary">소개 페이지로 이동</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">4. 외판원 문제 (Traveling Salesman Problem, TSP)</h5>
+                    <h4><a href="{% url 'puzzles_logic_app:tsp_introduction' %}">외판원 문제 (Traveling Salesman Problem, TSP)</a></h4>
+                    <h5 class="card-title">3. 외판원 문제 (Traveling Salesman Problem, TSP)</h5>
                     <p class="card-text">
                         여러 도시를 단 한 번씩만 방문하고 출발점으로 돌아오는 가장 짧은 경로를 찾는, 조합 최적화 분야에서 가장 유명한 문제 중 하나입니다.
                     </p>
-                    <a href="{% url 'puzzles_logic_app:tsp_introduction' %}" class="btn btn-primary">소개 페이지로 이동</a>
+                    <p><strong>주요 목표:</strong> 총 이동 거리 최소화</p>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="row">
+
         <div class="col-md-6 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">5. 스도쿠 해결사 (Sudoku Solver)</h5>
+                    <h4><a href="{% url 'puzzles_logic_app:tsp_introduction' %}">스도쿠 해결사 (Sudoku Solver)</a></h4>
                     <p class="card-text">
                         숫자 퍼즐 스도쿠를 제약 프로그래밍 문제로 모델링하여 해를 찾는 문제입니다. 모든 빈칸에 대해 가능한 숫자를 탐색하고 규칙을 만족하는 해를 찾아냅니다.
                     </p>
-                    <a href="{% url 'puzzles_logic_app:sudoku_introduction' %}" class="btn btn-primary">소개 페이지로 이동</a>
+                    <p><strong>주요 목표:</strong> 문제 해결</p>
                 </div>
             </div>
         </div>

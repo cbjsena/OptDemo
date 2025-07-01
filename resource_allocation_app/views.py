@@ -334,3 +334,20 @@ def data_center_capacity_demo_view(request):
             logger.error(f"Unexpected error in data_center_capacity_demo_view (POST): {e}", exc_info=True)
 
     return render(request, 'resource_allocation_app/data_center_capacity_demo.html', context)
+
+# --- 3. Nurse Rostering Problem ---
+def nurse_rostering_introduction_view(request):
+    context = {
+        'active_model': 'Resource Allocation',
+        'active_submenu': 'nurse_rostering_introduction'
+    }
+    logger.debug("Rendering Nurse Rostering introduction page.")
+    return render(request, 'resource_allocation_app/nurse_rostering_introduction.html', context)
+
+def nurse_rostering_demo_view(request):
+    context = {
+        'active_model': 'Resource Allocation',
+        'active_submenu': 'Nurse Rostering Demo'
+    }
+    logger.debug("Rendering Nurse Rostering demo page.")
+    return render(request, 'resource_allocation_app/nurse_rostering_demo.html', context)

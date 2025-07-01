@@ -245,24 +245,8 @@ def sports_scheduling_demo_view(request):
 
     return render(request, 'puzzles_logic_app/sports_scheduling_demo.html', context)
 
-# --- 3. Nurse Rostering Problem ---
-def nurse_rostering_introduction_view(request):
-    context = {
-        'active_model': 'Puzzles & Real-World Logic',
-        'active_submenu': 'nurse_rostering_introduction'
-    }
-    logger.debug("Rendering Nurse Rostering introduction page.")
-    return render(request, 'puzzles_logic_app/nurse_rostering_introduction.html', context)
 
-def nurse_rostering_demo_view(request):
-    context = {
-        'active_model': 'Puzzles & Real-World Logic',
-        'active_submenu': 'Nurse Rostering Demo'
-    }
-    logger.debug("Rendering Nurse Rostering demo page.")
-    return render(request, 'puzzles_logic_app/nurse_rostering_demo.html', context)
-
-# --- 4. Traveling Salesman Problem (TSP) ---
+# --- 3. Traveling Salesman Problem (TSP) ---
 def tsp_introduction_view(request):
     context = {
         'active_model': 'Puzzles & Real-World Logic',
@@ -272,14 +256,52 @@ def tsp_introduction_view(request):
     return render(request, 'puzzles_logic_app/tsp_introduction.html', context)
 
 def tsp_demo_view(request):
+    all_city_names = [city['name'] for city in preset_tsp_all_cities]
     context = {
         'active_model': 'Puzzles & Real-World Logic',
-        'active_submenu': 'TSP Demo'
+        'active_submenu': 'TSP Demo',
+        'all_cities': all_city_names,
+        'selected_cities': preset_tsp_cities,
+        'results': None, 'error_message': None, 'success_message': None,
+        'processing_time_seconds': "N/A",
     }
+
+    if request.method == 'POST':
+        selected_city_names = request.POST.getlist('cities')
+        context['selected_cities'] = selected_city_names
+
+        if len(selected_city_names) < 2:
+            context['error_message'] = "최소 2개 이상의 도시를 선택해야 합니다."
+        else:
+            try:
+                selected_cities_data = [city for city in preset_tsp_all_cities if city['name'] in selected_city_names]
+                # 1. 선택된 도시에 대한 부분 거리 행렬 생성
+                input_data = create_tsp_json_data(selected_cities_data)
+
+                # 2. 최적화 실행
+                results_data, error_msg, processing_time = run_tsp_optimizer(input_data)
+                context['processing_time_seconds'] = processing_time
+
+                if error_msg:
+                    context['error_message'] = error_msg
+                elif results_data:
+                    # 결과에 좌표 정보도 포함하여 템플릿으로 전달
+                    tour_indices = results_data['tour_indices']
+                    tour_data = [selected_cities_data[i] for i in tour_indices]
+
+                    results_data['tour_cities_data'] = tour_data
+                    results_data['tour_cities'] = " → ".join([city['name'] for city in tour_data])
+                    context['results'] = results_data
+                    context['success_message'] = f"최단 경로를 찾았습니다! 총 이동 거리는 {results_data['total_distance']}km 입니다."
+
+            except Exception as e:
+                context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+
     logger.debug("Rendering TSP demo page.")
     return render(request, 'puzzles_logic_app/tsp_demo.html', context)
 
-# --- 5. Sudoku Solver ---
+
+# --- 4. Sudoku Solver ---
 def sudoku_introduction_view(request):
     context = {
         'active_model': 'Puzzles & Real-World Logic',
