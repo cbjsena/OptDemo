@@ -770,7 +770,7 @@ def run_nurse_roster_advanced_optimizer(input_data):
     """
     숙련도, 휴가, 강화된 공정성 등 고급 제약이 포함된 스케줄링 문제를 해결합니다.
     """
-
+    SHIFT_NIGHT = preset_nurse_rostering_shifts[2]
     # --- 입력 데이터 파싱 ---
     nurses_data = input_data['nurses_data']
     num_nurses = len(nurses_data)
@@ -829,7 +829,7 @@ def run_nurse_roster_advanced_optimizer(input_data):
 
         # 목표 1: [신규] 공평한 야간 근무 분배
         if 'fair_nights' in enabled_fairness:
-            night_shift_idx = shifts.index('야간(N)')
+            night_shift_idx = shifts.index(SHIFT_NIGHT)
             night_shifts_worked = [sum(assigns[(n_id, d, night_shift_idx)] for d in range(num_days)) for n_id in
                                    nurse_ids]
             min_nights = model.NewIntVar(0, num_days, 'min_nights')
@@ -890,8 +890,8 @@ def run_nurse_roster_advanced_optimizer(input_data):
             total_shifts = [
                 sum(solver.Value(assigns[(n_id, d, s)]) for d in range(num_days) for s in range(num_shifts_per_day)) for
                 n_id in nurse_ids]
-            if 'fair_nights' in enabled_fairness and '야간(N)' in shifts:
-                night_shift_idx = shifts.index('야간(N)')
+            if 'fair_nights' in enabled_fairness and SHIFT_NIGHT in shifts:
+                night_shift_idx = shifts.index(SHIFT_NIGHT)
                 total_nights = [sum(solver.Value(assigns[(n_id, d, night_shift_idx)]) for d in range(num_days)) for n_id
                                 in nurse_ids]
             else:

@@ -352,11 +352,10 @@ def nurse_rostering_demo_view(request):
     form_data = {}
     shift_requests = {}
     if request.method == 'GET':
-        form_data['total_budget'] = preset_total_budget
         submitted_num_nurses = int(request.GET.get('num_nurses', preset_nurse_rostering_num_nurses))
-        submitted_num_days = int(request.GET.get('min_shifts', preset_nurse_rostering_days))
-        submitted_min_shifts = int(request.GET.get('max_shifts', preset_nurse_rostering_min_shifts))
-        submitted_max_shifts = int(request.GET.get('num_items_to_show', preset_nurse_rostering_max_shifts))
+        submitted_num_days = int(request.GET.get('num_days', preset_nurse_rostering_days))
+        submitted_min_shifts = int(request.GET.get('min_shifts', preset_nurse_rostering_min_shifts))
+        submitted_max_shifts = int(request.GET.get('max_shifts', preset_nurse_rostering_max_shifts))
         shift_requests = preset_nurse_rostering_requests
 
     elif request.method == 'POST':
@@ -418,55 +417,64 @@ def nurse_rostering_demo_view(request):
 def nurse_rostering_advanced_demo_view(request):
     logger.info(f"Start nurse_rostering_advanced_demo_view.")
 
-    form_data = {}
+    # 요청 방식에 따라 데이터 소스 결정
+    source = request.POST if request.method == 'POST' else request.GET
+    submitted_num_nurses = int(source.get('num_nurses', preset_nurse_rostering_num_nurses))
+    submitted_num_days = int(source.get('num_days', preset_nurse_rostering_days))
+    submitted_min_shifts = int(source.get('min_shifts', preset_nurse_rostering_min_shifts))
+    submitted_max_shifts = int(source.get('max_shifts', preset_nurse_rostering_max_shifts))
     nurses_data = []
+    for i in range(submitted_num_nurses):
+        preset = preset_nurse_rostering_nurses_data[i]
+        nurses_data.append({
+            'id': i,
+            'name': source.get(f'nurse_{i}_name', preset['name']),
+            'skill': source.get(f'nurse_{i}_skill', preset['skill']),
+        })
 
-    if request.method == 'GET':
-        submitted_num_nurses = int(request.GET.get('num_nurses_to_show', 15))
+    # --- 시프트별 필요인원, 휴가, 공정성 옵션 값 유지 ---
+    skill_requirements = {}
+    for s_name in preset_nurse_rostering_shifts:
+        skill_requirements[s_name] = {}
+        for skill in preset_nurse_rostering_skill_options:
+            default_req = {'H': 1, 'M': 2, 'L': 1}.get(skill, 1)  # 예시 기본값
+            skill_requirements[s_name][skill] = int(source.get(f'req_{s_name}_{skill}', default_req))
 
-        nurses_data = preset_nurse_rostering_nurses_data
-        form_data['num_days'] = preset_nurse_rostering_days
-        form_data['min_shifts'] = preset_nurse_rostering_min_shifts
-        form_data['max_shifts'] = preset_nurse_rostering_max_shifts
-        form_data['skill_requirements'] = preset_nurse_rostering_shift_requirements
-        form_data['enabled_fairness'] = preset_nurse_rostering_enabled_fairness
+    submitted_vacations = {i: source.get(f'nurse_{i}_vacation', '') for i in range(submitted_num_nurses)}
+    submitted_fairness = source.getlist('fairness_options')
+    if request.method != 'POST' and not submitted_fairness:  # 최초 로드 시 기본값 체크
+        submitted_fairness = preset_nurse_rostering_enabled_fairness
 
-    elif request.method == 'POST':
-        form_data = request.POST
-        submitted_num_nurses = int(form_data.get('num_nurses', 15))
-        # POST된 데이터로 간호사 정보 재구성
-        for i in range(submitted_num_nurses):
-            nurses_data.append({
-                'id': i,
-                'name': form_data.get(f'nurse_{i}_name'),
-                'skill': form_data.get(f'nurse_{i}_skill')
-            })
-
-    # 요일 정보는 항상 필요
-    num_days = int(form_data.get('num_days', 14))
-    today = datetime.date.today()
-    schedule_dates = [today + datetime.timedelta(days=i) for i in range(num_days)]
-    weekdays = ["월", "화", "수", "목", "금", "토", "일"]
-    schedule_weekdays = [weekdays[d.weekday()] for d in schedule_dates]
+    schedule_weekdays = get_schedule_weekdays(preset_nurse_rostering_days)
 
     context = {
         'active_model': 'Resource Allocation',
-        'active_submenu': 'Nurse Rostering Advanced Demo',
+        'active_submenu': 'Advanced Nurse Rostering',
         'nurses_data': nurses_data,
-        'form_data': form_data,  # 폼 데이터 전달
-        'num_nurses_options': range(5, 26),  # 5명 ~ 25명
-        'submitted_num_nurses': submitted_num_nurses,
         'shifts': preset_nurse_rostering_shifts,
-        'skills': ['상', '중', '하'],
+        'skill_options': preset_nurse_rostering_skill_options,
         'schedule_weekdays': schedule_weekdays,
-        'results': None, 'error_message': None, 'success_message': None,
+        'skill_requirements': skill_requirements,
+        'submitted_vacations': submitted_vacations,
+        'submitted_fairness': submitted_fairness,
+        'results': None, 'error_message': None, 'success_message': None, 'success_save_message': None,
         'processing_time_seconds': "N/A",
+        # 설정 옵션
+        'num_nurses_options': range(5, 21),
+        'num_days_options': [7, 10, 14, 21, 28],
+        'min_shifts_options': range(2, 11),
+        'max_shifts_options': range(5, 16),
+        # 현재 선택된 값
+        'submitted_num_nurses': submitted_num_nurses,
+        'submitted_num_days': submitted_num_days,
+        'submitted_min_shifts': submitted_min_shifts,
+        'submitted_max_shifts': submitted_max_shifts,
     }
 
     if request.method == 'POST':
         try:
             # 1. 데이터 생성 및 검증
-            input_data = create_nurse_rostering_advanced_json_data(form_data)
+            input_data = create_nurse_rostering_advanced_json_data(source)
 
             # 2. 파일 저장 (선택 사항)
             if settings.SAVE_DATA_FILE:

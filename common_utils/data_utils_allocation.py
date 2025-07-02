@@ -41,8 +41,9 @@ preset_datacenter_services = [
 
 preset_nurse_rostering_num_nurses = 15
 preset_nurse_rostering_days = 14
-preset_nurse_rostering_shifts = ['주간(D)', '오후(E)', '야간(N)']
-preset_nurse_rostering_requests = {'D': 4, 'E': 3, 'N': 2}
+preset_nurse_rostering_shifts = ['Day', 'Aft', 'Ngt']
+preset_nurse_rostering_skill_options = ['H', 'M', 'L']
+preset_nurse_rostering_requests = {'Day': 4, 'Aft': 3, 'Ngt': 2}
 preset_nurse_rostering_day_requests = [[4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
                                    [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
                                    [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
@@ -50,29 +51,34 @@ preset_nurse_rostering_day_requests = [[4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2
 preset_nurse_rostering_min_shifts = 5
 preset_nurse_rostering_max_shifts = 8
 preset_nurse_rostering_nurses_data = [
-        {'id': 0, 'name': '간호사_A', 'skill': '중'},
-        {'id': 1, 'name': '간호사_B', 'skill': '중'},
-        {'id': 2, 'name': '간호사_C', 'skill': '상'},
-        {'id': 3, 'name': '간호사_D', 'skill': '상'},
-        {'id': 4, 'name': '간호사_E', 'skill': '상'},
-        {'id': 5, 'name': '간호사_F', 'skill': '상'},
-        {'id': 6, 'name': '간호사_G', 'skill': '상'},
-        {'id': 7, 'name': '간호사_H', 'skill': '중'},
-        {'id': 8, 'name': '간호사_I', 'skill': '중'},
-        {'id': 9, 'name': '간호사_J', 'skill': '하'},
-        {'id': 10, 'name': '간호사_K', 'skill': '하'},
-        {'id': 11, 'name': '간호사_L', 'skill': '하'},
-        {'id': 12, 'name': '간호사_M', 'skill': '상'},
-        {'id': 13, 'name': '간호사_N', 'skill': '상'},
-        {'id': 14, 'name': '간호사_O', 'skill': '하'},
-    # {'id': i, 'name': f'간호사_{chr(65+i)}', 'skill': random.choice(['상', '중', '하'])} for i in range(15)
+        {'id': 0, 'name': 'NurA', 'skill': 'L'},
+        {'id': 1, 'name': 'NurB', 'skill': 'M'},
+        {'id': 2, 'name': 'NurC', 'skill': 'L'},
+        {'id': 3, 'name': 'NurD', 'skill': 'H'},
+        {'id': 4, 'name': 'NurE', 'skill': 'M'},
+        {'id': 5, 'name': 'NurF', 'skill': 'H'},
+        {'id': 6, 'name': 'NurG', 'skill': 'M'},
+        {'id': 7, 'name': 'NurH', 'skill': 'L'},
+        {'id': 8, 'name': 'NurI', 'skill': 'H'},
+        {'id': 9, 'name': 'NurJ', 'skill': 'M'},
+        {'id': 10, 'name': 'NurK', 'skill': 'L'},
+        {'id': 11, 'name': 'NurL', 'skill': 'M'},
+        {'id': 12, 'name': 'NurM', 'skill': 'H'},
+        {'id': 13, 'name': 'NurN', 'skill': 'M'},
+        {'id': 14, 'name': 'NurO', 'skill': 'M'},
+        {'id': 15, 'name': 'NurK', 'skill': 'L'},
+        {'id': 16, 'name': 'NurL', 'skill': 'L'},
+        {'id': 17, 'name': 'NurM', 'skill': 'M'},
+        {'id': 18, 'name': 'NurN', 'skill': 'H'},
+        {'id': 19, 'name': 'NurO', 'skill': 'M'},
+    # {'id': i, 'name': f'Nur{chr(65+i)}', 'skill': random.choice(['H', 'M', 'L'])} for i in range(15)
 ]
 preset_nurse_rostering_shift_requirements = {
-    '주간(D)': {'상': 1, '중': 2, '하': 1},
-    '오후(E)': {'상': 1, '중': 1, '하': 1},
-    '야간(N)': {'상': 1, '하': 1}
+    'Day': {'H': 1, 'M': 2, 'L': 1},
+    'Aft': {'H': 1, 'M': 1, 'L': 1},
+    'Ngt': {'H': 1, 'L': 1}
 }
-preset_nurse_rostering_enabled_fairness = ['fair_weekends', 'fair_nights', 'fair_offs']
+preset_nurse_rostering_enabled_fairness = [ 'fair_nights', 'fair_offs'] #'fair_weekends'
 
 def create_budjet_allocation_json_data(form_data, num_items):
     total_budget_str = form_data.get('total_budget')
@@ -295,9 +301,10 @@ def create_nurse_rostering_json_data(form_data):
 
 
 def create_nurse_rostering_advanced_json_data(form_data):
-    num_nurses = int(form_data.get('num_nurses', 0))
-    num_days = int(form_data.get('num_days', 14))
-    shifts = ['주간(D)', '오후(E)', '야간(N)']
+
+    num_nurses = int(form_data.get('num_nurses'))
+    num_days = int(form_data.get('num_days'))
+    shifts = preset_nurse_rostering_shifts
 
     # 요일 및 주말 정보 생성
     today = datetime.date.today()
@@ -315,28 +322,29 @@ def create_nurse_rostering_advanced_json_data(form_data):
     skill_reqs = {
         s_name: {
             skill: int(form_data.get(f'req_{s_name}_{skill}', 0))
-            for skill in ['상', '중', '하']
+            for skill in preset_nurse_rostering_skill_options
         } for s_name in shifts
     }
-    # 휴가 요청 파싱
+
     vacation_reqs = {
-        i: [int(d.strip()) - 1 for d in form_data.get(f'nurse_{i}_vacation', '').split(',') if d.strip().isdigit()]
-        for i in range(num_nurses)
-    }
+        i: [int(d.strip()) - 1 for d in form_data.get(f'nurse_{i}_vacation', '').split(',') if d.strip().isdigit()] for
+        i in range(num_nurses)}
+    weekend_days = [i for i, day_name in enumerate(schedule_weekdays) if day_name in ['토', '일']]
 
     input_data = {
-        'problem_type': 'nurse_rostering_advanced',
+        "problem_type": form_data.get('problem_type'),
         'nurses_data': nurses_data,
+        'num_nurses': num_nurses,
         'num_days': num_days,
         'shifts': shifts,
         'skill_requirements': skill_reqs,
         'vacation_requests': vacation_reqs,
         'enabled_fairness': form_data.getlist('fairness_options'),
         'weekend_days': weekend_days,
-        # 사용자가 설정한 min/max 근무일 (POST 폼에 추가 필요)
         'min_shifts_per_nurse': int(form_data.get('min_shifts', 5)),
         'max_shifts_per_nurse': int(form_data.get('max_shifts', 8)),
     }
+
     return input_data
 
 
