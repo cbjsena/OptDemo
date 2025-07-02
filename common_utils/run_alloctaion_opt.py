@@ -660,7 +660,7 @@ def run_nurse_rostering_optimizer(input_data):
     num_nurses = input_data['num_nurses']
     num_days = input_data['num_days']
     shifts = input_data['shifts']
-    shift_requests = input_data['shift_requests']
+    day_shift_requests = input_data['day_shift_requests']
     min_shifts_per_nurse = input_data['min_shifts_per_nurse']
     max_shifts_per_nurse = input_data['max_shifts_per_nurse']
     weekend_days = input_data['weekend_days']  # 주말에 해당하는 날짜 인덱스
@@ -691,7 +691,7 @@ def run_nurse_rostering_optimizer(input_data):
         # 제약 2: 각 날짜, 각 시프트의 필요 인원 충족
         for d in all_days:
             for s in all_shifts:
-                required_nurses = shift_requests.get((d, s), 0)
+                required_nurses = day_shift_requests[d][s]
                 model.Add(sum(assigns[(n, d, s)] for n in all_nurses) == required_nurses)
 
         # 제약 3: [신규] 최소 휴식 보장 (근무 후 2개 시프트 휴식)

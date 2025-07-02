@@ -43,6 +43,10 @@ preset_nurse_rostering_num_nurses = 15
 preset_nurse_rostering_days = 14
 preset_nurse_rostering_shifts = ['주간(D)', '오후(E)', '야간(N)']
 preset_nurse_rostering_requests = {'D': 4, 'E': 3, 'N': 2}
+preset_nurse_rostering_day_requests = [[4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
+                                   [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
+                                   [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
+                                   [4, 3, 2], [4, 3, 2]]
 preset_nurse_rostering_min_shifts = 5
 preset_nurse_rostering_max_shifts = 8
 preset_nurse_rostering_nurses_data = [
@@ -263,11 +267,13 @@ def create_nurse_rostering(form_data):
     min_shifts = int(form_data.get('min_shifts'))
     max_shifts = int(form_data.get('max_shifts'))
 
-    shift_requests_parsed = {}
-    for s_idx, s_name in enumerate(preset_nurse_rostering_shifts):
-        required = int(form_data.get(f'shift_{s_idx}_req'))
-        for d in range(num_days):
-            shift_requests_parsed[(d, s_idx)] = required
+    day_shift_requests = []
+    for d in range(preset_nurse_rostering_days):
+        days = []
+        for s_idx, s_name in enumerate(preset_nurse_rostering_shifts):
+            required = int(form_data.get(f'shift_{s_idx}_req'))
+            days.append(required)
+        day_shift_requests.append(days)
 
     schedule_weekdays = get_schedule_weekdays(num_days)
     weekend_days = [i for i, day_name in enumerate(schedule_weekdays) if day_name in ['토', '일']]
@@ -277,7 +283,7 @@ def create_nurse_rostering(form_data):
         'num_nurses': num_nurses,
         'num_days': num_days,
         'shifts': preset_nurse_rostering_shifts,
-        'shift_requests': shift_requests_parsed,
+        'day_shift_requests': day_shift_requests,
         'min_shifts_per_nurse': min_shifts,
         'max_shifts_per_nurse': max_shifts,
         'schedule_weekdays': schedule_weekdays,
@@ -297,7 +303,7 @@ def save_allocation_json_data(input_data):
         num_server_types =input_data.get('num_server_types')
         num_services = input_data.get('num_services')
         filename_pattern = f"svr{num_server_types}_svc{num_services}"
-    elif "nurse rostering" == problem_type:
+    elif "nurse_rostering" == problem_type:
         num_nurses =input_data.get('num_nurses')
         num_days = input_data.get('num_days')
         filename_pattern = f"nurse{num_nurses}_day{num_days}"
