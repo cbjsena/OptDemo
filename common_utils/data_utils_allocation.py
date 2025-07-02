@@ -72,6 +72,7 @@ preset_nurse_rostering_shift_requirements = {
     '오후(E)': {'상': 1, '중': 1, '하': 1},
     '야간(N)': {'상': 1, '하': 1}
 }
+preset_nurse_rostering_enabled_fairness = ['fair_weekends', 'fair_nights', 'fair_offs']
 
 def create_budjet_allocation_json_data(form_data, num_items):
     total_budget_str = form_data.get('total_budget')
@@ -261,7 +262,7 @@ def set_datacenter_chart_data(results_data, parsed_global_constraints):
     return chart_data
 
 
-def create_nurse_rostering(form_data):
+def create_nurse_rostering_json_data(form_data):
     num_nurses = int(form_data.get('num_nurses'))
     num_days = int(form_data.get('num_days'))
     min_shifts = int(form_data.get('min_shifts'))
@@ -291,6 +292,53 @@ def create_nurse_rostering(form_data):
     }
 
     return input_data
+
+
+def create_nurse_rostering_advanced_json_data(form_data):
+    num_nurses = int(form_data.get('num_nurses', 0))
+    num_days = int(form_data.get('num_days', 14))
+    shifts = ['주간(D)', '오후(E)', '야간(N)']
+
+    # 요일 및 주말 정보 생성
+    today = datetime.date.today()
+    schedule_dates = [today + datetime.timedelta(days=i) for i in range(num_days)]
+    weekdays = ["월", "화", "수", "목", "금", "토", "일"]
+    schedule_weekdays = [weekdays[d.weekday()] for d in schedule_dates]
+    weekend_days = [i for i, day_name in enumerate(schedule_weekdays) if day_name in ['토', '일']]
+
+    # 간호사 정보 파싱
+    nurses_data = [
+        {'id': i, 'name': form_data.get(f'nurse_{i}_name'), 'skill': form_data.get(f'nurse_{i}_skill')}
+        for i in range(num_nurses)
+    ]
+    # 시프트별 필요인원 파싱
+    skill_reqs = {
+        s_name: {
+            skill: int(form_data.get(f'req_{s_name}_{skill}', 0))
+            for skill in ['상', '중', '하']
+        } for s_name in shifts
+    }
+    # 휴가 요청 파싱
+    vacation_reqs = {
+        i: [int(d.strip()) - 1 for d in form_data.get(f'nurse_{i}_vacation', '').split(',') if d.strip().isdigit()]
+        for i in range(num_nurses)
+    }
+
+    input_data = {
+        'problem_type': 'nurse_rostering_advanced',
+        'nurses_data': nurses_data,
+        'num_days': num_days,
+        'shifts': shifts,
+        'skill_requirements': skill_reqs,
+        'vacation_requests': vacation_reqs,
+        'enabled_fairness': form_data.getlist('fairness_options'),
+        'weekend_days': weekend_days,
+        # 사용자가 설정한 min/max 근무일 (POST 폼에 추가 필요)
+        'min_shifts_per_nurse': int(form_data.get('min_shifts', 5)),
+        'max_shifts_per_nurse': int(form_data.get('max_shifts', 8)),
+    }
+    return input_data
+
 
 def save_allocation_json_data(input_data):
     problem_type = input_data.get('problem_type')
