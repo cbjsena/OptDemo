@@ -39,3 +39,8 @@ python manage.py runserver
 # 종료 docker-compose down
 # docker-compose.yml에서 volume 경로만 수정 -> docker-compose up 또는 --force-recreate
 # Dockerfile 수정 또는 패키지 변경 -> docker-compose up --build
+
+# postgresql 설치 시 인스톨
+1. pip install psycopg2-binary
+# db 데이터가 없으므로 초기화 하는 명령 입력(현 app은 db 사용하지 않아서 문제 없음)
+1. docker 실행 후 다른 창에 입력-> docker-compose exec web python manage.py migrate
