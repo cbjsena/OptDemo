@@ -4,8 +4,9 @@ Django 프로젝트 .gitignore 설정 가이드Git으로 프로젝트 버전을 
 venv/
 .venv/
 secrets/
-*.env
-.env.*
+
+.env.prod
+.env.prod.db
 
 # Python 캐시 파일 및 컴파일된 파일
 __pycache__/
@@ -66,23 +67,3 @@ temp_csvs/
 ####################
 .DS_Store
 Thumbs.db
-
-
-# Secrets / Credentials #
-#########################
-# !! 매우 중요: 비밀 키, API 키, 인증서 파일 등은 절대 커밋하지 마세요 !!
-# Secrets / Credentials
-secrets/
-*.env
-.env.dev
-
-# Google API 인증 정보 파일 예시 (실제 파일 이름 패턴 사용)
-creden_*.json
-token_*.json
-client_secrets.json # 등등 구체적인 파일명 명시 권장
-
-# 다른 비밀 정보 파일 패턴
-secrets.*
-credentials.*
-*.pem
-*.key
