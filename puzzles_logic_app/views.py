@@ -213,7 +213,7 @@ def sports_scheduling_demo_view(request):
                     context['error_message'] = save_error
                 elif success_save_message:
                     context['success_save_message'] = success_save_message
-            logger.info(submitted_solver_type)
+
             # 3. 최적화 실행
             if submitted_solver_type == settings.SOLVER_GUROBI:
                 if submitted_num_teams <= 5:

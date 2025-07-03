@@ -1195,7 +1195,7 @@ def has_unique_solution(board):
     solver.parameters.enumerate_all_solutions = True
     status = solver.Solve(model, solution_printer)
     processing_time = solver.WallTime()
-    logger.info(f"Solver status: {status}, Time: {processing_time} sec")
+    logger.debug(f"Solver status: {status}, Time: {processing_time} sec")
 
     return solution_printer.solution_count() == 1
 

@@ -50,7 +50,7 @@ for demo_key, dir_path in DEMO_DIR_MAP.items():
         os.makedirs(dir_path, exist_ok=True)
 
 
-dotenv_path = BASE_DIR / '.env'
+dotenv_path = BASE_DIR / '.env.dev'
 load_dotenv(dotenv_path=dotenv_path)
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -267,27 +267,27 @@ LOGGING = {
         },
         'matching_assignment_app': { # 우리 앱 로거
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'SOLVE', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,
         },
         'resource_allocation_app': { # 우리 앱 로거
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'SOLVE', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,
         },
         'routing_logistics_app': { # 우리 앱 로거
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'SOLVE', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,
         },
         'production_scheduling_app': { # 우리 앱 로거
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'SOLVE', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,
         },
         'puzzles_logic_app': { # 우리 앱 로거
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'SOLVE', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,
         },
     },

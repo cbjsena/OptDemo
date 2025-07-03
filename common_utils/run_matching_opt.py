@@ -483,7 +483,7 @@ def run_skill_matching_optimizer(input_data):
         else:
             error_msg = f"최적 할당을 찾지 못했습니다. (솔버 상태: {status})"
         logger.error(f"Skill matching optimization failed: {error_msg}")
-    logger.info(results)
+
     return results, error_msg, get_solving_time_sec(solver.WallTime())
 
 def get_solving_time_sec(processing_time):

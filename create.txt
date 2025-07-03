@@ -30,3 +30,12 @@ python manage.py runserver
 
 # 마지막 커밋 메시지 변경 명령어
 1. git commit --amend -m "Refactor: unify validation and data generation logic"
+
+
+# 빌드 docker-compose build
+# 검색 docker-compose image ls
+# 실행 docker-compose up
+# 확인 docker container ls
+# 종료 docker-compose down
+# docker-compose.yml에서 volume 경로만 수정 -> docker-compose up 또는 --force-recreate
+# Dockerfile 수정 또는 패키지 변경 -> docker-compose up --build

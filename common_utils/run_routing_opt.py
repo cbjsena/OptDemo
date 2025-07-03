@@ -147,7 +147,6 @@ def run_cvrp_optimizer(input_data):
     num_vehicles: 차량 수
     """
     logger.info("Running CVRP Optimizer.")
-    logger.info(input_data)
     depot_location = input_data.get('depot_location')
     customer_locations = input_data.get('customer_locations')
     num_vehicles = input_data.get('num_vehicles')

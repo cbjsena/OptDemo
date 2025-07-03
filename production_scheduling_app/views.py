@@ -58,7 +58,6 @@ def lot_sizing_demo_view(request):
         #     'holding_cost': request.GET.get(f'holding_cost_{t}', str(random.randint(1, 5))),
         #     'capacity': request.GET.get(f'capacity_{t}', str(random.randint(150, 300)))
         # })
-        logger.info(periods_data)
 
     elif request.method == 'POST':
         form_data = request.POST.copy()

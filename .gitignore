@@ -74,7 +74,7 @@ Thumbs.db
 # Secrets / Credentials
 secrets/
 *.env
-.env
+.env.dev
 
 # Google API 인증 정보 파일 예시 (실제 파일 이름 패턴 사용)
 creden_*.json
