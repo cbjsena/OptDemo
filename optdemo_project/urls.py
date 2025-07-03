@@ -14,6 +14,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 
@@ -26,3 +28,5 @@ urlpatterns = [
     path('production-scheduling/', include('production_scheduling_app.urls')),
     path('puzzles-logic/', include('puzzles_logic_app.urls')),
 ]
+
+urlpatterns += static(settings.STATIC_ROOT, document_root=settings.STATIC_ROOT)
