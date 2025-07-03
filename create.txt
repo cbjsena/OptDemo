@@ -54,3 +54,7 @@ python manage.py runserver
 ####### docker-compose 분리
 1. docker-compose.dev.yml 복사 생성
 2. docker-compose -f docker-compose.dev.yml up
+
+####### nginx
+1. docker-compose에 services에 nginx 추가
+2. nginx 폴더와 하위 파일 추가
