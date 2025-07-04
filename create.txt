@@ -158,3 +158,16 @@ Cloud Run은 내부적으로 PORT=8080을 설정
     - docker push gcr.io/my-optimization-demo/optdemo
     - gcloud run deploy optdemo --image gcr.io/my-optimization-demo/optdemo --platform managed --region asia-northeast3 --allow-unauthenticated --add-cloudsql-instances my-optimization-demo:asia-northeast3:my-optimization-db --env-vars-file .env.yaml
     - https://optdemo-216727465560.asia-northeast3.run.app/static/css/style.css에 접속하여 static 파일이 로딩되는지 확인
+
+
+100 기타 오류
+    - post 방식 버튼을 실행하면 Forbidden (403) CSRF verification failed. Request aborted.
+        * settings.py에 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') 추가
+
+
+TODO
+1. 파이참, docker compose, Docker 실행 관리 방안
+2. matching-assignment/lcd-cf-tft/data-generation/ 버튼 오류
+3. media 폴더 반영
+4. 배포 시 collectstatic 실행 안됨 -> settins에  dotenv_path = BASE_DIR / '.env.dev'
+5. 파이참에서 DB는 sqlite 이용 변경? 아니면 postgre로 변경?
