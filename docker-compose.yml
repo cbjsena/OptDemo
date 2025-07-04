@@ -12,12 +12,15 @@ services:
   web:
     build: .
 #    command: python manage.py runserver 0.0.0.0:8000
-    command: gunicorn optdemo_project.wsgi:application --bind 0.0.0.0:8000
+#    command: gunicorn optdemo_project.wsgi:application --bind 0.0.0.0:8000
+    command: gunicorn optdemo_project.wsgi:application --bind 0.0.0.0:8080
     volumes:
       - static_volume:/usr/src/app/static
       - .:/usr/src/app/
-    expose:
-      - 8000
+    ports:
+      - 8080:8080  # local
+    #expose:
+    #  - 8080      # GCP
     env_file:
       - ./.env.prod
     depends_on:

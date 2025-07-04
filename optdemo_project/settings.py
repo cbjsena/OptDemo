@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-STATIC_URL = '/static/'
+STATIC_URL = os.environ.get('STATIC_URL', '/static/')
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # MEDIA_URL 및 MEDIA_ROOT 설정 (파일 업로드 시 필요에 따라 사용)
@@ -60,7 +60,6 @@ DEBUG=os.environ.get('DEBUG', 'False').upper()=='TRUE'
 SAVE_DATA_FILE=os.environ.get('SAVE_DATA_FILE', 'False').upper()=='TRUE'
 allowed_hosts_str=os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
-# ALLOWED_HOSTS = ['opt-demo-462706.an.r.appspot.com']
 
 # Application definition
 INSTALLED_APPS = [
@@ -76,6 +75,7 @@ INSTALLED_APPS = [
     'routing_logistics_app',
     'production_scheduling_app',
     'puzzles_logic_app',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -306,3 +306,14 @@ SOLVER_ORTOOLS = 'ORTOOLS'
 ORTOOLS_TIME_LIMIT=180
 SOLVER_GUROBI = 'GUROBI'
 GUROBI_TIME_LIMIT=60
+
+# Cloud Storage 사용 여부 (배포 환경)
+USE_GCS = os.environ.get('USE_GCS', 'False') == 'True'
+
+if USE_GCS:
+    # Cloud Storage 설정
+    STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+    GS_BUCKET_NAME = os.environ['GS_BUCKET_NAME']
+    STATIC_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/'
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

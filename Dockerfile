@@ -1,30 +1,26 @@
 # pull official base image
 FROM python:3.11-slim-buster
 
-
-# 필수 패키지 설치
-#RUN apt-get update && \
-#    apt-get install -y wget build-essential libreadline-dev libsqlite3-dev zlib1g-dev make gcc
-
-# SQLite 최신 버전 다운로드 및 빌드
-#RUN wget https://www.sqlite.org/2024/sqlite-autoconf-3450100.tar.gz && \
-#    tar xzf sqlite-autoconf-3450100.tar.gz && \
-#    cd sqlite-autoconf-3450100 && \
-#    ./configure && make && make install && \
-#    cd .. && rm -rf sqlite-autoconf*
-
-# shared library 로드
-RUN ldconfig
+# set enviroment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # set work directory
 WORKDIR /usr/src/app
 
-# set enviroment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-COPY . /usr/src/app/
+COPY . .
+COPY .env.prod .env
+# 정적 파일 폴더 생성 및 수집
+RUN mkdir -p /usr/src/app/static
+RUN python manage.py collectstatic --noinput
 
-# install dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+# Cloud SQL용 소켓 경로 생성
+RUN mkdir -p /cloudsql
+ENV CLOUD_SQL_CONNECTION_NAME=my-optimization-demo:asia-northeast3:my-optimization-db
+
+# 포트 8080에 맞춰 gunicorn 실행
+CMD ["gunicorn", "optdemo_project.wsgi:application", "--bind", "0.0.0.0:8080", "--log-level=debug"]
+
