@@ -189,7 +189,8 @@ def lcd_cf_tft_large_scale_demo_view(request):
         'active_model': 'Matching & Assignment',
         'active_submenu_category': 'lcd_tft_cf_matching',
         'active_submenu': 'lcd_cf_tft_large_scale_demo',
-        'available_json_files': []
+        'available_json_files': [],
+        'is_cloud': getattr(settings, 'USE_GCS', False),
     }
 
     data_dir_path_str = settings.DEMO_DIR_MAP['matching_cf_tft_data']
@@ -253,7 +254,7 @@ def lcd_cf_tft_large_scale_demo_view(request):
                             context['success_message'] = f"데이터가 생성되어 '{loaded_filename}'으로 서버에 저장되었습니다. 이제 매칭을 실행합니다."
                             # 파일 목록을 즉시 업데이트하기 위해 다시 로드 (선택 사항)
                             files = [f for f in os.listdir(data_dir_path_str) if
-                                     f.endswith('.json') and f.startswith('test_cf')]
+                                     f.endswith('.json') and f.startswith('cf')]
                             context['available_json_files'] = [{'value': f, 'name': f} for f in
                                                                sorted(files, reverse=True)]
                             break

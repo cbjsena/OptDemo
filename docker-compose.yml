@@ -16,6 +16,7 @@ services:
     command: gunicorn optdemo_project.wsgi:application --bind 0.0.0.0:8080
     volumes:
       - static_volume:/usr/src/app/static
+      - media_volume:/usr/src/app/media
       - .:/usr/src/app/
     ports:
       - 8080:8080  # local
@@ -34,4 +35,5 @@ services:
 volumes:
   postgres_data:
   static_volume:
+  media_volume:
 

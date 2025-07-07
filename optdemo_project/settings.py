@@ -52,6 +52,9 @@ for demo_key, dir_path in DEMO_DIR_MAP.items():
 
 
 dotenv_path = BASE_DIR / '.env.dev'
+# 로컬에서 실행 중이면 .env.local을 우선으로 사용
+if os.path.exists(BASE_DIR / '.env.local'):
+    dotenv_path = BASE_DIR / '.env.local'
 load_dotenv(dotenv_path=dotenv_path)
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -307,13 +310,16 @@ ORTOOLS_TIME_LIMIT=180
 SOLVER_GUROBI = 'GUROBI'
 GUROBI_TIME_LIMIT=60
 
-# Cloud Storage 사용 여부 (배포 환경)
+# GCS(Google Cloud Storage) 사용 여부 (배포 환경)
 USE_GCS = os.environ.get('USE_GCS', 'False') == 'True'
 
-if USE_GCS:
-    # Cloud Storage 설정
-    STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
-    GS_BUCKET_NAME = os.environ['GS_BUCKET_NAME']
-    STATIC_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/'
+# if USE_GCS:
+#     # Cloud Storage 설정
+#     STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+#     GS_BUCKET_NAME = os.environ['GS_BUCKET_NAME']
+#     STATIC_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/'
+    # USE_GCS_MEDIA = os.environ.get('USE_GCS_MEDIA', 'False') == 'True'
+    # if USE_GCS_MEDIA:
+    #     MEDIA_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/media/'
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

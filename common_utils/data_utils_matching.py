@@ -182,7 +182,7 @@ def save_matching_assignment_json_data(input_data):
     problem_type = input_data.get('problem_type')
     dir = f'matching_{problem_type}_data'
     filename_pattern = ''
-    if "Transport Assignment" == problem_type:
+    if "transport assignment" == problem_type:
         num_driver = len(input_data.get('driver_names'))
         num_zone = len(input_data.get('zone_names'))
         filename_pattern = f"driver{num_driver}_zone{num_zone}"
