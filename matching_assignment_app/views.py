@@ -109,14 +109,16 @@ def lcd_cf_tft_small_scale_demo_view(request):
         'active_submenu_category': 'lcd_tft_cf_matching',
         'active_submenu': 'lcd_cf_tft_small_scale_demo'
     }
-
-    if 'generated_lcd_data' in request.session:
-        # 세션에 데이터가 있으면 가져와서 context에 추가
-        generated_data = request.session['generated_lcd_data']
-        context['submitted_json_data'] = generated_data
-        # 사용 후 세션 데이터 삭제 (새로고침 시 재사용 방지)
-        del request.session['generated_lcd_data']
-        logger.info("Loaded generated data from session.")
+    try:
+        if 'generated_lcd_data' in request.session:
+            # 세션에 데이터가 있으면 가져와서 context에 추가
+            generated_data = request.session['generated_lcd_data']
+            context['submitted_json_data'] = generated_data
+            # 사용 후 세션 데이터 삭제 (새로고침 시 재사용 방지)
+            del request.session['generated_lcd_data']
+            logger.info("Loaded generated data from session.")
+    except Exception as e:
+        logger.error("Session error while accessing 'generated_lcd_data': %s", str(e), exc_info=True)
 
     if request.method == 'POST':
         test_data_json_str = request.POST.get('test_data_json')

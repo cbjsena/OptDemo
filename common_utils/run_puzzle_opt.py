@@ -6,6 +6,7 @@ from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 
 from ortools.sat.python import cp_model
 from gurobipy import Model, GRB, quicksum
 
+from common_utils.common_run_opt import *
 from common_utils.data_utils_puzzle import *
 
 import datetime
@@ -15,7 +16,8 @@ logger = logging.getLogger('puzzles_logic_app')
 
 
 def run_diet_optimizer(input_data):
-    logger.info("Running Diet Problem Optimizer.")
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
 
     foods = input_data['food_items']
     nutrients = input_data['nutrient_reqs']
@@ -45,8 +47,7 @@ def run_diet_optimizer(input_data):
     logger.debug("Objective set to minimize total cost.")
 
     # 해결
-    status = solver.Solve()
-    logger.info(f"Solver status: {status}, Time: {solver.WallTime()} ms")
+    status, processing_time = solving_log(solver, problem_type)
 
     # 결과 추출
     results = {'diet_plan': [], 'total_cost': 0, 'nutrient_summary': []}
@@ -75,7 +76,7 @@ def run_diet_optimizer(input_data):
     else:
         error_msg = "최적 식단을 찾지 못했습니다. 제약 조건이 너무 엄격하거나(INFEASIBLE), 문제가 잘못 정의되었을 수 있습니다."
 
-    return results, error_msg, get_solving_time_sec(solver.WallTime())
+    return results, error_msg, processing_time
 
 
 def calculate_manual_diet_result(input_data, manual_quantities):
@@ -113,6 +114,9 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
     """
     3가지 다른 목표를 지원하는 Sports Scheduling 최적화 함수.
     """
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     schedule_type = input_data.get('schedule_type')
     objective_choice = input_data.get('objective_choice')
     teams = input_data.get('teams', [])
@@ -276,9 +280,7 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
     # --- 4. 문제 해결 ---
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = settings.ORTOOLS_TIME_LIMIT
-    status = solver.Solve(model)
-    processing_time = solver.WallTime()
-    logger.info(f"Solver status: {status}, Time: {processing_time} sec")
+    status, processing_time = solving_log(solver, problem_type, model)
 
     # --- 5. 결과 추출 ---
     results = {'schedule': [], 'has_bye': has_bye, 'total_distance': 'N/A', 'team_distances': []}
@@ -326,7 +328,7 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
         error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
         logger.error(f"Sports Scheduling failed: {error_msg}")
 
-    return results, error_msg, get_solving_time_cp_sec(solver.WallTime())
+    return results, error_msg, processing_time
 
 
 def run_sports_scheduling_optimizer_ortools2(input_data):
@@ -334,6 +336,9 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
     OR-Tools CP-SAT를 사용하여 Sports Scheduling 문제를 해결합니다.
     Gurobi2 모델과 동일한 로직을 구현합니다.
     """
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     schedule_type = input_data.get('schedule_type')
     objective_choice = input_data.get('objective_choice')
     teams = list(input_data.get('teams'))
@@ -342,7 +347,7 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
     max_consecutive = input_data.get('max_consecutive')
     num_teams_original = len(teams)
 
-    logger.info(
+    logger.solve(
         f"Running {schedule_type.upper()} Scheduler with OR-Tools-2. Objective: {objective_choice}, Teams: {num_teams_original}")
 
     if num_teams_original < 2:
@@ -567,10 +572,7 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
         solver = cp_model.CpSolver()
         # Gurobi: model.setParam('TimeLimit', ...)
         solver.parameters.max_time_in_seconds = settings.ORTOOLS_TIME_LIMIT
-
-        status = solver.Solve(model)
-        processing_time = solver.WallTime()
-        logger.info(f"Solver status: {status}, Time: {processing_time} sec")
+        status, processing_time = solving_log(solver, problem_type, model)
 
         # --- 6. 결과 추출 ---
         results = {'schedule': [], 'has_bye': has_bye, 'total_distance': 0, 'team_distances': [], 'total_breaks': 0,
@@ -636,6 +638,9 @@ def run_sports_scheduling_optimizer_gurobi1(input_data):
     """
     Gurobi를 사용하여 Sports Scheduling 문제를 해결합니다.
     """
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     schedule_type = input_data.get('schedule_type', 'double')
     objective_choice = input_data.get('objective_choice', 'fairness')
     teams = list(input_data.get('teams', []))
@@ -643,7 +648,7 @@ def run_sports_scheduling_optimizer_gurobi1(input_data):
     max_consecutive = input_data.get('max_consecutive', 3)
     num_teams_original = len(teams)
 
-    logger.info(
+    logger.solve(
         f"Running {schedule_type.upper()} Scheduler with Gurobi-1. Objective: {objective_choice}, Teams: {num_teams_original}")
 
     if num_teams_original < 2:
@@ -735,17 +740,14 @@ def run_sports_scheduling_optimizer_gurobi1(input_data):
 
         # --- 5. 문제 해결 ---
         model.setParam('TimeLimit', settings.GUROBI_TIME_LIMIT)  # 시간 제한 10초
-        solve_start_time = datetime.datetime.now()
-        model.optimize()
-        solve_end_time = datetime.datetime.now()
-        processing_time_ms = (solve_end_time - solve_start_time).total_seconds()
+        status, processing_time = gurobi_solving_log(model, problem_type)
 
         # --- 6. 결과 추출 ---
         results = {'schedule': [], 'has_bye': has_bye, 'total_distance': 0, 'team_distances': [], 'total_breaks': 0,
                    'distance_gap': 0}
         error_msg = None
 
-        if model.status in [GRB.OPTIMAL, GRB.SUBOPTIMAL, GRB.TIME_LIMIT]:
+        if status in [GRB.OPTIMAL, GRB.SUBOPTIMAL, GRB.TIME_LIMIT]:
             # 대진표 파싱
             schedule = []
             for s in range(num_slots):
@@ -793,15 +795,18 @@ def run_sports_scheduling_optimizer_gurobi1(input_data):
     except Exception as e:
         logger.error(f"Error using Gurobi: {e}", exc_info=True)
         error_msg = "Gurobi 솔버 사용 중 오류가 발생했습니다. 라이선스 또는 설치를 확인하세요."
-        processing_time_ms = 0
+        processing_time = 0
 
-    return results, error_msg, processing_time_ms
+    return results, error_msg, processing_time
 
 
 def run_sports_scheduling_optimizer_gurobi2(input_data):
     """
     Gurobi를 사용하여 Sports Scheduling 문제를 해결합니다.
     """
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     schedule_type = input_data.get('schedule_type', 'double')
     objective_choice = input_data.get('objective_choice', 'fairness')
     teams = list(input_data.get('teams', []))
@@ -949,17 +954,14 @@ def run_sports_scheduling_optimizer_gurobi2(input_data):
             logger.debug("Objective set to: Minimize distance gap.")
         # --- 5. 문제 해결 ---
         model.setParam('TimeLimit', settings.GUROBI_TIME_LIMIT)
-        solve_start_time = datetime.datetime.now()
-        model.optimize()
-        solve_end_time = datetime.datetime.now()
-        processing_time_ms = (solve_end_time - solve_start_time).total_seconds()
+        status, processing_time = gurobi_solving_log(model, problem_type)
 
         # --- 6. 결과 추출 ---
         results = {'schedule': [], 'has_bye': has_bye, 'total_distance': 0, 'team_distances': [], 'total_breaks': 0,
                    'distance_gap': 0}
         error_msg = None
 
-        if model.status in [GRB.OPTIMAL, GRB.SUBOPTIMAL, GRB.TIME_LIMIT]:
+        if status in [GRB.OPTIMAL, GRB.SUBOPTIMAL, GRB.TIME_LIMIT]:
             # 대진표 파싱
             schedule = []
             for s in range(num_slots):
@@ -1011,14 +1013,15 @@ def run_sports_scheduling_optimizer_gurobi2(input_data):
     except Exception as e:
         logger.error(f"Error using Gurobi: {e}", exc_info=True)
         error_msg = "Gurobi 솔버 사용 중 오류가 발생했습니다. 라이선스 또는 설치를 확인하세요."
-        processing_time_ms = 0
+        processing_time = 0
 
-    return results, error_msg, processing_time_ms
+    return results, error_msg, processing_time
 
 
 def run_tsp_optimizer(input_data):
     """OR-Tools Routing 라이브러리를 사용하여 TSP를 해결합니다."""
-
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
     try:
         # 1. 데이터 모델 생성
         distance_matrix = input_data.get('sub_matrix')
@@ -1045,10 +1048,7 @@ def run_tsp_optimizer(input_data):
         search_parameters.time_limit.FromSeconds(10)  # 타임아웃 설정
 
         # 4. 문제 해결
-        solve_start_time = datetime.datetime.now()
-        solution = routing.SolveWithParameters(search_parameters)
-        solve_end_time = datetime.datetime.now()
-        processing_time = (solve_end_time - solve_start_time).total_seconds()
+        solution, status, processing_time = ortools_routing_solving_log(routing, search_parameters, problem_type)
 
         # 5. 결과 추출
         results_data = {}
@@ -1066,7 +1066,7 @@ def run_tsp_optimizer(input_data):
                 'tour_indices': tour,
                 'total_distance': solution.ObjectiveValue()
             }
-            return results_data, None, None
+            return results_data, None, processing_time
         else:
             return None, "해를 찾을 수 없었습니다.", None
 
@@ -1083,6 +1083,9 @@ def run_sudoku_solver_optimizer(input_data):
     Returns:
         tuple: (solved_grid, error_message, processing_time)
     """
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     input_grid = input_data.get('input_grid')
     num_size =  input_data.get('num_size')
     subgrid_size = input_data.get('subgrid_size')
@@ -1122,10 +1125,7 @@ def run_sudoku_solver_optimizer(input_data):
     # 3. 문제 해결
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = settings.ORTOOLS_TIME_LIMIT
-
-    status = solver.Solve(model)
-    processing_time = solver.WallTime()
-    logger.info(f"Solver status: {status}, Time: {processing_time} sec")
+    status, processing_time = solving_log(solver, problem_type, model)
 
     # 4. 결과 추출
     solved_grid = None

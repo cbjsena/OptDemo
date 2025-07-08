@@ -2,7 +2,8 @@ import collections
 
 from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 LP 솔버 사용)
 from ortools.sat.python import cp_model # CP-SAT 솔버 사용
-import datetime
+
+from common_utils.common_run_opt import *
 import logging
 
 logger = logging.getLogger('production_scheduling_app')
@@ -13,7 +14,8 @@ def run_lot_sizing_optimizer(input_data):
     """
     OR-Tools를 사용하여 Lot Sizing 문제를 해결합니다.
     """
-    logger.info("Running Lot Sizing Optimizer.")
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
 
     demands = input_data.get('demands', [])
     num_periods = len(demands)
@@ -54,9 +56,7 @@ def run_lot_sizing_optimizer(input_data):
         objective.SetCoefficient(I[t], holding_costs[t])
     objective.SetMinimization()
 
-    logger.info("Solving the Lot Sizing model...")
-    status = solver.Solve()
-    logger.info(f"Solver finished. Status: {status}, Time: {solver.WallTime():.2f} ms")
+    status, processing_time = solving_log(solver, problem_type)
 
     # 결과 추출
     results = {'schedule': [], 'total_cost': 0}
@@ -94,19 +94,22 @@ def run_lot_sizing_optimizer(input_data):
             error_msg = f"최적해를 찾지 못했습니다. (솔버 상태: {status})"
         logger.error(f"Lot Sizing optimization failed: {error_msg}")
 
-    return results, error_msg, get_solving_time_sec(solver.WallTime())
+    return results, error_msg, processing_time
 
 
 def run_single_machine_optimizer(input_data):
     """
     OR-Tools CP-SAT와 namedtuple을 사용하여 단일 기계 스케줄링 문제를 해결합니다.
     """
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     objective_choice = input_data.get('objective_choice')
     jobs_list = input_data.get('jobs_list', [])  # jobs_list를 직접 받도록 수정
     num_jobs = len(jobs_list)
 
-    logger.info(f"Running Single Machine Scheduler for objective: {objective_choice}")
-    logger.debug(f"Jobs Data: {jobs_list}")
+    logger.solve(f"Running Single Machine Scheduler for objective: {objective_choice}")
+    logger.solve(f"Jobs Data: {jobs_list}")
 
     if num_jobs == 0:
         return None, "오류: 작업 데이터가 없습니다.", 0.0
@@ -164,9 +167,7 @@ def run_single_machine_optimizer(input_data):
     # --- 5. 문제 해결 ---
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 5.0  # 시간 제한
-    logger.info("Solving the Single Machine Scheduling model...")
-    status = solver.Solve(model)
-    logger.info(f"Solver finished. Status: {solver.StatusName(status)}, Time: {solver.WallTime():.2f} sec")
+    status, processing_time = solving_log(solver, problem_type, model)
 
     # --- 6. 결과 추출 ---
     results = {'schedule': [], 'objective_value': 0}
@@ -191,11 +192,12 @@ def run_single_machine_optimizer(input_data):
         error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
         logger.error(f"Single Machine Scheduling failed: {error_msg}")
 
-    return results, error_msg, get_solving_time_cp_sec(solver.WallTime())
+    return results, error_msg, processing_time
 
 
 def run_flow_shop_optimizer(input_data):
-    logger.info("Running Flow Shop Optimizer.")
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
 
     processing_times = input_data['processing_times']
     num_jobs = input_data['num_jobs']
@@ -249,8 +251,7 @@ def run_flow_shop_optimizer(input_data):
     # 해결
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 10.0  # 시간 제한
-    status = solver.Solve(model)
-    logger.info(f"Solver finished. Status: {status}, Time: {solver.WallTime():.2f} serc")
+    status, processing_time = solving_log(solver, problem_type, model)
 
     # 결과 추출
     results = {'schedule': [], 'makespan': 0, 'sequence': []}
@@ -276,7 +277,7 @@ def run_flow_shop_optimizer(input_data):
     else:
         error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
 
-    return results, error_msg, get_solving_time_cp_sec(solver.WallTime())
+    return results, error_msg, processing_time
 
 
 # --- 고정된 순서에 대한 Makespan 계산 함수 (새로 추가) ---
@@ -338,7 +339,9 @@ def calculate_flow_shop_schedule(processing_times, job_ids, sequence):
 
 # --- Job Shop 최적화 실행 함수 ---
 def run_job_shop_optimizer(input_data):
-    logger.info("Running Job Shop Optimizer.")
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     jobs_data = input_data['jobs']
     num_jobs = input_data['num_jobs']
     num_machines = input_data['num_machines']
@@ -379,8 +382,7 @@ def run_job_shop_optimizer(input_data):
     # 해결
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 10.0
-    status = solver.Solve(model)
-    logger.info(f"Solver status: {status}, Time: {solver.WallTime():.2f} ms")
+    status, processing_time = solving_log(solver, problem_type, model)
 
     # 결과 추출
     results = {'schedule': [], 'makespan': 0}
@@ -407,11 +409,12 @@ def run_job_shop_optimizer(input_data):
     else:
         error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
 
-    return results, error_msg, get_solving_time_cp_sec(solver.WallTime())
+    return results, error_msg, processing_time
 
 
 def run_rcpsp_optimizer(input_data):
-    logger.info("Running RCPSP Optimizer.")
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
 
     activities_data = input_data['activities']
     resource_availabilities = input_data['resource_availabilities']
@@ -446,7 +449,7 @@ def run_rcpsp_optimizer(input_data):
     # 해결
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 10.0
-    status = solver.Solve(model)
+    status, processing_time = solving_log(solver, problem_type, model)
 
     # 결과 추출
     results = {'schedule': [], 'makespan': 0, 'resource_usage': {}}
@@ -477,20 +480,7 @@ def run_rcpsp_optimizer(input_data):
     else:
         error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
 
-    return results, error_msg, get_solving_time_sec(solver.WallTime())
-
-
-def get_solving_time_sec(processing_time):
-    # solver.WallTime(): if solver is CP-SAT then, sec else ms
-    processing_time = processing_time / 1000
-    return f"{processing_time:.3f}" if processing_time is not None else "N/A"
-
-
-def get_solving_time_cp_sec(processing_time):
-    # solver.WallTime(): if solver is CP-SAT then, sec else ms
-    processing_time = processing_time
-    return f"{processing_time:.3f}" if processing_time is not None else "N/A"
-
+    return results, error_msg, processing_time
 
 def result_obj_info(results):
     results['makespan'] = max(job['end'] for job in results['schedule'])

@@ -313,13 +313,13 @@ GUROBI_TIME_LIMIT=60
 # GCS(Google Cloud Storage) 사용 여부 (배포 환경)
 USE_GCS = os.environ.get('USE_GCS', 'False') == 'True'
 
-# if USE_GCS:
-#     # Cloud Storage 설정
-#     STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
-#     GS_BUCKET_NAME = os.environ['GS_BUCKET_NAME']
-#     STATIC_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/'
-    # USE_GCS_MEDIA = os.environ.get('USE_GCS_MEDIA', 'False') == 'True'
-    # if USE_GCS_MEDIA:
-    #     MEDIA_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/media/'
+if USE_GCS:
+    # Cloud Storage 설정
+    STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+    GS_BUCKET_NAME = os.environ['GS_BUCKET_NAME']
+    STATIC_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/'
+    USE_GCS_MEDIA = os.environ.get('USE_GCS_MEDIA', 'False') == 'True'
+    if USE_GCS_MEDIA:
+        MEDIA_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/media/'
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

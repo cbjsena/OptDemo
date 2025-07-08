@@ -157,7 +157,6 @@ Cloud Run은 내부적으로 PORT=8080을 설정
     - docker build -t gcr.io/my-optimization-demo/optdemo .
     - docker push gcr.io/my-optimization-demo/optdemo
     - gcloud run deploy optdemo --image gcr.io/my-optimization-demo/optdemo --platform managed --region asia-northeast3 --allow-unauthenticated --add-cloudsql-instances my-optimization-demo:asia-northeast3:my-optimization-db --env-vars-file .env.yaml
-    - https://optdemo-216727465560.asia-northeast3.run.app/static/css/style.css에 접속하여 static 파일이 로딩되는지 확인
     - DB 활성화위해 최초 job 생성: gcloud run jobs create optdemo-migrate --image gcr.io/my-optimization-demo/optdemo --region asia-northeast3 --command "python" --args "manage.py","migrate" --set-cloudsql-instances my-optimization-demo:asia-northeast3:my-optimization-db --env-vars-file .env.yaml
       이후에는 job 실행만: gcloud run jobs execute optdemo-migrate --region asia-northeast3 실행
 
@@ -178,7 +177,7 @@ Cloud Run은 내부적으로 PORT=8080을 설정
 #### DB 변경 시 초기화 필요
 개발          python manage.py makemigrations,python manage.py migrate
 로컬 테스트    docker-compose up 후 별도 cmd에서 실행 docker-compose exec web python manage.py migrate
-배포          gcloud run jobs create optdemo-migrate --image gcr.io/my-optimization-demo/optdemo --region asia-northeast3 --command "python" --args "manage.py","migrate" --set-cloudsql-instances my-optimization-demo:asia-northeast3:my-optimization-db --env-vars-file .env.yaml
+배포          최초 gcloud run jobs create optdemo-migrate --image gcr.io/my-optimization-demo/optdemo --region asia-northeast3 --command "python" --args "manage.py","migrate" --set-cloudsql-instances my-optimization-demo:asia-northeast3:my-optimization-db --env-vars-file .env.yaml
              이후 gcloud run jobs execute optdemo-migrate --region asia-northeast3 실행
 
 ########## Cloud Run 서비스 계정에 Storage Object Admin 설정

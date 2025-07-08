@@ -63,10 +63,13 @@
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 근무표 생성</button>
     </form>
 
-    {# --- 결과 메시지 --- #}
-    {% if error_message or success_message %}
+    {# 1. 결과 메세지 #}
+    {% if success_save_message%}
+        <div class="alert alert-success" role="alert">{{ success_save_message }}</div>
+    {% endif %}
+    {% if opt_results is not None or error_message or success_message %}
     <hr class="my-4">
-    <h3 class="mt-4">Optimization Result</h3>
+    <h3 class="mt-4">Optimization Results ({{ active_submenu }})</h3>
     {% endif %}
     {% if error_message %}
         <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
@@ -76,6 +79,14 @@
     {% endif %}
 
     {% if results %}
+    <div class="card mt-4">
+        <div class="card-header"><strong>결과 요약</strong></div>
+        <div class="card-body">
+            <p class="h4"><strong>총 페널티: {{ results.total_penalty }}</strong></p>
+            <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
+        </div>
+    </div>
+
     <div class="card mt-3">
         <div class="card-header"><strong>2주 근무표</strong></div>
         <div class="table-responsive">

@@ -3,6 +3,7 @@ from ortools.constraint_solver import pywrapcp # OR-Tools VRP
 import logging
 import datetime  # 파일명 생성 등에 사용 가능
 from math import sqrt
+from common_utils.common_run_opt import ortools_routing_solving_log, start_log
 
 logger = logging.getLogger('routing_logistics_app')
 
@@ -13,7 +14,9 @@ def run_vrp_optimizer(input_data):
     customer_locations: [{'id': 'C1', 'x': 1, 'y': 2}, ...]
     num_vehicles: 차량 수
     """
-    logger.info(f"Running VRP Optimizer.")
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     depot_location=input_data.get('depot_location')
     customer_locations=input_data.get('customer_locations')
     num_vehicles=input_data.get('num_vehicles')
@@ -70,18 +73,13 @@ def run_vrp_optimizer(input_data):
     #     routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
     # search_parameters.time_limit.FromSeconds(5) # 시간 제한
 
-    logger.info("Solving VRP model...")
-    solve_start_time = datetime.datetime.now()
-    solution = routing.SolveWithParameters(search_parameters)
-    solve_end_time = datetime.datetime.now()
-    processing_time_ms = (solve_end_time - solve_start_time).total_seconds() * 1000
-    logger.info(f"VRP Solver finished. Status: {routing.status()}, Time: {processing_time_ms:.2f} ms")
+    solution, status, processing_time = ortools_routing_solving_log(routing, search_parameters, problem_type)
 
     # --- 결과 추출 ---
     vrp_results = {'routes': [], 'total_distance': 0, 'dropped_nodes': []}
     error_msg = None
 
-    if solution and routing.status() in [routing_enums_pb2.RoutingSearchStatus.ROUTING_SUCCESS,
+    if solution and status in [routing_enums_pb2.RoutingSearchStatus.ROUTING_SUCCESS,
                                          routing_enums_pb2.RoutingSearchStatus.ROUTING_OPTIMAL]:
         logger.info(f'Objective (total distance): {solution.ObjectiveValue()}')
         vrp_results['total_distance'] = solution.ObjectiveValue() / 100.0  # 원래 거리로 환산
@@ -136,7 +134,7 @@ def run_vrp_optimizer(input_data):
     if error_msg:
         logger.error(f"VRP optimization failed or no solution: {error_msg}")
 
-    return vrp_results, error_msg, get_solving_time_sec(processing_time_ms)
+    return vrp_results, error_msg, processing_time
 
 
 def run_cvrp_optimizer(input_data):
@@ -146,7 +144,9 @@ def run_cvrp_optimizer(input_data):
     customer_locations: [{'id': 'C1', 'x': 1, 'y': 2}, ...]
     num_vehicles: 차량 수
     """
-    logger.info("Running CVRP Optimizer.")
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     depot_location = input_data.get('depot_location')
     customer_locations = input_data.get('customer_locations')
     num_vehicles = input_data.get('num_vehicles')
@@ -166,9 +166,7 @@ def run_cvrp_optimizer(input_data):
     data['demands'] = demands_input  # 수요량 추가
     data['vehicle_capacities'] = vehicle_capacities  # 차량 용량 추가
 
-    logger.debug(f"Locations: {data['locations']}")
-    logger.debug(f"Demands: {data['demands']}")
-    logger.debug(f"Vehicle Capacities: {data['vehicle_capacities']}")
+    logger.solve(f"Locations: {data['locations']}, Demands: {data['demands']}, Vehicle Capacities: {data['vehicle_capacities']}")
 
     # --- 거리 행렬 생성 (유클리드 거리) ---
     num_locations = len(data['locations'])
@@ -228,18 +226,13 @@ def run_cvrp_optimizer(input_data):
     #    routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
     # search_parameters.time_limit.FromSeconds(5) # 시간 제한 증가 고려
 
-    logger.info("Solving CVRP model...")
-    solve_start_time = datetime.datetime.now()
-    solution = routing.SolveWithParameters(search_parameters)
-    solve_end_time = datetime.datetime.now()
-    processing_time_ms = (solve_end_time - solve_start_time).total_seconds() * 1000
-    logger.info(f"CVRP Solver finished. Status: {routing.status()}, Time: {processing_time_ms:.2f} ms")
+    solution, status, processing_time = ortools_routing_solving_log(routing, search_parameters, problem_type)
 
     # --- 결과 추출 (기존 VRP와 유사하나, 경로별 적재량 등 추가 정보 포함 가능) ---
     cvrp_results = {'routes': [], 'total_distance': 0, 'dropped_nodes': [], 'total_demand_served': 0}
     error_msg = None
 
-    if solution and routing.status() in [routing_enums_pb2.RoutingSearchStatus.ROUTING_SUCCESS,
+    if solution and status in [routing_enums_pb2.RoutingSearchStatus.ROUTING_SUCCESS,
                                          routing_enums_pb2.RoutingSearchStatus.ROUTING_OPTIMAL]:
         cvrp_results['total_distance'] = solution.ObjectiveValue() / 100.0
         total_demand_served_on_routes = 0
@@ -310,14 +303,16 @@ def run_cvrp_optimizer(input_data):
             error_msg = f"최적 경로를 찾지 못했습니다. (솔버 상태: {status_str})"
         logger.error(f"CVRP optimization failed or no solution: {error_msg}")
 
-    return cvrp_results, error_msg, get_solving_time_sec(processing_time_ms)
+    return cvrp_results, error_msg, processing_time
 
 
 def run_pdp_optimizer(input_data):
     """
     OR-Tools를 사용하여 Pickup and Delivery Problem을 해결합니다.
     """
-    logger.info("Running PDP Optimizer.")
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     depot_location = input_data.get('depot_location')
     pickup_delivery_pairs = input_data.get('pickup_delivery_pairs')
     num_vehicles = input_data.get('num_vehicles')
@@ -414,18 +409,13 @@ def run_pdp_optimizer(input_data):
     search_parameters.first_solution_strategy = (routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION)
     search_parameters.time_limit.FromSeconds(5)  # 시간 제한
 
-    logger.info("Solving PDP model...")
-    solve_start_time = datetime.datetime.now()
-    solution = routing.SolveWithParameters(search_parameters)
-    solve_end_time = datetime.datetime.now()
-    processing_time_ms = (solve_end_time - solve_start_time).total_seconds() * 1000
-    logger.info(f"PDP Solver finished. Status: {routing.status()}, Time: {processing_time_ms:.2f} ms")
+    solution, status, processing_time = ortools_routing_solving_log(routing, search_parameters, problem_type)
 
     # --- 결과 추출 ---
     pdp_results = {'routes': [], 'total_distance': 0}
     error_msg = None
 
-    if solution and routing.status() in [routing_enums_pb2.RoutingSearchStatus.ROUTING_SUCCESS,
+    if solution and status in [routing_enums_pb2.RoutingSearchStatus.ROUTING_SUCCESS,
                                          routing_enums_pb2.RoutingSearchStatus.ROUTING_OPTIMAL]:
         pdp_results['total_distance'] = solution.ObjectiveValue() / 100.0
         capacity_dimension = routing.GetDimensionOrDie('Capacity')
@@ -468,9 +458,4 @@ def run_pdp_optimizer(input_data):
         error_msg = f"PDP 최적 경로를 찾지 못했습니다. (솔버 상태: {routing.status()})"
         logger.error(f"PDP optimization failed: {error_msg}")
 
-    return pdp_results, error_msg, get_solving_time_sec(processing_time_ms)
-
-def get_solving_time_sec(processing_time):
-    # solver.WallTime(): if solver is CP-SAT then, sec else ms
-    processing_time = processing_time / 1000
-    return f"{processing_time:.3f}" if processing_time is not None else "N/A"
+    return pdp_results, error_msg, processing_time

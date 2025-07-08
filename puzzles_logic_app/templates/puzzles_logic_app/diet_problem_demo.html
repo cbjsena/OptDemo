@@ -122,13 +122,17 @@
     {% endif %}
 
     {% if results %}
+        <div class="card mt-4">
+            <div class="card-header"><strong>결과 요약</strong></div>
+            <div class="card-body">
+                <p class="h4"><strong>최소 총 비용: {{ results.total_cost|floatformat:2 }}</strong></p>
+                <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
+            </div>
+        </div>
         <div class="row">
             <div class="col-lg-6">
                 <div class="card mt-3">
                     <div class="card-header"><strong>[최적화 결과] 식단 계획</strong></div>
-                    <div class="card-body">
-                        <p class="h5"><strong>최소 총 비용: {{ results.total_cost|floatformat:2 }}</strong></p>
-                    </div>
                     <div class="table-responsive">
                         <table class="table table-striped table-sm results-table mb-0">
                             <thead class="thead-light"><tr><th class="text-left">식품명</th><th>섭취량</th><th class="text-right">비용</th></tr></thead>

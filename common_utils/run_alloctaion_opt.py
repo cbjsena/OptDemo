@@ -4,6 +4,7 @@ from ortools.sat.python import cp_model
 from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 LP 솔버 사용)
 
 from common_utils.data_utils_allocation import *
+from common_utils.common_run_opt import *
 import logging
 
 from math import floor
@@ -12,6 +13,9 @@ logger = logging.getLogger('resource_allocation_app')
 
 
 def run_budget_allocation_optimizer(input_data):
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     total_budget = input_data.get('total_budget')
     items_data = input_data.get('items_data')
     logger.info(f"Running budget allocation for Total Budget: {total_budget}, Items: {len(items_data)}")
@@ -53,9 +57,7 @@ def run_budget_allocation_optimizer(input_data):
     objective.SetMaximization()
     logger.debug("Budget allocation objective function set for maximization.")
 
-    logger.info("Solving the budget allocation model...")
-    status = solver.Solve()
-    logger.info(f"Solver status: {status}, Time: {solver.WallTime():.2f} ms")
+    status, processing_time = solving_log(solver, problem_type)
 
     results = {'allocations': [],
                'total_maximized_return': 0,
@@ -111,7 +113,7 @@ def run_budget_allocation_optimizer(input_data):
         }
         error_msg = solver_status_map.get(status, f"최적해를 찾지 못했습니다. (솔버 상태 코드: {status})")
         logger.error(f"Budget allocation solver failed. Status: {status}. Message: {error_msg}")
-    return results, error_msg, get_solving_time_sec(solver.WallTime())
+    return results, error_msg, processing_time
 
 
 def run_portfolio_optimization_optimizer(num_assets, expected_returns, covariance_matrix, target_portfolio_return):
@@ -122,9 +124,10 @@ def run_portfolio_optimization_optimizer(num_assets, expected_returns, covarianc
     covariance_matrix: 공분산 행렬 (NxN 리스트의 리스트 또는 numpy 배열)
     target_portfolio_return: 목표 포트폴리오 수익률
     """
-    logger.info(
-        f"Running Portfolio Optimization. Assets: {num_assets}, Target Return: {target_portfolio_return}"
-    )
+    problem_type = 'portfolio'
+    start_log(problem_type)
+
+    logger.debug(f" Assets: {num_assets}, Target Return: {target_portfolio_return}")
     logger.debug(f"Expected Returns: {expected_returns}")
     logger.debug(f"Covariance Matrix: {covariance_matrix}")
 
@@ -301,11 +304,7 @@ def run_portfolio_optimization_optimizer(num_assets, expected_returns, covarianc
         return None, 0, 0, f"오류: 포트폴리오 최적화 모델 구성 중 오류 발생. {str(e)}", 0.0
 
     # --- 문제 해결 (이미 try-except로 감싸여 있음) ---
-    solve_start_time_actual = datetime.datetime.now()
-    status = solver.Solve()
-    solve_end_time_actual = datetime.datetime.now()
-    processing_time_ms_actual = (solve_end_time_actual - solve_start_time_actual).total_seconds() * 1000
-    logger.info(f"Portfolio optimization solver status: {status}, Time: {processing_time_ms_actual:.2f} ms")
+    status, processing_time = solving_log(solver, problem_type)
 
     # --- 결과 추출 ---
     results = []
@@ -360,13 +359,13 @@ def run_portfolio_optimization_optimizer(num_assets, expected_returns, covarianc
         logger.error(f"Portfolio solver failed. Status: {status}. Message: {error_msg}")
 
     return results, round(portfolio_expected_return, 4), round(portfolio_variance,
-                                                               6), error_msg, processing_time_ms_actual
+                                                               6), error_msg, processing_time
 
 
 def run_datacenter_capacity_optimizer(input_data):
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
 
-
-    logger.info("Running Data Center Capacity Optimizer...")
     global_constraints = input_data.get('global_constraints')
     server_data = input_data.get('server_data')
     demand_data = input_data.get('demand_data')
@@ -554,9 +553,7 @@ def run_datacenter_capacity_optimizer(input_data):
     obj_expr_str = " + ".join(obj_terms)
     logger.solve(f"obj_exp: {obj_expr_str}")
     # --- 문제 해결 ---
-    logger.info("Solving Data Center Capacity model...")
-    status = solver.Solve()
-    logger.info(f"Solver status: {status}, Time: {solver.WallTime():.2f} ms")
+    status, processing_time = solving_log(solver, problem_type)
 
     # --- 결과 추출 ---
     results = {
@@ -648,7 +645,7 @@ def run_datacenter_capacity_optimizer(input_data):
         error_msg = solver_status_map.get(status, f"최적해를 찾지 못했습니다. (솔버 상태 코드: {status})")
         logger.error(f"Data center capacity solver failed. Status: {status}. Message: {error_msg}")
 
-    return results, error_msg, get_solving_time_sec(solver.WallTime())
+    return results, error_msg, processing_time
 
 
 def run_nurse_rostering_optimizer(input_data):
@@ -656,6 +653,9 @@ def run_nurse_rostering_optimizer(input_data):
     주말 근무 공정성, 최소 휴식 보장 등 복잡한 제약이 추가된
     간호사 스케줄링 문제를 해결합니다.
     """
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     # 입력 데이터 파싱
     num_nurses = input_data['num_nurses']
     num_days = input_data['num_days']
@@ -664,7 +664,7 @@ def run_nurse_rostering_optimizer(input_data):
     min_shifts_per_nurse = input_data['min_shifts_per_nurse']
     max_shifts_per_nurse = input_data['max_shifts_per_nurse']
     weekend_days = input_data['weekend_days']  # 주말에 해당하는 날짜 인덱스
-    logger.info(
+    logger.solve(
         f"Running Nurse Rostering Optimizer. - Num nurses: {num_nurses},  Num days: {num_days}, Shifts: {shifts}")
     all_nurses = range(num_nurses)
     all_days = range(num_days)
@@ -740,9 +740,7 @@ def run_nurse_rostering_optimizer(input_data):
         # --- 5. 문제 해결 ---
         solver = cp_model.CpSolver()
         solver.parameters.max_time_in_seconds = settings.ORTOOLS_TIME_LIMIT
-        status = solver.Solve(model)
-        processing_time = solver.WallTime()
-        logger.info(f"Solver status: {status}, Time: {processing_time} ms")
+        status, processing_time = solving_log(solver, problem_type, model)
 
         # --- 6. 결과 추출 ---
         if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
@@ -770,6 +768,9 @@ def run_nurse_roster_advanced_optimizer(input_data):
     """
     숙련도, 휴가, 강화된 공정성 등 고급 제약이 포함된 스케줄링 문제를 해결합니다.
     """
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     SHIFT_NIGHT = preset_nurse_rostering_shifts[2]
     # --- 입력 데이터 파싱 ---
     nurses_data = input_data['nurses_data']
@@ -793,7 +794,7 @@ def run_nurse_roster_advanced_optimizer(input_data):
     # 간호사 ID와 인덱스, 스킬 매핑
     nurse_ids = [n['id'] for n in nurses_data]
     nurses_by_skill = {skill: [n['id'] for n in nurses_data if n['skill'] == skill] for skill in all_skills}
-    logger.info(
+    logger.solve(
         f"Running Nurse Rostering Advanced Optimizer. - Num nurses: {num_nurses},  Num days: {num_days}, Shifts: {shifts}")
 
     try:
@@ -874,9 +875,7 @@ def run_nurse_roster_advanced_optimizer(input_data):
         # --- 5. 문제 해결 ---
         solver = cp_model.CpSolver()
         solver.parameters.max_time_in_seconds = 30.0
-        status = solver.Solve(model)
-        processing_time = solver.WallTime()
-        logger.info(f"Solver status: {status}, Time: {processing_time} ms")
+        status, processing_time = solving_log(solver, problem_type)
 
         # --- 6. 결과 추출 ---
         if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
@@ -917,8 +916,3 @@ def run_nurse_roster_advanced_optimizer(input_data):
 
     except Exception as e:
         return None, f"오류 발생: {str(e)}", None
-
-def get_solving_time_sec(processing_time):
-    # solver.WallTime(): if solver is CP-SAT then, sec else ms
-    processing_time = processing_time / 1000
-    return f"{processing_time:.3f}" if processing_time is not None else "N/A"

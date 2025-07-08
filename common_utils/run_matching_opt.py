@@ -1,5 +1,5 @@
 from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 LP 솔버 사용)
-import datetime
+from common_utils.common_run_opt import *
 import logging
 
 logger = logging.getLogger('matching_assignment_app')
@@ -181,7 +181,9 @@ def run_matching_transport_optimizer(input_data):
     OR-Tools의 LinearSumAssignment 솔버를 사용하여 작업 배정 문제를 해결합니다.
     cost_matrix: 비용 행렬 (리스트의 리스트)
     """
-    logger.info("Running Assignment Problem Optimizer.")
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     logger.debug(f"Cost Matrix: {input_data}")
 
     workers = input_data['driver_names']
@@ -215,9 +217,7 @@ def run_matching_transport_optimizer(input_data):
             objective_terms.append(costs[i][j] * x[i, j])
     solver.Minimize(solver.Sum(objective_terms))
 
-    logger.info("Solving the assignment model...")
-    status = solver.Solve()
-    logger.info(f"Solver finished. Status: {status}, Time: {solver.WallTime():.2f} ms")
+    status, processing_time = solving_log(solver, problem_type)
 
     results = {'assignments':[], 'total_cost':0}
     error_msg = None
@@ -244,7 +244,7 @@ def run_matching_transport_optimizer(input_data):
     if error_msg:
         logger.error(f"Assignment optimization failed: {error_msg}")
 
-    return results, error_msg, get_solving_time_sec(solver.WallTime())
+    return results, error_msg, processing_time
 
 
 # --- 자원-기술 매칭 최적화 실행 함수 ---
@@ -254,7 +254,9 @@ def run_skill_matching_optimizer0(input_data):
     resources_data: [{'id': 'R1', 'name': '김개발', 'cost': 100, 'skills': ['Python', 'ML']}, ...]
     projects_data: [{'id': 'P1', 'name': 'AI 모델 개발', 'required_skills': ['Python', 'ML', 'Cloud']}, ...]
     """
-    logger.info("Running Resource-Skill Matching Optimizer...")
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
+
     resources_data = input_data['resources_data']
     projects_data = input_data['projects_data']
     num_resources = input_data['num_resources']
@@ -307,12 +309,7 @@ def run_skill_matching_optimizer0(input_data):
     logger.debug("Objective function set to minimize total cost.")
 
     # --- 4. 문제 해결 ---
-    logger.info("Solving the skill matching model...")
-    solve_start_time = datetime.datetime.now()
-    status = solver.Solve()
-    solve_end_time = datetime.datetime.now()
-    processing_time_ms = (solve_end_time - solve_start_time).total_seconds() * 1000
-    logger.info(f"Solver finished. Status: {status}, Time: {processing_time_ms:.2f} ms")
+    status, processing_time = solving_log(solver, problem_type)
 
     # --- 5. 결과 추출 ---
     results = {'assignments': {}, 'total_cost': 0, 'unassigned_resources': []}
@@ -350,14 +347,15 @@ def run_skill_matching_optimizer0(input_data):
             error_msg = f"최적 할당을 찾지 못했습니다. (솔버 상태: {status})"
         logger.error(f"Skill matching optimization failed: {error_msg}")
 
-    return results, error_msg, processing_time_ms
+    return results, error_msg, processing_time
 
 def run_skill_matching_optimizer(input_data):
     """
     자원-기술 매칭 문제를 해결하여 총 비용을 최소화합니다.
     Add slack variable
     """
-    logger.info("Running Resource-Skill Matching Optimizer...")
+    problem_type = input_data['problem_type']
+    start_log(problem_type)
     resources_data = input_data['resources_data']
     projects_data = input_data['projects_data']
     num_resources = input_data['num_resources']
@@ -444,9 +442,7 @@ def run_skill_matching_optimizer(input_data):
     logger.debug("Objective function set to minimize total cost.")
 
     # --- 4. 문제 해결 ---
-    logger.info("Solving the skill matching model...")
-    status = solver.Solve()
-    logger.info(f"Solver finished. Status: {status}, Time: {solver.WallTime():.2f} ms")
+    status, processing_time = solving_log(solver, problem_type)
 
     # --- 5. 결과 추출 ---
     results = {'assignments': {}, 'total_cost': 0, 'unassigned_resources': []}
@@ -484,9 +480,4 @@ def run_skill_matching_optimizer(input_data):
             error_msg = f"최적 할당을 찾지 못했습니다. (솔버 상태: {status})"
         logger.error(f"Skill matching optimization failed: {error_msg}")
 
-    return results, error_msg, get_solving_time_sec(solver.WallTime())
-
-def get_solving_time_sec(processing_time):
-    # solver.WallTime(): if solver is CP-SAT then, sec else ms
-    processing_time = processing_time/1000
-    return f"{processing_time:.3f}" if processing_time is not None else "N/A"
+    return results, error_msg, processing_time
