@@ -1,0 +1,50 @@
+name: Django CI/CD with Docker
+
+on:
+  push:
+    branches: [ master, develop ] # main 또는 develop 브랜치에 push될 때 실행
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: Run Automated Tests
+    runs-on: ubuntu-latest
+
+    services:
+      # 테스트를 위한 PostgreSQL 데이터베이스 서비스 실행
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build Docker image
+      run: docker-compose build test
+
+    - name: Run Django Tests
+      run: docker-compose run --rm test
+      env: # 테스트 실행 시 사용할 환경 변수 (GitHub Secrets에서 관리)
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        SQL_ENGINE: django.db.backends.postgresql
+        SQL_DATABASE: ${{ secrets.POSTGRES_DB }}
+        SQL_USER: ${{ secrets.POSTGRES_USER }}
+        SQL_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        SQL_HOST: postgres # jobs.test.services에 정의된 서비스 이름
+        SQL_PORT: 5432
+        # ... 기타 필요한 환경 변수 ...

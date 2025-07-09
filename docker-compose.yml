@@ -32,6 +32,17 @@ services:
       - postgres_data:/var/lib/postgresql/data
     env_file:
       - ./.env.prod.db
+
+  test:
+    build: .
+    command: python manage.py test
+    volumes:
+      - .:/usr/src/app/
+    env_file:
+      - ./.env.prod # 테스트도 동일한 환경 변수 사용
+    depends_on:
+      - db # 테스트 시 데이터베이스 연결이 필요하므로 의존성 추가
+
 volumes:
   postgres_data:
   static_volume:
