@@ -149,7 +149,7 @@ class PuzzlesLogicAppTests(TestCase):
 
     def test_tsp_demo_post_request_returns_solution(self):
         """TSP 데모가 POST 요청 시 최단 경로를 계산하는지 테스트합니다."""
-        url = reverse('puzzles_logic_app:tsp_demo')
+        url = reverse('routing_logistics_app:tsp_demo')
 
         # name이 'cities'인 여러 개의 값을 리스트로 전달
         post_data = {
@@ -189,6 +189,9 @@ class PuzzlesLogicAppTests(TestCase):
         self.assertContains(response, 'Sudoku Demo')  # 3. 페이지 제목이 HTML에 포함되어 있는지 확인
 
 
+    # ----------------------------------------------------------------
+    # 테스트 2: 데모 View의 POST 요청 및 결과 검증
+    # ----------------------------------------------------------------
     def test_sudoku_demo_post_request_returns_solution(self):
         """Sudoku 데모 페이지가 POST 요청 시 퍼즐을 해결하고 결과를 반환하는지 테스트합니다."""
         url = reverse('puzzles_logic_app:sudoku_demo')
