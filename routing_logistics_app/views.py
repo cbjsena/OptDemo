@@ -102,7 +102,6 @@ def vrp_demo_view(request):
                 context['opt_results'] = results_data
                 success_message = f"{model_name} 최적 경로 계산 완료! 총 거리: {results_data['total_distance']:.2f}"
                 context['success_message'] = success_message
-                logger.info(success_message)
 
                 # 차트용 데이터 준비
                 plot_data = {'locations': [], 'routes': [], 'depot_index': 0}
