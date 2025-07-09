@@ -106,11 +106,11 @@
     {% endif %}
 
     {# 2. 결과 요약 및 시각화 #}
-    {% if assignment_results %}
+    {% if results %}
     <div class="card mt-4">
         <div class="card-header"><strong>결과 요약</strong></div>
         <div class="card-body">
-            <p class="h4"><strong>최소 총 비용 (시간): {{ assignment_results.total_cost }}</strong></p>
+            <p class="h4"><strong>최소 총 비용 (시간): {{ results.total_cost }}</strong></p>
             <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
         </div>
     </div>
@@ -126,7 +126,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in assignment_results.assignments %}
+                    {% for item in results.assignments %}
                     <tr>
                         <td>{{ item.worker_name }}</td>
                         <td>{{ item.task_name }}</td>

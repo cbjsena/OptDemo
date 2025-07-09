@@ -429,7 +429,6 @@ def transport_assignment_demo_view(request):
         'active_submenu_category': 'transport_assignment_problems',
         'active_submenu': 'Transport Assignment Demo',
         'form_data': form_data,
-        'assignment_results': None,
         'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
         'num_items_options': range(2, 6),  # 2x2 ~ 5x5 행렬
@@ -457,7 +456,7 @@ def transport_assignment_demo_view(request):
             if error_msg_opt:
                 context['error_message'] = error_msg_opt
             elif results_data:
-                context['assignment_results'] = results_data
+                context['results'] = results_data
                 context['success_message'] = f"최적 할당 완료! 최소 총 비용(시간): {results_data['total_cost']}"
                 logger.info(f"Assignment successful. Total cost: {results_data['total_cost']}")
             else:
@@ -555,6 +554,7 @@ def resource_skill_matching_demo_view(request):
 
             if error_msg_opt:
                 context['error_message'] = error_msg_opt
+                logger.info(f"error_message:{context['error_message']}, results_data:{context['results'] }")
             elif results_data:
                 context['results'] = results_data
                 context['success_message'] = f"최적 팀 구성 완료! 최소 총 투입 비용: {results_data.get('total_cost', 0)}"
