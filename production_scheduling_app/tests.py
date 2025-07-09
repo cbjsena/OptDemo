@@ -155,6 +155,7 @@ class ResourceAllocationAppTests(TestCase):
         self.assertContains(response, 'Flow Shop Scheduling Demo')
 
     def test_flow_shop_demo_post_request_returns_solution(self):
+        """Flow shop 데모가 POST 요청 시 최적 생산 계획을 계산하는지 테스트합니다."""
         url = reverse('production_scheduling_app:flow_shop_demo')
 
         post_data = {
@@ -212,6 +213,7 @@ class ResourceAllocationAppTests(TestCase):
         self.assertContains(response, 'Job Shop Scheduling Demo')
 
     def test_job_shop_demo_post_request_returns_solution(self):
+        """Job shop 데모가 POST 요청 시 최적 생산 계획을 계산하는지 테스트합니다."""
         url = reverse('production_scheduling_app:job_shop_demo')
 
         post_data = {
@@ -263,6 +265,7 @@ class ResourceAllocationAppTests(TestCase):
         self.assertContains(response, 'Resource-Constrained Project Scheduling (RCPSP) Demo')
 
     def test_rcpsp_demo_post_request_returns_solution(self):
+        """RCPSP 데모가 POST 요청 시 최적 생산 계획을 계산하는지 테스트합니다."""
         url = reverse('production_scheduling_app:rcpsp_demo')
 
         post_data = {
