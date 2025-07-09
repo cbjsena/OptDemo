@@ -149,7 +149,7 @@ class PuzzlesLogicAppTests(TestCase):
 
     def test_tsp_demo_post_request_returns_solution(self):
         """TSP 데모가 POST 요청 시 최단 경로를 계산하는지 테스트합니다."""
-        url = reverse('routing_logistics_app:tsp_demo')
+        url = reverse('puzzles_logic_app:tsp_demo')
 
         # name이 'cities'인 여러 개의 값을 리스트로 전달
         post_data = {
