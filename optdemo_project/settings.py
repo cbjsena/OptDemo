@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -115,25 +116,44 @@ WSGI_APPLICATION = 'optdemo_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_BACKEND = os.environ.get('DATABASE_BACKEND', 'postgres')
+
+if DATABASE_BACKEND == 'sqlite3':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
-
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': os.environ.get('SQL_ENGINE', 'django.db.backends.sqlite3'),
-#         'NAME': os.environ.get('SQL_DATABASE', BASE_DIR / 'db.sqlite3'),
-#         'USER': os.environ.get('SQL_USER', 'user'),
-#         'PASSWORD': os.environ.get('SQL_PASSWORD', 'password'),
-#         'HOST': os.environ.get('SQL_HOST', 'localhost'),
-#         'PORT': os.environ.get('SQL_PORT', '5432'),
-#     }
-# }
-
+elif 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('SQL_DATABASE', 'testdb'),
+            'USER': os.getenv('SQL_USER', 'testuser'),
+            'PASSWORD': os.getenv('SQL_PASSWORD', 'testpass'),
+            'HOST': os.getenv('SQL_HOST', 'localhost'),
+            'PORT': os.getenv('SQL_PORT', '5432'),
+        }
+    }
+elif DATABASE_BACKEND == 'postgres':
+    DATABASES = {
+        'default': {
+            'ENGINE': os.environ.get('SQL_ENGINE', 'django.db.backends.sqlite3'),
+            'NAME': os.environ.get('SQL_DATABASE', BASE_DIR / 'db.sqlite3'),
+            'USER': os.environ.get('SQL_USER', 'user'),
+            'PASSWORD': os.environ.get('SQL_PASSWORD', 'password'),
+            'HOST': os.environ.get('SQL_HOST', 'localhost'),
+            'PORT': os.environ.get('SQL_PORT', '5432'),
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
