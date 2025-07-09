@@ -13,10 +13,22 @@
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h2>예산 분배 최적화 (Budget Allocation Problem)</h2>
     </div>
+    <p>
+        예산 분배 최적화 문제는 주어진 총 예산 한도 내에서 여러 투자 대상에 예산을 어떻게 배분해야 전반적인 목표(예: 총 투자 대비 효과(ROI) 극대화)를 가장 효과적으로 달성할 수 있는지를 결정하는 문제입니다.
+    </p>
+
+    <figure class="text-center my-4">
+        <img src="{% static 'resource_allocation_app/images/budget_allocation_concept.png' %}"
+             alt="예산 분배 문제 개념도" class="intro-image img-fluid rounded shadow-sm" style="max-width: 600px;">
+        <figcaption class="image-caption mt-2">
+            그림 1: 예산 분배 문제 개념 - 한정된 총예산을 각기 다른 기대 수익률(ROI)을 가진 여러 투자 채널에 최적으로 배분하여 전체 수익을 극대화 합니다.
+        </figcaption>
+    </figure>
 
     <h3>1. 문제 설명</h3>
     <p>
-        예산 분배 최적화 문제는 주어진 총 예산 한도 내에서 여러 투자 대상(예: 마케팅 채널, 연구개발 과제, 광고 캠페인 등)에 예산을 어떻게 배분해야 전반적인 목표(예: 총 투자 대비 효과(ROI) 극대화, 시장 점유율 최대화, 브랜드 인지도 향상 등)를 가장 효과적으로 달성할 수 있는지를 결정하는 문제입니다.
+        각 투자 대상은 일반적으로 투자 금액에 따라 다른 성과를 보이며, 때로는 최소 투자 금액이나 최대 투자 금액과 같은 제약 조건이 있을 수 있습니다.
+        최적화 모델은 이러한 복잡한 조건 속에서 최상의 의사결정을 내리도록 돕습니다.
     </p>
     <p>
         각 투자 대상은 일반적으로 투자 금액에 따라 다른 성과를 보이며, 때로는 최소 투자 금액이나 최대 투자 금액과 같은 제약 조건이 있을 수 있습니다.
@@ -32,6 +44,16 @@
 
     <h3>3. 수학적 모델</h3>
     <div class="col-md-8 model-definition-content">
+        <h4 class="model-definition-content"><strong>입력 데이터:</strong></h4>
+        <ul>
+            <li><strong>\( i \in \{1, 2, \dots, n\} \)</strong> : 아이템의 인덱스. n은 총 아이템의 수</li>
+            <li> <strong>\( p_{i} \)</strong> : 아이템 \( i \)에 투자할 때 기대되는 이익</li>
+            <li><strong>\( TB \)</strong> : 총 예산 금액</li>
+            <li><strong>\( A_{min,i} \)</strong> : 아이템 \( i \) 에 대한 최소 투자액</li>
+            <li><strong>\( A_{max,i} \)</strong> : 아이템 \( i \) 에 대한 최대 투자액</li>
+        </ul>
+        <hr>
+
         <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
         <ul>
             <li> <strong>\( x_{i} \)</strong>: 아이템 \( i \)에 할당된 예산 규모(연속 또는 정수 변수)</li>
@@ -41,32 +63,38 @@
 
         <h4 class="model-definition-content"><strong>목적 함수: </strong> 총 기대 수익 극대화 </h4>
         <div class="math-block">
-            <p>$$\max \sum_{i=1}^{n} pro_{i} x_{i}$$</p>
-            <p>$$ \text{where } pro_{i} \text{ is the profit obtained when investing in item } i $$</p>
+            <p>$$\max \sum_{i=1}^{n} p_{i} x_{i}$$</p>
         </div>
 
         <h4 class="model-definition-content"><strong>제약 조건:</strong></h4>
         <ul>
             <li><strong>총 예산 제약:</strong> 투자된 예산의 합은 총 예산 금액 이하
                 <div class="math-block">
-                    $$ \sum_{i \in I} x_{i} \le TotalBudjet$$
+                    $$ \sum_{i \in I} x_{i} \le TB$$
                 </div>
             </li>
             <li><strong>항목 금액 제약:</strong> 항목 별 최소/최대 투자 금액 범위 제약
                 <div class="math-block">
-                     $$ {MinAllocation}_i  \le x_{i} \le {MaxAllocation}_i $$
+                     $$ A_{min,i}  \le x_{i} \le A_{max,i} $$
                 </div>
             </li>
              <li>기타 특정 조건 (예: 특정 항목 그룹에 대한 최소/최대 총 투자 금액 등)</li>
         </ul>
     </div>
 
-    <h3>4. Budjet Allocation Demo</h3>
-    <p>
-        <strong>Budjet Allocation Demo</strong>에서는
-        사용자가 직접 총 예산, 투자 항목 수, 각 항목의 기대 수익률 (또는 수익 함수 계수), 최소/최대 투자액 등의 파라미터를 설정하고,
-        최적의 예산 배분 결과를 확인하는 과정을 체험할 수 있습니다.
-    </p>
+    <h3>4. Budget Allocation Demo</h3>
+    <div class="card-body">
+        <p><strong>Budget Allocation Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
+        <ul>
+            <li>총 예산 및 항목 수 설정</li>
+            <li>각 투자 항목의 정보 입력</li>
+            <li>최적 예산 분배 결과 확인</li>
+        </ul>
+        <a href="{% url 'resource_allocation_app:budget_allocation_demo' %}" class="btn btn-primary mt-3">
+            데모 페이지로 이동 &rarr;
+        </a>
+    </div>
+
 </div>
 {% endblock %}
 

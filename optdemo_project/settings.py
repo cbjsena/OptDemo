@@ -29,7 +29,7 @@ DEMO_DIR_MAP ={'matching_cf_tft_data':DEMO_DIR/'match_cf_tft_data',
             'matching_transport assignment_data':DEMO_DIR/'matching_transport assignment_data',
             'matching_resource skill_data':DEMO_DIR/'matching_resource skill_data',
             'allocation_datacenter_data':DEMO_DIR/'allocation_datacenter_data',
-            'allocation_budjet_data':DEMO_DIR/'allocation_budjet_data',
+            'allocation_budget_data':DEMO_DIR/'allocation_budget_data',
             'allocation_nurse_rostering_data':DEMO_DIR/'allocation_nurse_rostering_data',
             'routing_vrp_data':DEMO_DIR/'routing_vrp_data',
             'routing_cvrp_data':DEMO_DIR/'routing_cvrp_data',
@@ -117,14 +117,22 @@ WSGI_APPLICATION = 'optdemo_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': os.environ.get('SQL_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.environ.get('SQL_DATABASE', BASE_DIR / 'db.sqlite3'),
-        'USER': os.environ.get('SQL_USER', 'user'),
-        'PASSWORD': os.environ.get('SQL_PASSWORD', 'password'),
-        'HOST': os.environ.get('SQL_HOST', 'localhost'),
-        'PORT': os.environ.get('SQL_PORT', '5432'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': os.environ.get('SQL_ENGINE', 'django.db.backends.sqlite3'),
+#         'NAME': os.environ.get('SQL_DATABASE', BASE_DIR / 'db.sqlite3'),
+#         'USER': os.environ.get('SQL_USER', 'user'),
+#         'PASSWORD': os.environ.get('SQL_PASSWORD', 'password'),
+#         'HOST': os.environ.get('SQL_HOST', 'localhost'),
+#         'PORT': os.environ.get('SQL_PORT', '5432'),
+#     }
+# }
 
 
 # Password validation

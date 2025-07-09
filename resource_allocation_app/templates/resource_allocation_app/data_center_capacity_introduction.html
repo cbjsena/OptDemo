@@ -15,10 +15,16 @@
         <h2>데이터 센터 용량 계획 (Data Center Capacity Planning)</h2>
     </div>
 
-    <p><strong>소메뉴: 설비 투자 및 생산 능력 할당 (Capacity Investment & Allocation)</strong></p>
     <p>
         데이터 센터 용량 계획은 미래의 컴퓨팅 수요를 예측하고, 이를 충족시키기 위해 필요한 서버, 스토리지, 네트워크, 전력, 냉각 등의 인프라 자원에 대한 투자 및 할당을 최적화하는 과정입니다. 이는 막대한 초기 투자 비용과 지속적인 운영 비용을 수반하므로, 효율적인 계획은 기업의 수익성과 서비스 품질에 직접적인 영향을 미칩니다.
     </p>
+    <figure class="text-center my-4">
+        <img src="{% static 'resource_allocation_app/images/datacenter_allocation_concept.png' %}"
+             alt="데이터 선테 용량 계획 개념도" class="intro-image img-fluid rounded shadow-sm" style="max-width: 600px;">
+        <figcaption class="image-caption mt-2">
+            그림 1: 데이터 선테 용량 계획 개념도 - 미래의 수요 예측, 현재 인프라, 가용 예산을 바탕으로 총소유비용(TCO) 최소화를 목표로 신규 설비 투자와 서비스별 자원 할당을 결정합니다.
+        </figcaption>
+    </figure>
 
     <h3>1. 문제 설명</h3>
     <p>
@@ -108,10 +114,17 @@
     </div>
 
     <h3>4. Data Center Capacity Demo</h3>
-    <p>
-        <strong>Data Center Capacity Demo</strong>에서는
-        서버와 서비스 관련 정보를 설정하고, 최적의 데이터 센터 용량 계획을 수립하는 과정을 체험할 수 있습니다.
-    </p>
+    <div class="card-body">
+        <p><strong>Data Center Capacity Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
+        <ul>
+            <li>총 예산 및 항목 수 설정</li>
+            <li>각 서버와 서비스 항목의 정보 입력</li>
+            <li>최적의 데이터 센터 용량 계획</li>
+        </ul>
+        <a href="{% url 'resource_allocation_app:data_center_capacity_demo' %}" class="btn btn-primary mt-3">
+            데모 페이지로 이동 &rarr;
+        </a>
+    </div>
 </div>
 {% endblock %}
 

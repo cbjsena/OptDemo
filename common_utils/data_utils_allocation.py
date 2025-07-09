@@ -3,40 +3,40 @@ import datetime
 import random
 
 from common_utils.common_data_utils import save_json_data
+
 logger = logging.getLogger(__name__)
 
-
-preset_total_budget=1000
-preset_budjet_num_item=3
-preset_budjet_items = [
-        {'item_1_id': 'item_1', 'item_1_return_coeff': '3.1', 'item_1_min_alloc': '0', 'item_1_max_alloc': '200'},
-        {'item_2_id': 'item_2', 'item_2_return_coeff': '2.1', 'item_2_min_alloc': '0', 'item_2_max_alloc': '300'},
-        {'item_3_id': 'item_3', 'item_3_return_coeff': '1.1', 'item_3_min_alloc': '0', 'item_3_max_alloc': '1000'},
-        {'item_4_id': 'item_4', 'item_4_return_coeff': '3.1', 'item_4_min_alloc': '0', 'item_4_max_alloc': '200'},
-        {'item_5_id': 'item_5', 'item_5_return_coeff': '2.1', 'item_5_min_alloc': '0', 'item_5_max_alloc': '300'},
-        {'item_6_id': 'item_6', 'item_6_return_coeff': '1.1', 'item_6_min_alloc': '0', 'item_6_max_alloc': '1000'},
-        {'item_7_id': 'item_7', 'item_7_return_coeff': '3.1', 'item_7_min_alloc': '0', 'item_7_max_alloc': '200'},
-        {'item_8_id': 'item_8', 'item_8_return_coeff': '2.1', 'item_8_min_alloc': '0', 'item_8_max_alloc': '300'},
-        {'item_9_id': 'item_9', 'item_9_return_coeff': '1.1', 'item_9_min_alloc': '0', 'item_9_max_alloc': '1000'},
-        {'item_10_id': 'item_10', 'item_10_return_coeff': '3.1', 'item_10_min_alloc': '0', 'item_10_max_alloc': '200'}
+preset_total_budget = 1000
+preset_budget_num_item = 3
+preset_budget_items = [
+    {'item_1_id': 'item_1', 'item_1_return_coeff': '3.1', 'item_1_min_alloc': '0', 'item_1_max_alloc': '200'},
+    {'item_2_id': 'item_2', 'item_2_return_coeff': '2.1', 'item_2_min_alloc': '0', 'item_2_max_alloc': '300'},
+    {'item_3_id': 'item_3', 'item_3_return_coeff': '1.1', 'item_3_min_alloc': '0', 'item_3_max_alloc': '1000'},
+    {'item_4_id': 'item_4', 'item_4_return_coeff': '3.1', 'item_4_min_alloc': '0', 'item_4_max_alloc': '200'},
+    {'item_5_id': 'item_5', 'item_5_return_coeff': '2.1', 'item_5_min_alloc': '0', 'item_5_max_alloc': '300'},
+    {'item_6_id': 'item_6', 'item_6_return_coeff': '1.1', 'item_6_min_alloc': '0', 'item_6_max_alloc': '1000'},
+    {'item_7_id': 'item_7', 'item_7_return_coeff': '3.1', 'item_7_min_alloc': '0', 'item_7_max_alloc': '200'},
+    {'item_8_id': 'item_8', 'item_8_return_coeff': '2.1', 'item_8_min_alloc': '0', 'item_8_max_alloc': '300'},
+    {'item_9_id': 'item_9', 'item_9_return_coeff': '1.1', 'item_9_min_alloc': '0', 'item_9_max_alloc': '1000'},
+    {'item_10_id': 'item_10', 'item_10_return_coeff': '3.1', 'item_10_min_alloc': '0', 'item_10_max_alloc': '200'}
 ]
 
 preset_datacenter_servers = [
-            {'id': 'SrvA', 'cost': '500', 'cpu_cores': '48', 'ram_gb': '256', 'storage_tb': '10', 'power_kva': '0.5',
-             'space_sqm': '0.2'},
-            {'id': 'SrvB', 'cost': '300', 'cpu_cores': '32', 'ram_gb': '128', 'storage_tb': '5', 'power_kva': '0.3',
-             'space_sqm': '0.1'},
-            {'id': 'SrvC', 'cost': '800', 'cpu_cores': '128', 'ram_gb': '512', 'storage_tb': '20', 'power_kva': '0.8',
-             'space_sqm': '0.3'}
+    {'id': 'SrvA', 'cost': '500', 'cpu_cores': '48', 'ram_gb': '256', 'storage_tb': '10', 'power_kva': '0.5',
+     'space_sqm': '0.2'},
+    {'id': 'SrvB', 'cost': '300', 'cpu_cores': '32', 'ram_gb': '128', 'storage_tb': '5', 'power_kva': '0.3',
+     'space_sqm': '0.1'},
+    {'id': 'SrvC', 'cost': '800', 'cpu_cores': '128', 'ram_gb': '512', 'storage_tb': '20', 'power_kva': '0.8',
+     'space_sqm': '0.3'}
 ]
 
 preset_datacenter_services = [
-            {'id': 'WebPool', 'revenue_per_unit': '100', 'req_cpu_cores': '4', 'req_ram_gb': '8',
-             'req_storage_tb': '0.1', 'max_units': '50'},
-            {'id': 'DBFarm', 'revenue_per_unit': '200', 'req_cpu_cores': '8', 'req_ram_gb': '16',
-             'req_storage_tb': '0.5', 'max_units': '20'},
-            {'id': 'BatchProc', 'revenue_per_unit': '150', 'req_cpu_cores': '16', 'req_ram_gb': '32',
-             'req_storage_tb': '0.2', 'max_units': '30'}
+    {'id': 'WebPool', 'revenue_per_unit': '100', 'req_cpu_cores': '4', 'req_ram_gb': '8',
+     'req_storage_tb': '0.1', 'max_units': '50'},
+    {'id': 'DBFarm', 'revenue_per_unit': '200', 'req_cpu_cores': '8', 'req_ram_gb': '16',
+     'req_storage_tb': '0.5', 'max_units': '20'},
+    {'id': 'BatchProc', 'revenue_per_unit': '150', 'req_cpu_cores': '16', 'req_ram_gb': '32',
+     'req_storage_tb': '0.2', 'max_units': '30'}
 ]
 
 preset_nurse_rostering_num_nurses = 15
@@ -45,32 +45,32 @@ preset_nurse_rostering_shifts = ['Day', 'Aft', 'Ngt']
 preset_nurse_rostering_skill_options = ['H', 'M', 'L']
 preset_nurse_rostering_requests = {'Day': 4, 'Aft': 3, 'Ngt': 2}
 preset_nurse_rostering_day_requests = [[4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
-                                   [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
-                                   [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
-                                   [4, 3, 2], [4, 3, 2]]
+                                       [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
+                                       [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
+                                       [4, 3, 2], [4, 3, 2]]
 preset_nurse_rostering_min_shifts = 5
 preset_nurse_rostering_max_shifts = 8
 preset_nurse_rostering_nurses_data = [
-        {'id': 0, 'name': 'NurA', 'skill': 'L'},
-        {'id': 1, 'name': 'NurB', 'skill': 'M'},
-        {'id': 2, 'name': 'NurC', 'skill': 'L'},
-        {'id': 3, 'name': 'NurD', 'skill': 'H'},
-        {'id': 4, 'name': 'NurE', 'skill': 'M'},
-        {'id': 5, 'name': 'NurF', 'skill': 'H'},
-        {'id': 6, 'name': 'NurG', 'skill': 'M'},
-        {'id': 7, 'name': 'NurH', 'skill': 'L'},
-        {'id': 8, 'name': 'NurI', 'skill': 'H'},
-        {'id': 9, 'name': 'NurJ', 'skill': 'M'},
-        {'id': 10, 'name': 'NurK', 'skill': 'L'},
-        {'id': 11, 'name': 'NurL', 'skill': 'M'},
-        {'id': 12, 'name': 'NurM', 'skill': 'H'},
-        {'id': 13, 'name': 'NurN', 'skill': 'M'},
-        {'id': 14, 'name': 'NurO', 'skill': 'M'},
-        {'id': 15, 'name': 'NurK', 'skill': 'L'},
-        {'id': 16, 'name': 'NurL', 'skill': 'L'},
-        {'id': 17, 'name': 'NurM', 'skill': 'M'},
-        {'id': 18, 'name': 'NurN', 'skill': 'H'},
-        {'id': 19, 'name': 'NurO', 'skill': 'M'},
+    {'id': 0, 'name': 'NurA', 'skill': 'L'},
+    {'id': 1, 'name': 'NurB', 'skill': 'M'},
+    {'id': 2, 'name': 'NurC', 'skill': 'L'},
+    {'id': 3, 'name': 'NurD', 'skill': 'H'},
+    {'id': 4, 'name': 'NurE', 'skill': 'M'},
+    {'id': 5, 'name': 'NurF', 'skill': 'H'},
+    {'id': 6, 'name': 'NurG', 'skill': 'M'},
+    {'id': 7, 'name': 'NurH', 'skill': 'L'},
+    {'id': 8, 'name': 'NurI', 'skill': 'H'},
+    {'id': 9, 'name': 'NurJ', 'skill': 'M'},
+    {'id': 10, 'name': 'NurK', 'skill': 'L'},
+    {'id': 11, 'name': 'NurL', 'skill': 'M'},
+    {'id': 12, 'name': 'NurM', 'skill': 'H'},
+    {'id': 13, 'name': 'NurN', 'skill': 'M'},
+    {'id': 14, 'name': 'NurO', 'skill': 'M'},
+    {'id': 15, 'name': 'NurK', 'skill': 'L'},
+    {'id': 16, 'name': 'NurL', 'skill': 'L'},
+    {'id': 17, 'name': 'NurM', 'skill': 'M'},
+    {'id': 18, 'name': 'NurN', 'skill': 'H'},
+    {'id': 19, 'name': 'NurO', 'skill': 'M'},
     # {'id': i, 'name': f'Nur{chr(65+i)}', 'skill': random.choice(['H', 'M', 'L'])} for i in range(15)
 ]
 preset_nurse_rostering_shift_requirements = {
@@ -78,9 +78,10 @@ preset_nurse_rostering_shift_requirements = {
     'Aft': {'H': 1, 'M': 1, 'L': 1},
     'Ngt': {'H': 1, 'L': 1}
 }
-preset_nurse_rostering_enabled_fairness = [ 'fair_nights', 'fair_offs'] #'fair_weekends'
+preset_nurse_rostering_enabled_fairness = ['fair_nights', 'fair_offs']  # 'fair_weekends'
 
-def create_budjet_allocation_json_data(form_data, num_items):
+
+def create_budget_allocation_json_data(form_data, num_items):
     total_budget_str = form_data.get('total_budget')
     if not total_budget_str:
         raise ValueError("총 예산이 입력되지 않았습니다.")
@@ -301,7 +302,6 @@ def create_nurse_rostering_json_data(form_data):
 
 
 def create_nurse_rostering_advanced_json_data(form_data):
-
     num_nurses = int(form_data.get('num_nurses'))
     num_days = int(form_data.get('num_days'))
     shifts = preset_nurse_rostering_shifts
@@ -350,21 +350,22 @@ def create_nurse_rostering_advanced_json_data(form_data):
 
 def save_allocation_json_data(input_data):
     problem_type = input_data.get('problem_type')
-    dir=f'allocation_{problem_type}_data'
+    dir = f'allocation_{problem_type}_data'
     filename_pattern = ''
-    if "budjet" == problem_type:
+    if "budget" == problem_type:
         num_items = input_data.get('num_items')
         filename_pattern = f"item{num_items}"
     elif "datacenter" == problem_type:
-        num_server_types =input_data.get('num_server_types')
+        num_server_types = input_data.get('num_server_types')
         num_services = input_data.get('num_services')
         filename_pattern = f"svr{num_server_types}_svc{num_services}"
     elif "nurse_rostering" == problem_type:
-        num_nurses =input_data.get('num_nurses')
+        num_nurses = input_data.get('num_nurses')
         num_days = input_data.get('num_days')
         filename_pattern = f"nurse{num_nurses}_day{num_days}"
 
     return save_json_data(input_data, dir, filename_pattern)
+
 
 def get_schedule_weekdays(num_days):
     today = datetime.date.today()

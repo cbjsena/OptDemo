@@ -20,12 +20,12 @@
     </p>
 
     <figure>
-        <img src="{% static 'puzzles_logic_app/images/nurse_rostering_concept.png' %}"
+        <img src="{% static 'resource_allocation_app/images/nurse_rostering_concept.png' %}"
              alt="간호사 스케줄링 문제 개념도" class="intro-image" style="max-width: 600px;">
         <figcaption class="image-caption">그림 1: 간호사 스케줄링 개념 - 각 간호사의 선호, 능력과 병원의 인력 수요, 수많은 근무 규칙을 동시에 고려하여 최적의 근무표를 생성합니다.</figcaption>
     </figure>
 
-    <h4>1. 문제 설명 및 핵심 제약</h4>
+    <h3>1. 문제 설명 및 핵심 제약</h3>
     <p>
         간호사 스케줄링은 다양한 종류의 제약 조건으로 구성됩니다. 이 제약들은 크게 두 가지로 나눌 수 있습니다.
     </p>
@@ -47,7 +47,7 @@
         </li>
     </ul>
 
-    <h4>2. 수학적 모델</h4>
+    <h3>2. 문제의 목표 및 특징</h3>
     <p>
         이 문제의 목표는 모든 강성 제약을 만족시키는 해를 찾으면서, 연성 제약을 위반하는 것에 대한 페널티(Penalty)의 총합을 최소화하는 것입니다.
         즉, 근무자 만족도를 최대화하고 운영의 공정성을 높이는 것이 주된 목표가 됩니다.
@@ -115,6 +115,19 @@
         </ul>
         <p>참고: 실제 모델에서는 "야간 근무 후 최소 16시간 휴식", "최대 5일 연속 근무" 등 훨씬 더 복잡하고 다양한 패턴 제약 조건들이 추가됩니다.
         </p>
+    </div>
+
+    <h3>4. Nurse Rostering Demo</h3>
+    <div class="card-body">
+        <p><strong>Nurse Rostering Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
+        <ul>
+            <li>간호사 수와 근무 기간 설정</li>
+            <li>시프트 별 필요 인원 설정</li>
+            <li>최적 근무표와 간호사별 근무일 수 결과</li>
+        </ul>
+        <a href="{% url 'resource_allocation_app:nurse_rostering_demo' %}" class="btn btn-primary mt-3">
+            데모 페이지로 이동 &rarr;
+        </a>
     </div>
 </div>
 {% endblock %}

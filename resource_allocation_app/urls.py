@@ -9,7 +9,6 @@ urlpatterns = [
 
     # 1. Budget Allocation
     path('budget-allocation/introduction/', views.budget_allocation_introduction_view, name='budget_allocation_introduction'),
-    # path('budget-allocation/data/', views.budget_allocation_data_view, name='budget_allocation_data'),
     path('budget-allocation/demo/', views.budget_allocation_demo_view, name='budget_allocation_demo'),
 
     # 2.Data Center Capacity Planning

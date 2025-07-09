@@ -35,17 +35,17 @@ def budget_allocation_demo_view(request):
     form_data = {}
     if request.method == 'GET':
         form_data['total_budget'] = preset_total_budget
-        submitted_num_item = int(request.GET.get('num_items_to_show', preset_budjet_num_item))
+        submitted_num_item = int(request.GET.get('num_items_to_show', preset_budget_num_item))
         submitted_num_item = max(2, min(10, submitted_num_item))
 
         for i in range(submitted_num_item):
-            preset = preset_budjet_items[i]
+            preset = preset_budget_items[i]
             for key, default_val in preset.items():
                 form_data[key] = default_val
 
     elif request.method == 'POST':
         form_data = request.POST.copy()
-        submitted_num_item = int(form_data.get('num_items', preset_budjet_num_item))
+        submitted_num_item = int(form_data.get('num_items', preset_budget_num_item))
 
     context = {
         'active_model': 'Resource Allocation',
@@ -63,7 +63,7 @@ def budget_allocation_demo_view(request):
         logger.info("Budget allocation demo POST request received.")
         try:
             # 1. 데이터 생성 및 검증
-            input_data = create_budjet_allocation_json_data(form_data, submitted_num_item)
+            input_data = create_budget_allocation_json_data(form_data, submitted_num_item)
 
             # 2. 파일 저장
             if settings.SAVE_DATA_FILE:
