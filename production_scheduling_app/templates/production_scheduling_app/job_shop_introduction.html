@@ -16,10 +16,10 @@
 
     <h3>1. 문제 설명</h3>
     <p>
-        <strong>작업장 일정 계획 문제(Job Shop Scheduling Problem, JSSP)</strong>는 스케줄링 분야에서 가장 유명하고 어려운 문제 중 하나입니다. 이 문제는 여러 개의 작업(Job)이 여러 대의 기계(Machine)를 거쳐 가공될 때, **각 작업이 거쳐가는 기계의 순서가 서로 다르다**는 특징이 있습니다.
+        <strong>작업장 일정 계획 문제(Job Shop Scheduling Problem, JSSP)</strong>는 스케줄링 분야에서 가장 유명하고 어려운 문제 중 하나입니다. 이 문제는 여러 개의 작업(Job)이 여러 대의 기계(Machine)를 거쳐 가공될 때, 각 작업이 거쳐가는 기계의 순서가 서로 다르다는 특징이 있습니다.
     </p>
     <p>
-        이는 모든 작업이 동일한 순서로 기계를 거쳐가는 흐름 공정(Flow Shop)보다 훨씬 더 복잡하고 일반적인 생산 환경을 모델링합니다. 문제의 목표는 보통 모든 작업이 완료되는 총 소요 시간, 즉 **전체 작업 완료 시간(Makespan)**을 최소화하는 최적의 작업 순서와 기계별 작업 계획을 수립하는 것입니다.
+        이는 모든 작업이 동일한 순서로 기계를 거쳐가는 흐름 공정(Flow Shop)보다 훨씬 더 복잡하고 일반적인 생산 환경을 모델링합니다. 문제의 목표는 보통 모든 작업이 완료되는 총 소요 시간, 즉 전체 작업 완료 시간(Makespan)을 최소화하는 최적의 작업 순서와 기계별 작업 계획을 수립하는 것입니다.
     </p>
     <figure>
         <img src="{% static 'production_scheduling_app/images/job_shop_concept.png' %}"
@@ -115,11 +115,17 @@
         </ul>
     </div>
     <h3>4. Job Shop Demo</h3>
-    <p>
-        <strong>Job Shop Demo</strong>에서는
-        사용자가 <strong>작업 정보</strong>와 <strong>기계별 처리 시간</strong>을 입력하여
-        전체 작업 완료 시간(Makespan)을 최소화하는 생산 계획을 수립하는 과정을 체험할 수 있습니다.
-    </p>
+    <div class="card-body">
+        <p><strong>Job Shop Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
+        <ul>
+            <li>작업 수와 기계 수를 설정</li>
+            <li>작업별 기계 처리 시간과 공정 순서 정보 입력</li>
+            <li>전체 작업 완료 시간(Makespan)을 최소화하는 생산 계획 확인</li>
+        </ul>
+        <a href="{% url 'production_scheduling_app:job_shop_demo' %}" class="btn btn-success mt-2">
+            데모 페이지로 이동 &rarr;
+        </a>
+    </div>
 </div>
 {% endblock %}
 

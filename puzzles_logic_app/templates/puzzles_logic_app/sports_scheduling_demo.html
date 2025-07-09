@@ -46,7 +46,7 @@
 
     <div class="mb-3 form-inline">
         <div class="form-group mr-2">
-            <label for="num_teams_to_show" class="mr-2">팀 수 (2-8):</label>
+            <label for="num_teams_to_show" class="mr-2">팀 수 (2-10):</label>
             <select id="num_teams_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
                 {% for i in num_teams_options %}
                     <option value="{{ i }}" {% if i == submitted_num_teams %}selected{% endif %}>{{ i }}팀</option>
@@ -142,11 +142,23 @@
             </div>
         </div>
 
+        <div>
+            <table class="table table-bordered table-sm distance-matrix-table">
+                <thead>
+                    <tr>
+                        {% for team_name in all_teams_for_matrix %}
+                            <th>{{ team_name }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+            </table>
+        </div>
+
         <div class="form-section">
-            <h4>참가 팀 정보</h4>
+            <p>프로 야구 10개 구단 중 원하는 팀을 입력하세요.</p>
             <div class="row">
                 {% for team_name in teams_list %}
-                <div class="col-md-4 col-lg-3">
+                <div class="col-md-4 col-lg-2">
                     <div class="form-group">
                         <label for="team_{{ forloop.counter0 }}_name">팀 {{ forloop.counter }}:</label>
                         <input type="text" class="form-control form-control-sm" id="team_{{ forloop.counter0 }}_name" name="team_{{ forloop.counter0 }}_name" value="{{ team_name }}">

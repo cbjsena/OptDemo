@@ -63,7 +63,7 @@
         </ul>
 
         <h4 class="model-definition-content"><strong>목표 함수 (Objective Function):</strong></h4>
-        <p>이 문제는 특정 값을 최소화하거나 최대화하는 최적화 문제가 아닌, 모든 제약을 만족하는 **실행 가능한 해(feasible solution)를 찾는 문제**입니다. 따라서 별도의 목표 함수는 필요하지 않습니다.</p>
+        <p>이 문제는 특정 값을 최소화하거나 최대화하는 최적화 문제가 아닌, 모든 제약을 만족하는 실행 가능한 해(feasible solution)를 찾는 문제입니다. 따라서 별도의 목표 함수는 필요하지 않습니다.</p>
 
 
         <h4 class="model-definition-content"><strong>제약 조건 (Constraints)</strong></h4>
@@ -93,6 +93,18 @@
                 </div>
             </li>
         </ul>
+    </div>
+
+    <h3>3. Sudoku Solver Demo</h3>
+    <div class="card-body">
+        <p><strong>Sudoku Solver Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
+        <ul>
+            <li>문제 사이즈와 난이도 설정</li>
+            <li>퍼즐 정답 확인</li>
+        </ul>
+        <a href="{% url 'puzzles_logic_app:sudoku_demo' %}" class="btn btn-success mt-2">
+            데모 페이지로 이동 &rarr;
+        </a>
     </div>
 </div>
 {% endblock %}

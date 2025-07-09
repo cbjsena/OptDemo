@@ -80,10 +80,17 @@
     </div>
 
     <h3>4. Resource Skill Matching Demo</h3>
-    <p>
-        <strong>Resource Skill Matching Demo</strong>에서는
-        보유 인력과 프로젝트 관련 정보를 설정하고, 최적의 프로젝트별 인력 할당 과정을 체험할 수 있습니다.
-    </p>
+    <div class="card-body">
+        <p><strong>Resource Skill Matching Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
+        <ul>
+            <li>인력 수와 프로젝트 수 설정</li>
+            <li>인력 별 비용과 보유 기술 정보 입력</li>
+            <li>최적의 프로젝트별 인력 할당  계획 확인</li>
+        </ul>
+        <a href="{% url 'matching_assignment_app:resource_skill_matching_demo' %}" class="btn btn-success mt-2">
+            데모 페이지로 이동 &rarr;
+        </a>
+    </div>
 </div>
 {% endblock %}
 

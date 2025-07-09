@@ -82,11 +82,17 @@
     </div>
 
     <h3>4. Transport Assignment Demo</h3>
-    <p>
-        <strong>Transport Assignment Demo</strong>에서는
-        사용자가 직접 배송 기사와 배송 구역의 수, 기사별 배송 구역의 비용을 설정하고,
-        최적의 배송 기사별 배송 구역 할당 과정을 체험할 수 있습니다.
-    </p>
+    <div class="card-body">
+        <p><strong>Transport Assignment Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
+        <ul>
+            <li>기사와 배송 구역의 수 설정</li>
+            <li>기사별 배송 구역의 비용 정보 입력</li>
+            <li>최적의 배송 기사별 배송 구역 할당 계획 확인</li>
+        </ul>
+        <a href="{% url 'matching_assignment_app:transport_assignment_demo' %}" class="btn btn-success mt-2">
+            데모 페이지로 이동 &rarr;
+        </a>
+    </div>
 </div>
 {% endblock %}
 

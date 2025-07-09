@@ -15,7 +15,7 @@
     </div>
 
     <p>
-        <strong>생산 로트 크기 결정 문제(Lot Sizing Problem)</strong>는 생산 계획 분야의 고전적이면서도 핵심적인 문제입니다. 이 문제는 시간에 따라 변동하는 고객 수요를 만족시키기 위해, **언제, 얼마나 많이 생산할 것인지(로트 크기)**를 결정하여 관련된 총비용을 최소화하는 것을 목표로 합니다.
+        <strong>생산 로트 크기 결정 문제(Lot Sizing Problem)</strong>는 생산 계획 분야의 고전적이면서도 핵심적인 문제입니다. 이 문제는 시간에 따라 변동하는 고객 수요를 만족시키기 위해, 언제, 얼마나 많이 생산할 것인지(로트 크기)를 결정하여 관련된 총비용을 최소화하는 것을 목표로 합니다.
     </p>
 
     <figure>
@@ -94,11 +94,17 @@
     </div>
 
     <h3>4. Lot Sizing Demo</h3>
-    <p>
-        <strong>Lot Sizing Demo</strong>에서는
-        사용자가 직접 기간별 수요, 생산/재고/준비 비용, 생산 능력을 입력하여
-        총비용을 최소화하는 최적의 생산 계획을 수립하는 과정을 체험할 수 있습니다.
-    </p>
+    <div class="card-body">
+        <p><strong>Lot Sizing Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
+        <ul>
+            <li>계획 기간 설정</li>
+            <li>기간별 수요, 생산/재고/준비 비용, 생산 능력 정보 입력</li>
+            <li>총비용을 최소화하는 최적의 생산 계획 확인</li>
+        </ul>
+        <a href="{% url 'production_scheduling_app:lot_sizing_demo' %}" class="btn btn-success mt-2">
+            데모 페이지로 이동 &rarr;
+        </a>
+    </div>
 </div>
 {% endblock %}
 
