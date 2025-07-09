@@ -169,7 +169,6 @@ def create_single_machine_json_data(jobs_list, objective_choice, num_jobs):
 
 
 def create_flow_shop_json_data(form_data):
-    logger.debug("Creating and validating flow shop input data from form.")
     num_jobs = int(form_data.get('num_jobs', 3))
     num_machines = int(form_data.get('num_machines', 3))
 
