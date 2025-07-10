@@ -1,0 +1,89 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Vehicle Routing Problem (VRP) - Introduction{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h2>차량 경로 문제 (Vehicle Routing Problem - VRP)</h2>
+    </div>
+
+    <p class="lead">
+        <strong>차량 경로 문제(VRP)</strong>는 물류 및 운송 관리 분야에서 가장 중요하고 활발히 연구되는 최적화 문제 중 하나입니다. 이 문제는 주어진 제약 조건 하에서 최적의 차량 운행 경로를 찾아 총비용을 최소화하는 것을 목표로 합니다.
+    </p>
+
+    <figure class="text-center my-4">
+        <img src="{% static 'routing_logistics_app/images/vrp_general_concept.png' %}" alt="VRP 문제 개념도"
+             class="intro-image img-fluid rounded shadow-sm" style="max-width: 700px;">
+        <figcaption class="image-caption mt-2">
+            그림 1: VRP 문제의 개념 - 중앙 차고지에서 여러 고객 지점으로 향하는 수많은 경로 조합 중, 어떤 경로가 최적인지를 찾는 문제를 시각화합니다.
+        </figcaption>
+    </figure>
+
+    <hr class="my-5">
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header"><h4>1. 문제 설명 및 응용 분야</h4></div>
+                <div class="card-body">
+                    <h5 class="card-title">문제 설명</h5>
+                    <p>
+                        VRP의 기본적인 목표는 총 운행 거리, 총 운행 시간, 총 운송 비용과 같은 특정 비용 함수를 최소화하는 것입니다. 동시에, 각 차량의 용량 제약, 고객 방문 시간 창 제약, 총 근무 시간 제약 등 다양한 현실적인 제약 조건들을 만족해야 합니다. VRP는 계산적으로 매우 어려운 NP-hard 문제에 속하여, 대규모 문제 해결을 위해 주로 휴리스틱(Heuristic) 알고리즘이 사용됩니다.
+                    </p>
+                    <hr>
+                    <h5 class="card-title mt-4">주요 산업 응용 분야</h5>
+                    <ul>
+                        <li><strong>택배 및 배송 서비스:</strong> 온라인 주문 상품, 식료품 등의 최종 소비자 배송 경로 최적화.</li>
+                        <li><strong>폐기물 수거:</strong> 생활 쓰레기, 재활용품 등의 수거 차량 경로 계획.</li>
+                        <li><strong>영업사원 및 서비스 기술자 방문 경로 계획:</strong> 제한된 시간 내에 여러 고객 또는 현장을 효율적으로 방문하기 위한 경로 설정.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header"><h4>2. VRP의 주요 구성 요소</h4></div>
+                <div class="card-body">
+                     <ul class="list-unstyled">
+                        <li class="mb-3"><strong>물류센터 (Depot)</strong> <span class="icon-inline">🏭</span>: 모든 차량이 운행을 시작하고 종료하는 지점입니다.</li>
+                        <li class="mb-3"><strong>고객 (Customers)</strong> <span class="icon-inline">📍</span>: 차량이 방문하여 서비스를 제공해야 하는 지점들입니다.</li>
+                        <li class="mb-3"><strong>차량 (Vehicles)</strong> <span class="icon-inline">🚛</span>: 고객에게 서비스를 제공하는 운송 수단으로, 용량이나 운행 시간 등 제약을 가질 수 있습니다.</li>
+                        <li class="mb-0"><strong>경로 (Routes)</strong> <span class="icon-inline">🗺️</span>: 각 차량이 물류센터에서 출발하여 고객들을 방문하고 돌아오는 최적화의 대상이 되는 여정입니다.</li>
+                    </ul>
+                </div>
+            </div>
+             <figure class="text-center my-4">
+                <img src="{% static 'routing_logistics_app/images/vrp_example_solution.png' %}" alt="VRP 해결 예시"
+                    class="intro-image img-fluid rounded shadow-sm">
+                <figcaption class="image-caption mt-2">
+                    그림 2: VRP 문제의 해결 예시 - 최적화 솔루션을 통해 각 차량(색상별로 구분)이 어떤 고객을 어떤 순서로 방문해야 하는지에 대한 최적 경로가 도출됩니다.
+                </figcaption>
+            </figure>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">3. VRP 데모</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>VRP Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
+                    <ul>
+                        <li>고객 수와 차량 수 설정</li>
+                        <li>차고지와 고객 위치 설정</li>
+                        <li>최적화된 차량 경로 시각화</li>
+                    </ul>
+                    <a href="{% url 'routing_logistics_app:vrp_demo' %}" class="btn btn-success btn-lg btn-block mt-3">
+                        데모 페이지로 이동 &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

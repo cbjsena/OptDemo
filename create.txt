@@ -42,6 +42,7 @@ python manage.py runserver
 
 # postgresql 설치 시 인스톨
 1. pip install psycopg2-binary
+2. db user의 Privileges는 superuser로 설정
 # db 데이터가 없으므로 초기화 하는 명령 입력(현 app은 db 사용하지 않아서 문제 없음)
 2. docker 실행 후 다른 창에 입력-> docker-compose exec web python manage.py migrate
 
@@ -50,10 +51,6 @@ python manage.py runserver
 # 쿠기 등으로 잘 안되는 경우 발생 확인 위해 시크릿모드 확인 필요
 # 앱별 static 폴더 대신 한곳에 모두 모음
 2. python manage.py collectstatic
-
-####### docker-compose 분리
-1. docker-compose.dev.yml 복사 생성
-2. docker-compose -f docker-compose.dev.yml up
 
 ####### nginx
 1. docker-compose에 services에 nginx 추가
@@ -170,15 +167,24 @@ Cloud Run은 내부적으로 PORT=8080을 설정
 환경	            명령	                                    비고
 --------------------------------------------------------------------------
 개발 (PyCharm)	python manage.py runserver	            .env.local 사용
-로컬 테스트	    docker-compose up --build	            .env.dev 사용
-배포	            gcloud run deploy ... --env-vars-file   .env.yaml	Cloud Run 환경
+로컬 테스트	    docker-compose up --build	            .env.prod, .env.prod.db 사용
+클라우드          gcloud run deploy ... --env-vars-file   .env.yaml	Cloud Run 환경
+              - docker build -t gcr.io/my-optimization-demo/optdemo .
+              - docker push gcr.io/my-optimization-demo/optdemo
+              - gcloud run deploy optdemo --image gcr.io/my-optimization-demo/optdemo --platform managed --region asia-northeast3 --allow-unauthenticated --add-cloudsql-instances my-optimization-demo:asia-northeast3:my-optimization-db --env-vars-file .env.yaml
 ########################################################################
 
-#### DB 변경 시 초기화 필요
+############### DB 변경 시 초기화 필요
 개발          python manage.py makemigrations,python manage.py migrate
 로컬 테스트    docker-compose up 후 별도 cmd에서 실행 docker-compose exec web python manage.py migrate
-배포          최초 gcloud run jobs create optdemo-migrate --image gcr.io/my-optimization-demo/optdemo --region asia-northeast3 --command "python" --args "manage.py","migrate" --set-cloudsql-instances my-optimization-demo:asia-northeast3:my-optimization-db --env-vars-file .env.yaml
+클라우드      최초 gcloud run jobs create optdemo-migrate --image gcr.io/my-optimization-demo/optdemo --region asia-northeast3 --command "python" --args "manage.py","migrate" --set-cloudsql-instances my-optimization-demo:asia-northeast3:my-optimization-db --env-vars-file .env.yaml
              이후 gcloud run jobs execute optdemo-migrate --region asia-northeast3 실행
+
+############### Static 파일 추가 시
+개발          해당 폴더에 추가
+로컬 테스트    docker-compose up 후 별도 cmd에서 실행 docker-compose exec web python manage.py collectstatic --noinput
+             빌드 필요 없이 반영됨
+클라우드       Cloud storage의 Buckets에 파일 업로드(추후에 명령어로 되도록 수정 필요)
 
 ########## Cloud Run 서비스 계정에 Storage Object Admin 설정
 1. Cloud Run 서비스 계정 확인 방법
@@ -206,6 +212,13 @@ Cloud Run은 내부적으로 PORT=8080을 설정
     3.3 CLI로 추가 (gcloud 명령어) 최소 권한만 부여
         - 쓰기만: projects add-iam-policy-binding my-optimization-demo --member="serviceAccount:my-cloud-run-service@my-optimization-demo.iam.gserviceaccount.com" --role="roles/storage.objectCreator"
         - 읽기만: gcloud projects add-iam-policy-binding my-optimization-demo --member="serviceAccount:my-cloud-run-service@my-optimization-demo.iam.gserviceaccount.com" --role="roles/storage.objectViewer"
+
+
+##########  postgers admin 비밀번호 안되는 현상
+1. PostgreSQL\13\data\pg_hba.conf 파일에서 "METHOD" 칼럼 값을 'trust'로 변경 (아마도 기존에는 scram-sha-256)
+2. Admin 권한으로 cmd에서 PostgreSQL\13\bin 이동
+3. pg_ctl reload -D PostgreSQL\data 입력
+4. pgAdmin 실행하면 리로드
 
 저장
 TODO

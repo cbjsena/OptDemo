@@ -50,33 +50,43 @@
 
     <h3>3. 수학적 모델</h3>
     <div class="col-md-8 model-definition-content">
+        <h4 class="model-definition-content"><strong>입력 데이터:</strong></h4>
+        <ul>
+            <li><strong>\( r \in R \)</strong> : 인원의 집합</li>
+            <li><strong>\( p \in P \)</strong> : 프로젝트 집합 (예: 프로젝트 A, B, C)</li>
+            <li><strong>\( s \in S \)</strong> : 기술(스킬)의 집합 (예: Python, DB, Design 등)</li>
+            <li><strong>\( s_{rs} \)</strong> : 인원 \( r \) 가 기술 \( s \) 를 보유하면 1, 아니면 0 </li>
+            <li><strong>\( d_{ps} \)</strong> : 프로젝트 \( p \) 가 기술 \( s \) 에 대해 요구하는 최소 인원 수 </li>
+            <li><strong>\( c_{rp} \)</strong> : 인원 \( r \) 을 프로젝트 \( p \) 에 배정할 때 발생하는 비용</li>
+        </ul>
+        <hr>
+
         <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
         <ul>
-            <li> <strong>\( x_{ij} \)</strong> : 인력 \( i \) 를 프로젝트 \( j \) 에 배정하면 1, 아니면 0(이진 변수)</li>
-            <p>또는 케이스에 따라 </p>
-            <li> <strong>\( x_{ijk} \)</strong> : 인력 \( i \) 를 프로젝트 \( j \) 에 역할 \( k \)로 배정하면 1, 아니면 0(이진 변수)</li>
+            <li> <strong>\( x_{rp} \)</strong> : 인원 \( r \) 을 프로젝트 \( p \) 에 배정하면 1, 아니면 0(이진 변수)</li>
         </ul>
         <hr>
 
         <h4 class="model-definition-content"><strong>목적 함수:</strong> 총비용 최소화</h4>
         <div class="math-block">
-            <p>$$\min \sum_{i=1}^{n} \sum_{j=1}^{n} c_{ij} x_{ij}$$</p>
-            <p>$$ \text{where } c_{ij} \text{ is the cost when resource } i \text{ is assigned to project } j $$</p>
+            <p>$$\min \sum_{r \in R} \sum_{p \in P} c_{rp} \cdot x_{rp}$$</p>
         </div>
 
         <h4 class="model-definition-content"><strong>제약 조건:</strong></h4>
         <ul>
-            <li><strong>기술 요구사항 충족 제약:</strong> 프로젝트 j가 요구하는 기술 s에 대해, 해당 기술을 보유한 인력 배정
+            <li><strong>기술 요구사항 충족 제약:</strong> 프로젝트 \( p \) 가 요구하는 기술 \( s \) 에 대해, 해당 기술을 보유한 인력 배정
                 <div class="math-block">
-                    $$\sum_{i \in \text{Resources}} \text{has_skill}(i, s) \cdot x_{ij} \ge 1, \quad \forall j \in \text{Projects}, s \in \text{required_skills}(j)$$
+                    $$ \sum_{r \in R} s_{rs} \cdot x_{rp} \ge d_{ps}, \quad \forall p \in P, s \in S $$
                 </div>
             </li>
             <li><strong>인력 할당 제약:</strong> 각 인력는 동시에 참여할 수 있는 프로젝트 수에 한계 (보통 1개)
                 <div class="math-block">
-                    $$\sum_{j \in \text{Projects}} x_{ij} \le 1, \quad \forall i \in \text{Resources}$$
+                    $$ \sum_{p \in P} x_{rp} \le 1, \quad \forall r \in R $$
                 </div>
             </li>
         </ul>
+        <p>실제 모델에서는 프로젝트별 인원 상한/하한, 자원별 작업량 한도 (ex. 주당 40시간 이하), 팀 구성 균형 제약 (ex. senior 1인 이상 등) 등 훨씬 더 복잡하고 다양한 패턴 제약 조건들이 추가됩니다.
+        </p>
     </div>
 
     <h3>4. Resource Skill Matching Demo</h3>

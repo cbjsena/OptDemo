@@ -60,7 +60,6 @@
                     <option value="{{ i }}" {% if i == submitted_num_customers %}selected{% endif %}>{{ i }}명</option>
                 {% endfor %}
             </select>
-            (고객 수나 차량 수를 변경하면 작업 정보가 초기화 됩니다.)
         </div>
         <div class="form-group mr-2">
             <label for="num_vehicles_to_show" class="mr-2">차량 수 (1-5):</label>
@@ -69,7 +68,9 @@
                     <option value="{{ i }}" {% if i == submitted_num_vehicles %}selected{% endif %}>{{ i }}대</option>
                 {% endfor %}
             </select>
+            (고객 수나 차량 수를 변경하면 작업 정보가 초기화 됩니다.)
         </div>
+
         <noscript><button type="submit" class="btn btn-sm btn-secondary">설정 적용</button></noscript>
     </form>
 

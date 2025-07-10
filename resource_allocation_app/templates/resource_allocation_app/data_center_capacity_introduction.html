@@ -54,9 +54,9 @@
         <p>데이터 센터 용량 계획 문제는 다양한 변형이 가능하지만, 일반적으로 다음과 같은 요소를 포함하는 혼합 정수 계획법(Mixed-Integer Programming, MIP) 또는 선형 계획법(LP) 문제로 모델링될 수 있습니다.</p>
         <h4 class="model-definition-content"><strong>입력 데이터:</strong></h4>
         <ul>
-            <li><strong>\( T \)</strong>: 서비스를 제공해야 되는 기간의 집합</li>
-            <li><strong>\( J \)</strong>: 사용 가능한 설비 유형의 집합</li>
-            <li><strong>\( S \)</strong>: 제공해야 되는 서비스의 집합</li>
+            <li><strong>\( t \in T \)</strong>: 서비스를 제공해야 되는 기간의 집합</li>
+            <li><strong>\( j \in J \)</strong>: 사용 가능한 설비 유형의 집합</li>
+            <li><strong>\( s \in S \)</strong>: 제공해야 되는 서비스의 집합</li>
             <li><strong>\( TotalInv_{t} \)</strong>: 기간별 투자 예산 집합</li>
             <li><strong>\( Inv_{jt} \)</strong>: 기간 \( t \), 설비 \( j \)의 투자 비용</li>
             <li><strong>\( OprCost_{jt} \)</strong>: 기간 \( t \), 설비 \( j \)의 운영 비용</li>
@@ -105,12 +105,9 @@
                    $$\sum_{j} Inv_{jt} \cdot C_{jt} \le TotalInv_{t}$$
                 </div>
             </li>
-            <li><strong>물리적 제약:</strong>  공간, 전력, 냉각 용량 한도 등
-            </li>
-            <li><strong>설비 간 의존성 제약:</strong>  서버 10대당 특정 냉각 용량 필요
-            </li>
         </ul>
-        <p>이러한 모델은 다양한 시나리오에 대한 최적의 투자 및 할당 계획을 도출하는 데 사용될 수 있습니다.</p>
+        <p>실제 모델에서는 물리적 제약(공간, 전력, 냉각 용량 한도 등), 설비 간 의존성 제약(예: 서버 10대당 특정 냉각 용량 필요) 등 훨씬 더 복잡하고 다양한 패턴 제약 조건들이 추가됩니다.
+        </p>
     </div>
 
     <h3>4. Data Center Capacity Demo</h3>
