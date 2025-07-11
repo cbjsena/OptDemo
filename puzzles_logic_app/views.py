@@ -264,35 +264,67 @@ def tsp_demo_view(request):
         'selected_cities': preset_tsp_cities,
         'results': None, 'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
+        'manual_results': None, 'original_input_json': None,
     }
 
     if request.method == 'POST':
-        selected_city_names = request.POST.getlist('cities')
+        form_data = request.POST
+        logger.info(form_data)
+        action = form_data.get('action', 'optimize')
+        selected_city_names = form_data.getlist('cities')
         context['selected_cities'] = selected_city_names
 
         if len(selected_city_names) < 2:
             context['error_message'] = "최소 2개 이상의 도시를 선택해야 합니다."
         else:
             try:
-                selected_cities_data = [city for city in preset_tsp_all_cities if city['name'] in selected_city_names]
-                # 1. 선택된 도시에 대한 부분 거리 행렬 생성
-                input_data = create_tsp_json_data(selected_cities_data)
+                if action == 'optimize':
+                    selected_cities_data = [city for city in preset_tsp_all_cities if city['name'] in selected_city_names]
+                    # 1. 선택된 도시에 대한 부분 거리 행렬 생성
+                    input_data = create_tsp_json_data(selected_cities_data)
 
-                # 2. 최적화 실행
-                results_data, error_msg, processing_time = run_tsp_optimizer(input_data)
-                context['processing_time_seconds'] = processing_time
+                    # 2. 최적화 실행
+                    results_data, error_msg, processing_time = run_tsp_optimizer(input_data)
+                    context['processing_time_seconds'] = processing_time
 
-                if error_msg:
-                    context['error_message'] = error_msg
-                elif results_data:
-                    # 결과에 좌표 정보도 포함하여 템플릿으로 전달
-                    tour_indices = results_data['tour_indices']
-                    tour_data = [selected_cities_data[i] for i in tour_indices]
+                    if error_msg:
+                        context['error_message'] = error_msg
+                    elif results_data:
+                        # 결과에 좌표 정보도 포함하여 템플릿으로 전달
+                        tour_indices = results_data['tour_indices']
+                        tour_data = [selected_cities_data[i] for i in tour_indices]
 
-                    results_data['tour_cities_data'] = tour_data
-                    results_data['tour_cities'] = " → ".join([city['name'] for city in tour_data])
-                    context['results'] = results_data
-                    context['success_message'] = f"최단 경로를 찾았습니다! 총 이동 거리는 {results_data['total_distance']}km 입니다."
+                        results_data['tour_cities_data'] = tour_data
+                        results_data['tour_cities'] = " → ".join([city['name'] for city in tour_data])
+                        context['results'] = results_data
+                        context['success_message'] = f"최단 경로를 찾았습니다! 총 이동 거리는 {results_data['total_distance']}km 입니다."
+                        # 수동 비교를 위해 원본 선택 데이터 저장
+                        context['original_input_json'] = json.dumps(selected_cities_data, ensure_ascii=False)
+
+                elif action == 'manual_check':
+                    logger.info(form_data)
+                    #TODO
+                    # manual_tour에 서울 포함되지 않음
+                    manual_tour_str = form_data.get('manual_tour', '')
+                    original_input_str = form_data.get('original_input_json', '[]')
+
+                    manual_tour_cities = [city.strip() for city in manual_tour_str.split('→') if city.strip()]
+                    original_selected_cities = json.loads(original_input_str)
+
+                    if len(manual_tour_cities) != len(original_selected_cities):
+                        raise ValueError("수동 경로의 도시 수가 원래 문제와 다릅니다.")
+
+                    # 수동 경로 거리 계산
+                    manual_distance = calculate_manual_tour_distance(manual_tour_cities, all_city_names,
+                                                                     preset_tsp_distance_matrix)
+
+                    context['manual_results'] = {
+                        'tour': ' → '.join(['서울'] + manual_tour_cities + ['서울']),
+                        'distance': manual_distance
+                    }
+                    # 비교를 위해 최적 결과도 다시 context에 추가
+                    context['results'] = json.loads(request.POST.get('optimal_results_json', '{}'))
+                    context['original_input_json'] = original_input_str  # 계속 전달
 
             except Exception as e:
                 context['error_message'] = f"처리 중 오류 발생: {str(e)}"
@@ -300,6 +332,25 @@ def tsp_demo_view(request):
     logger.debug("Rendering TSP demo page.")
     return render(request, 'puzzles_logic_app/tsp_demo.html', context)
 
+
+def calculate_manual_tour_distance(tour_city_names, all_cities_data, distance_matrix):
+    """사용자가 입력한 순서의 도시 이름 리스트를 받아 총 거리를 계산합니다."""
+    # 도시 이름을 전체 데이터의 인덱스로 변환하는 맵 생성
+    name_to_idx_map = {city['name']: i for i, city in enumerate(all_cities_data)}
+
+    # 투어 경로를 인덱스 리스트로 변환
+    tour_indices = [name_to_idx_map[name] for name in tour_city_names]
+
+    # 출발지(0)를 맨 앞과 뒤에 추가
+    full_tour = [0] + tour_indices + [0]
+
+    total_distance = 0
+    for i in range(len(full_tour) - 1):
+        from_node = full_tour[i]
+        to_node = full_tour[i + 1]
+        total_distance += distance_matrix[from_node][to_node]
+
+    return total_distance
 
 # --- 4. Sudoku Solver ---
 def sudoku_introduction_view(request):

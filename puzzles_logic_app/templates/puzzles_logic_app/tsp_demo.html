@@ -21,6 +21,7 @@
 
     <form method="POST" id="tspForm">
         {% csrf_token %}
+        <input type="hidden" name="action" value="optimize">
         <div class="card">
             <div class="card-header">
                 <strong>방문할 도시 선택 (2개 이상)</strong>
@@ -61,7 +62,7 @@
     {% if results %}
     <div class="row mt-4">
         {# 텍스트 결과 표시 영역 #}
-        <div class="col-md-5">
+        <div class="col-md-4">
              <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">최적 경로</h5>
@@ -73,11 +74,50 @@
                     <p class="mb-0 text-muted"><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
                 </div>
             </div>
+
+            {% if manual_results %}
+            <div class="card mt-3 border-secondary">
+                <div class="card-header bg-secondary text-white"><strong>[수동 입력 결과]</strong></div>
+                <div class="card-body">
+                    <h5 class="card-title">입력한 경로</h5>
+                    <p class="card-text"><strong>{{ manual_results.tour }}</strong></p>
+                    <hr>
+                    <p class="mb-0"><strong>총 이동 거리: {{ manual_results.distance }} km</strong>
+                        {% with diff=manual_results.distance|sub:results.total_distance %}
+                        <span class="ml-2 badge {% if diff > 0 %}badge-danger{% else %}badge-success{% endif %}">
+                            최적해 대비 {% if diff > 0 %}+{{ diff }}{% else %}{{ diff }}{% endif %}km
+                        </span>
+                        {% endwith %}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
         </div>
         {# 지도 표시 영역 #}
-        <div class="col-md-7">
-            <div id="map" class="border rounded"></div>
+        <div class="col-md-8">
+            <div id="map" class="border rounded" style="height: 500px;"></div>
         </div>
+    </div>
+
+    <hr class="my-5">
+    <div class="manual-check-section mt-4">
+        <h4>수동 경로 비교</h4>
+        <p>최적화 결과와 비교하고 싶은 다른 방문 순서를 직접 입력해 보세요. (도시 이름은 '→'로 구분)</p>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="manual_check">
+            <input type="hidden" name="original_input_json" value="{{ original_input_json }}">
+            <input type="hidden" name="optimal_results_json" value="{{ results|to_json_str }}">
+            {% for city in selected_cities %}
+            <input type="hidden" name="cities" value="{{ city }}">
+            {% endfor %}
+            <div class="form-group">
+                <label for="manual_tour"><strong>방문 순서 입력</strong></label>
+                <input type="text" class="form-control" id="manual_tour" name="manual_tour"
+                       value="{{ results.tour_cities_data|slice:'1:-1'|join_names:' → ' }}">
+            </div>
+            <button type="submit" class="btn btn-secondary mt-2">수동 경로 거리 계산</button>
+        </form>
     </div>
     {% endif %}
 </div>

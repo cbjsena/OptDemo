@@ -1,3 +1,5 @@
+import json
+
 from django import template
 import logging
 logger = logging.getLogger(__name__)
@@ -98,3 +100,35 @@ def multiply_custom(value, arg):
     except (ValueError, TypeError):
         # 변환 실패 시 0 또는 다른 기본값 반환
         return 0
+
+
+@register.filter(name='to_json_str')
+def to_json_str(data):
+    """Python 객체를 JSON 문자열로 변환합니다."""
+    try:
+        # 한글이 깨지지 않도록 ensure_ascii=False 옵션 사용
+        return json.dumps(data, ensure_ascii=False)
+    except TypeError:
+        return ""
+
+
+@register.filter(name='join_names')
+def join_names(data_list, separator=' → '):
+    """
+    [{'name': '도시1'}, {'name': '도시2'}] 형태의 리스트에서
+    'name' 값만 추출하여 주어진 구분자로 연결합니다.
+    """
+    if not isinstance(data_list, list):
+        return ""
+
+    names = [item.get('name', '') for item in data_list]
+    return separator.join(names)
+
+
+@register.filter(name='sub')
+def sub(value, arg):
+    """템플릿에서 빼기 연산을 수행합니다. (value - arg)"""
+    try:
+        return float(value) - float(arg)
+    except (ValueError, TypeError):
+        return None
