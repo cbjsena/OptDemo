@@ -50,6 +50,17 @@ class VrpDemoTests(TestCase):
         self.assertContains(response, "차량별 최적 경로")
         self.assertContains(response, "경로 시각화 (VRP)")
 
+    def test_advanced_view_loads_successfully(self):
+        """Vehicle Routing Problem Advanced 페이지가 GET 요청 시 정상적으로 로드되는지 테스트합니다."""
+        url = reverse('routing_logistics_app:vrp_advanced')
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'routing_logistics_app/vrp_advanced.html')
+        self.assertContains(response, '차량 경로 최적화 모델 정의')
+        self.assertContains(response, '주요 VRP 변형 모델 상세 설명')
+        self.assertContains(response, '종합 정리')
+
 
 class CvrpDemoTests(TestCase):
     """CVRP(용량 제약 차량 경로 문제) 데모에 대한 테스트"""

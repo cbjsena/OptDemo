@@ -13,18 +13,10 @@
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h2>프로젝트 일정 및 자원 제약 스케줄링 (RCPSP)</h2>
     </div>
-
-    <h3>1. 문제 설명</h3>
-    <p>
-        <strong>자원 제약 프로젝트 스케줄링 문제(Resource-Constrained Project Scheduling Problem, RCPSP)</strong>는
+    <p> <strong>자원 제약 프로젝트 스케줄링 문제(Resource-Constrained Project Scheduling Problem, RCPSP)</strong>는
         한정된 자원(인력, 장비, 자본 등)을 사용하여 프로젝트를 구성하는 여러 활동(Activity)들을 언제 시작하고 완료할지 결정하는 문제입니다.
         문제의 목표는 주어진 제약 조건들을 모두 만족시키면서 프로젝트의 <strong>전체 완료 시간(Makespan)</strong>을 최소화하는
         최적의 활동 시작 시간을 찾는 것입니다.
-    </p>
-    <p>
-        이전의 <strong>머신 스케줄링(Flow Shop, Job Shop)</strong>가 기계라는 특정 자원의 순서 배분에 초점을 맞췄다면,
-        <strong>RCPSP</strong>는 더욱 일반화된 문제로 각 활동의 소요 시간과 활동 간의 선후 관계뿐만 아니라, 프로젝트 수행에 필요한
-        제한된 자원을 동시에 고려한다는 점에서 매우 현실적이고 복잡합니다.
     </p>
     <figure>
         <img src="{% static 'production_scheduling_app/images/rcpsp_concept.png' %}"
@@ -32,108 +24,123 @@
         <figcaption class="image-caption">그림 1: 활동 간 선후 관계와 더불어, 제한된 자원(인력, 장비 등)으로 인해 동시에 수행할 수 있는 활동의 수가 제약을 받아 전체 프로젝트 기간이 늘어나는 것을 보여줍니다.</figcaption>
     </figure>
 
-    <h4>RCPSP의 핵심 구성 요소</h4>
-    <ul>
-        <li><strong>활동 (Activities):</strong> 프로젝트를 구성하는 개별 작업 단위로 각 활동은 고유한 처리 기간(Duration)이 존재</li>
-        <li><strong>선후 관계 (Precedence Relationships):</strong> 활동들 사이에 존재하는 기술적인 순서 제약으로
-        이는 보통 네트워크 다이어그램(Network Diagram) 또는 AON(Activity-On-Node) 차트로 표현 </li>
-        <li><strong>자원 (Resources):</strong> 활동을 수행하는 데 필요한 요소로
-            사람이나 기계처럼 시간이 지나도 총량이 변하지 않고 계속 사용할 수 있는 자원인 <strong>재생 가능 자원 (Renewable Resources)</strong>과
-            예산이나 원자재처럼 사용하면 소모되어 사라지는 자원인 <strong>비재생 가능 자원 (Non-renewable Resources)</strong>으로 구분</li>
-        <li><strong>자원 제약 (Resource Constraints):</strong> 각 기간에 사용할 수 있는 자원의 총량은 한정되므로,
-            동시 진행 가능한 활동도 순차적으로 진행 하는 경우 발생하여 프로젝트 기간이 증가</li>
-    </ul>
+    <div class="row">
+        <div class="col-lg-8">
+            <h3>1. 문제 설명</h3>
+            <p>
+                이전의 <strong>머신 스케줄링(Flow Shop, Job Shop)</strong>가 기계라는 특정 자원의 순서 배분에 초점을 맞췄다면,
+                <strong>RCPSP</strong>는 더욱 일반화된 문제로 각 활동의 소요 시간과 활동 간의 선후 관계뿐만 아니라, 프로젝트 수행에 필요한
+                제한된 자원을 동시에 고려한다는 점에서 매우 현실적이고 복잡합니다.
+            </p>
+            <h4>RCPSP의 핵심 구성 요소</h4>
+            <ul>
+                <li><strong>활동 (Activities):</strong> 프로젝트를 구성하는 개별 작업 단위로 각 활동은 고유한 처리 기간(Duration)이 존재</li>
+                <li><strong>선후 관계 (Precedence Relationships):</strong> 활동들 사이에 존재하는 기술적인 순서 제약으로
+                이는 보통 네트워크 다이어그램(Network Diagram) 또는 AON(Activity-On-Node) 차트로 표현 </li>
+                <li><strong>자원 (Resources):</strong> 활동을 수행하는 데 필요한 요소로
+                    사람이나 기계처럼 시간이 지나도 총량이 변하지 않고 계속 사용할 수 있는 자원인 <strong>재생 가능 자원 (Renewable Resources)</strong>과
+                    예산이나 원자재처럼 사용하면 소모되어 사라지는 자원인 <strong>비재생 가능 자원 (Non-renewable Resources)</strong>으로 구분</li>
+                <li><strong>자원 제약 (Resource Constraints):</strong> 각 기간에 사용할 수 있는 자원의 총량은 한정되므로,
+                    동시 진행 가능한 활동도 순차적으로 진행 하는 경우 발생하여 프로젝트 기간이 증가</li>
+            </ul>
 
-    <p>RCPSP는 대표적인 NP-hard 문제로, 프로젝트의 규모가 커지면 최적해를 찾는 것이 매우 어렵습니다.
-        상황과 문제의 크기에 따라 아래 소개하는 간단한 우선 순위나 휴리스틱 접근법을 이용하기도 합니다.
-    <h4>해결 방법</h4>
-    <ul>
-        <li><strong>직렬 스케줄링 (Serial SGS):</strong> 활동 목록을 우선순위에 따라 정렬한 뒤, 순서대로 하나씩 가장 빨리 시작 가능한 시간을 찾아 배치</li>
-        <li><strong>병렬 스케줄링 (Parallel SGS):</strong> 시간의 흐름에 따라 매 시점마다, 시작 가능한 활동들 중 우선순위가 높은 활동을 자원이 허용하는 만큼 배치 </li>
-        <li><strong>MIN SLK (Minimum Slack):</strong> 여유 시간(Slack)이 가장 적은 활동을 우선 (긴급한 경로에 있는 활동)</li>
-        <li><strong>LFT (Latest Finish Time):</strong> 자원 제약이 없을 때의 최후 완료 시간이 가장 빠른 활동을 우선</li>
-        <li><strong>SPT (Shortest Processing Time):</strong> 처리 기간이 가장 짧은 활동을 우</li>
-        <li><strong>GRPW (Greatest Resource per Work):</strong> 단위 시간당 자원 요구량이 가장 큰 활동을 우선</li>
-    </ul>
+            <p>RCPSP는 대표적인 NP-hard 문제로, 프로젝트의 규모가 커지면 최적해를 찾는 것이 매우 어렵습니다.
+                상황과 문제의 크기에 따라 아래 소개하는 간단한 우선 순위나 휴리스틱 접근법을 이용하기도 합니다.
+            <h4>해결 방법</h4>
+            <ul>
+                <li><strong>직렬 스케줄링 (Serial SGS):</strong> 활동 목록을 우선순위에 따라 정렬한 뒤, 순서대로 하나씩 가장 빨리 시작 가능한 시간을 찾아 배치</li>
+                <li><strong>병렬 스케줄링 (Parallel SGS):</strong> 시간의 흐름에 따라 매 시점마다, 시작 가능한 활동들 중 우선순위가 높은 활동을 자원이 허용하는 만큼 배치 </li>
+                <li><strong>MIN SLK (Minimum Slack):</strong> 여유 시간(Slack)이 가장 적은 활동을 우선 (긴급한 경로에 있는 활동)</li>
+                <li><strong>LFT (Latest Finish Time):</strong> 자원 제약이 없을 때의 최후 완료 시간이 가장 빠른 활동을 우선</li>
+                <li><strong>SPT (Shortest Processing Time):</strong> 처리 기간이 가장 짧은 활동을 우</li>
+                <li><strong>GRPW (Greatest Resource per Work):</strong> 단위 시간당 자원 요구량이 가장 큰 활동을 우선</li>
+            </ul>
 
-    <h3>2. 산업 응용 분야</h3>
-    <p>RCPSP는 자원과 시간의 제약이 중요한 모든 종류의 프로젝트 관리에 핵심적으로 사용됩니다.</p>
-    <ul>
-        <li><strong>건설 프로젝트:</strong> 건물이나 교량을 건설할 때, '기초 공사 &rarr; 골조 공사 &rarr; 마감 공사'와 같은 선후 관계와 함께, 제한된 수의 인력, 크레인, 트럭 등의 자원을 고려하여 최단 공사 기간을 계획합니다.</li>
-        <li><strong>신제품 개발:</strong> '시장 조사 &rarr; 제품 설계 &rarr; 시제품 제작 &rarr; 테스트' 등 일련의 개발 활동을 수행할 때, 각 단계에 필요한 연구원, 디자이너, 엔지니어 등의 인적 자원을 효율적으로 배분하여 출시 시점을 앞당깁니다.</li>
-        <li><strong>IT 시스템 구축:</strong> '요구사항 분석 &rarr; 시스템 설계 &rarr; 개발 &rarr; 테스트 &rarr; 배포'의 각 단계에 필요한 개발자, 테스터, 서버 등의 자원을 고려하여 프로젝트 일정을 최적화합니다.</li>
-        <li><strong>대규모 플랜트 유지보수:</strong> 정해진 기간 동안 발전소나 공장의 가동을 멈추고 여러 유지보수 활동을 수행할 때, 제한된 유지보수 인력과 특수 장비를 활용하여 작업 중단 시간을 최소화합니다.</li>
-    </ul>
+            <h3>2. 산업 응용 분야</h3>
+            <p>RCPSP는 자원과 시간의 제약이 중요한 모든 종류의 프로젝트 관리에 핵심적으로 사용됩니다.</p>
+            <ul>
+                <li><strong>건설 프로젝트:</strong> 건물이나 교량을 건설할 때, '기초 공사 &rarr; 골조 공사 &rarr; 마감 공사'와 같은 선후 관계와 함께, 제한된 수의 인력, 크레인, 트럭 등의 자원을 고려하여 최단 공사 기간을 계획합니다.</li>
+                <li><strong>신제품 개발:</strong> '시장 조사 &rarr; 제품 설계 &rarr; 시제품 제작 &rarr; 테스트' 등 일련의 개발 활동을 수행할 때, 각 단계에 필요한 연구원, 디자이너, 엔지니어 등의 인적 자원을 효율적으로 배분하여 출시 시점을 앞당깁니다.</li>
+                <li><strong>IT 시스템 구축:</strong> '요구사항 분석 &rarr; 시스템 설계 &rarr; 개발 &rarr; 테스트 &rarr; 배포'의 각 단계에 필요한 개발자, 테스터, 서버 등의 자원을 고려하여 프로젝트 일정을 최적화합니다.</li>
+                <li><strong>대규모 플랜트 유지보수:</strong> 정해진 기간 동안 발전소나 공장의 가동을 멈추고 여러 유지보수 활동을 수행할 때, 제한된 유지보수 인력과 특수 장비를 활용하여 작업 중단 시간을 최소화합니다.</li>
+            </ul>
 
-    <h3>3. 수학적 모델</h3>
-    <div class="col-md-8 model-definition-content">
-        <h4 class="model-definition-content"><strong>입력 데이터:</strong></h4>
-        <ul>
-            <li><strong>\( i, j \in \{0, 1, \dots, n+1 \} \)</strong>: 활동(Activity)의 인덱스. 0은 프로젝트의 시작을,
-                \( n + 1 \) 은 프로젝트의 종료를 나타내는 가상 활동(Dummy Activity) 입니다.</li>
-            <li><strong>\( k \in \{1, 2, \dots, K\} \)</strong>: 재생 가능 자원(Renewable Resource)의 종류</li>
-            <li><strong>\( t \in \{1, 2, \dots, T\} \)</strong>: 시간의 단위 (예: Day). \( T \) 는 프로젝트가 완료될 것으로 예상되는 충분히 긴 기간(Horizon)</li>
-            <li><strong>\( d_{i} \)</strong>: 활동 \( i \) 의 처리 기간(Duration). \( d_{0}  = d_{n+1} + 0\) </li>
-            <li><strong>\( r_{ik} \)</strong>: 활동 \( i \) 가 수행되는 동안 매 시간 단위마다 필요한 자원 \( k \) 의 양.
-                \( r_{0k}  = r_{n+1, k} = 0\)</li>
-            <li><strong>\( R_{k} \)</strong>: 매 시간 단위마다 사용 가능한 자원 \( k \) 의 최대 총량.</li>
-            <li><strong>\( P_{ij} \)</strong>: 선후 관계(Precedence)를 나타내는 활동 쌍 \( (i, j) \) 의 집합.
-                (\( i \) 는 \( j \) 보다 먼저 끝나야 함)</li>
-        </ul>
-        <hr>
+            <h3>3. 수학적 모델</h3>
+            <div class="model-definition-content">
+                <h4 class="model-definition-content"><strong>입력 데이터:</strong></h4>
+                <ul>
+                    <li><strong>\( i, j \in \{0, 1, \dots, n+1 \} \)</strong>: 활동(Activity)의 인덱스. 0은 프로젝트의 시작을,
+                        \( n + 1 \) 은 프로젝트의 종료를 나타내는 가상 활동(Dummy Activity) 입니다.</li>
+                    <li><strong>\( k \in \{1, 2, \dots, K\} \)</strong>: 재생 가능 자원(Renewable Resource)의 종류</li>
+                    <li><strong>\( t \in \{1, 2, \dots, T\} \)</strong>: 시간의 단위 (예: Day). \( T \) 는 프로젝트가 완료될 것으로 예상되는 충분히 긴 기간(Horizon)</li>
+                    <li><strong>\( d_{i} \)</strong>: 활동 \( i \) 의 처리 기간(Duration). \( d_{0}  = d_{n+1} + 0\) </li>
+                    <li><strong>\( r_{ik} \)</strong>: 활동 \( i \) 가 수행되는 동안 매 시간 단위마다 필요한 자원 \( k \) 의 양.
+                        \( r_{0k}  = r_{n+1, k} = 0\)</li>
+                    <li><strong>\( R_{k} \)</strong>: 매 시간 단위마다 사용 가능한 자원 \( k \) 의 최대 총량.</li>
+                    <li><strong>\( P_{ij} \)</strong>: 선후 관계(Precedence)를 나타내는 활동 쌍 \( (i, j) \) 의 집합.
+                        (\( i \) 는 \( j \) 보다 먼저 끝나야 함)</li>
+                </ul>
+                <hr>
 
-        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
-        <ul>
-            <li><strong>\( x_{it} \)</strong>: 활동 \( i \) 가 시간 \( t \) 에 시작 하면 1, 아니면 0</li></li>
-            <li><strong>\( C_{max} \)</strong>: 모든 활동이 완료되는 최종 시간(Makespan)</li>
-    </ul>
+                <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
+                <ul>
+                    <li><strong>\( x_{it} \)</strong>: 활동 \( i \) 가 시간 \( t \) 에 시작 하면 1, 아니면 0</li></li>
+                    <li><strong>\( C_{max} \)</strong>: 모든 활동이 완료되는 최종 시간(Makespan)</li>
+            </ul>
 
-        <h4 class="model-definition-content"><strong> 목표 함수:</strong></h4>
-        <p>프로젝트의 총 완료 기간(Makespan)을 최소화하는 것을 목표로 합니다.
-            이는 모든 실제 활동이 완료된 이후에 시작하는 가상 종료 활동 \( n + 1 \) 의 시작 시간을 최소화하는 것과 같습니다. </p>
-        <div class="math-block">
-             $$ \min C_{max}  =  \min \sum_{t=1}^{T} t \cdot x_{n+1, t} $$
+                <h4 class="model-definition-content"><strong> 목표 함수:</strong></h4>
+                <p>프로젝트의 총 완료 기간(Makespan)을 최소화하는 것을 목표로 합니다.
+                    이는 모든 실제 활동이 완료된 이후에 시작하는 가상 종료 활동 \( n + 1 \) 의 시작 시간을 최소화하는 것과 같습니다. </p>
+                <div class="math-block">
+                     $$ \min C_{max}  =  \min \sum_{t=1}^{T} t \cdot x_{n+1, t} $$
+                </div>
+
+                <h4 class="model-definition-content"><strong>제약 조건</strong></h4>
+                <ul>
+                    <li><strong>활동 시작 제약 (Unique Start Time):</strong>
+                        <p>모든 활동은 프로젝트 기간 내에 단 한 번만 시작</p>
+                        <div class="math-block">
+                            $$ \sum_{t=1}^{T} x_{it} = 1 \quad (\forall i)$$
+                        </div>
+                    </li>
+                    <li><strong>선후 관계 제약 (Precedence Constraints): </strong>
+                        <p>선후 관계가 존재하는 모든 활동 쌍 \( (i, j) in P\) 에 대해, 후행 활동 \( j \) 는
+                            선행 활동 \( i \) 이 완료된 이후에 만 시작</p>
+                        <div class="math-block">
+                            <p>$$ \sum_{t=1}^{T} t \cdot x_{jt} \ge \sum_{t=1}^{T} (t + d_{i}) \cdot x_{it}  \quad (\forall (i, j) \in P)$$</p>
+                            <p>좌변은 활동 \( j \) 의 시작 시간이고, 우변은 활동 \( i \) 의  완료 시간(시작 시간 + 처리 기간)</p>
+                        </div>
+                    </li>
+                    <li><strong>자원 제약 (Resource Constraints):</strong>
+                        <p>임의의 시간 \( t \) 에, 현재 수행 중인 모든 활동들이 사용하는 자원의 총합은 가용 자원의 총량에 제한 </p>
+                        <div class="math-block">
+                            <p>$$ \sum_{i=1}^{n} r_{ik} ( \sum_{\tau = t - d_i + 1}^{t} x_{i\tau} ) \leq R_k \quad (\forall k = 1, \dots, K;\ \forall t = 1, \dots, T) $$</p>
+                            <p>괄호 안의 \( \sum x_{i\tau} \) 부분은 시간 \( t \) 에 활동 \( i \) 가 진행 중인지 나타냅니다. <br>
+                            활동 \( i \) 가 \( \tau \) 에 시작했다면 \( t \) 시점에는 진행 중이므로  \( x_{i\tau} =  1 \) 이 됩니다.
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
         </div>
 
-        <h4 class="model-definition-content"><strong>제약 조건</strong></h4>
-        <ul>
-            <li><strong>활동 시작 제약 (Unique Start Time):</strong>
-                <p>모든 활동은 프로젝트 기간 내에 단 한 번만 시작</p>
-                <div class="math-block">
-                    $$ \sum_{t=1}^{T} x_{it} = 1 \quad (\forall i)$$
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-success text-white">
+                    <h4>RCPSP Demo</h4>
                 </div>
-            </li>
-            <li><strong>선후 관계 제약 (Precedence Constraints): </strong>
-                <p>선후 관계가 존재하는 모든 활동 쌍 \( (i, j) in P\) 에 대해, 후행 활동 \( j \) 는
-                    선행 활동 \( i \) 이 완료된 이후에 만 시작</p>
-                <div class="math-block">
-                    <p>$$ \sum_{t=1}^{T} t \cdot x_{jt} \ge \sum_{t=1}^{T} (t + d_{i}) \cdot x_{it}  \quad (\forall (i, j) \in P)$$</p>
-                    <p>좌변은 활동 \( j \) 의 시작 시간이고, 우변은 활동 \( i \) 의  완료 시간(시작 시간 + 처리 기간)</p>
-                </div>
-            </li>
-            <li><strong>자원 제약 (Resource Constraints):</strong>
-                <p>임의의 시간 \( t \) 에, 현재 수행 중인 모든 활동들이 사용하는 자원의 총합은 가용 자원의 총량에 제한 </p>
-                <div class="math-block">
-                    <p>$$ \sum_{i=1}^{n} r_{ik} ( \sum_{\tau = t - d_i + 1}^{t} x_{i\tau} ) \leq R_k \quad (\forall k = 1, \dots, K;\ \forall t = 1, \dots, T) $$</p>
-                    <p>괄호 안의 \( \sum x_{i\tau} \) 부분은 시간 \( t \) 에 활동 \( i \) 가 진행 중인지 나타냅니다. <br>
-                    활동 \( i \) 가 \( \tau \) 에 시작했다면 \( t \) 시점에는 진행 중이므로  \( x_{i\tau} =  1 \) 이 됩니다.
-                    </p>
-                </div>
-            </li>
-        </ul>
-    </div>
-
-    <h3>4. RCPSP Demo</h3>
-    <div class="card-body">
-        <p><strong>Job Shop Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
-        <ul>
-            <li>활동 수와 자원 수를 설정</li>
-            <li>가용 자원과 활동 정보 입력</li>
-            <li>최적 프로젝트 스케줄 확인</li>
-        </ul>
-        <a href="{% url 'production_scheduling_app:rcpsp_demo' %}" class="btn btn-success mt-2">
-            데모 페이지로 이동 &rarr;
-        </a>
+                <div class="card-body">
+                <p><strong>Job Shop Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
+                <ul>
+                    <li>활동 수와 자원 수를 설정</li>
+                    <li>가용 자원과 활동 정보 입력</li>
+                    <li>최적 프로젝트 스케줄 확인</li>
+                </ul>
+                <a href="{% url 'production_scheduling_app:rcpsp_demo' %}" class="btn btn-success mt-2">
+                    데모 페이지로 이동 &rarr;
+                </a>
+            </div>
+        </div>
     </div>
 
     <div class="highlight-box">

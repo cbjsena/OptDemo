@@ -13,16 +13,10 @@
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h2>흐름 공정 스케줄링 (Flow Shop Scheduling)</h2>
     </div>
-
-    <h3>1. 문제 설명</h3>
     <p>
         <strong>흐름 공정 스케줄링 문제</strong>는 여러 개의 작업(Job)이 모두 동일한 순서로 여러 대의 기계(Machine)를 거쳐
         가공되는 생산 환경에서의 순서 최적화 문제입니다.<br>
         예를 들어, 모든 제품이 <strong>1번 기계(절단) &rarr; 2번 기계(용접) &rarr; 3번 기계(도색)</strong> 순서로 처리되는 경우를 말합니다.
-    </p>
-    <p>
-        이 문제의 목표는 모든 작업이 마지막 기계까지 처리를 완료하는 총 소요 시간,
-        즉 <strong>전체 작업 완료 시간(Makespan)</strong>을 최소화하는 최적의 작업 투입 순서(sequence)를 찾는 것입니다.
     </p>
     <figure>
         <img src="{% static 'production_scheduling_app/images/flow_shop_concept.png' %}"
@@ -30,112 +24,129 @@
         <figcaption class="image-caption">그림 1: 모든 작업이 고정된 기계 순서(M1 &rarr; M2 &rarr; M3)를 따를 때, 작업 투입 순서에 따라 전체 완료 시간이 어떻게 달라지는지를 보여줍니다.</figcaption>
     </figure>
 
-    <h4>플로우샵의 종류 </h4>
-    <ul>
-        <li><strong>순열 플로우샵 (Permutation Flow Shop):</strong>
-            가장 일반적인 형태로, 모든 기계에서 작업의 처리 순서가 동일하게 유지됩니다.
-            즉, 한 번 결정된 작업 순서(예: A->B->C)는 M1, M2, M3...에서 모두 똑같이 적용됩니다.</li>
-        <li><strong>유연 플로우샵 (Flexible Flow Shop):</strong>
-            각 공정 단계에 동일한 기능을 하는 기계가 여러 대 있는 경우입니다.
-            예를 들어, 1단계(절단)에 2대의 기계, 2단계(가공)에 3대의 기계를 두어 유연성을 높인 생산 환경입니다.
-            이 경우 작업 순서뿐만 아니라 각 단계에서 어떤 기계에 작업을 할당할 것인지도 결정해야 합니다.</li>
-    </ul>
+    <div class="row">
+        <div class="col-lg-8">
+            <h3>1. 문제 설명</h3>
+            <p>
+                이 문제의 목표는 모든 작업이 마지막 기계까지 처리를 완료하는 총 소요 시간,
+                즉 <strong>전체 작업 완료 시간(Makespan)</strong>을 최소화하는 최적의 작업 투입 순서(sequence)를 찾는 것입니다.
+            </p>
 
-    <h4>해결 방법(Solution Methods) </h4>
-    <ul>
-        <li><strong>2-기계 문제:</strong> 존슨의 알고리즘 (Johnson's Algorithm)으로 최적해를 찾을 수 있습니다.</li>
-        <li><strong>3-기계 이상 문제:</strong> NP-hard 문제로, 최적해를 찾는 데 매우 오랜 시간이 걸릴 수 있습니다.
-            따라서 CDS 휴리스틱, NEH 휴리스틱 방법이나, 정수 계획법(MIP),
-            제약 프로그래밍(CP)과 같은 최적화 솔버를 사용합니다.</li>
-    </ul>
+            <h4>플로우샵의 종류 </h4>
+            <ul>
+                <li><strong>순열 플로우샵 (Permutation Flow Shop):</strong>
+                    가장 일반적인 형태로, 모든 기계에서 작업의 처리 순서가 동일하게 유지됩니다.
+                    즉, 한 번 결정된 작업 순서(예: A->B->C)는 M1, M2, M3...에서 모두 똑같이 적용됩니다.</li>
+                <li><strong>유연 플로우샵 (Flexible Flow Shop):</strong>
+                    각 공정 단계에 동일한 기능을 하는 기계가 여러 대 있는 경우입니다.
+                    예를 들어, 1단계(절단)에 2대의 기계, 2단계(가공)에 3대의 기계를 두어 유연성을 높인 생산 환경입니다.
+                    이 경우 작업 순서뿐만 아니라 각 단계에서 어떤 기계에 작업을 할당할 것인지도 결정해야 합니다.</li>
+            </ul>
 
-    <h3>2. 산업 응용 분야</h3>
-    <p>공정의 순서가 고정된 많은 조립 라인 및 연속 공정에서 이 모델을 활용할 수 있습니다.</p>
-    <ul>
-        <li><strong>조립 라인 제조업:</strong> 자동차, 가전제품, 스마트폰 등 부품이 일정한 순서로 조립되는 생산 라인의 효율성을 극대화합니다.</li>
-        <li><strong>인쇄 및 출판:</strong> 인쇄 &rarr; 코팅 &rarr; 재단 &rarr; 제본 순서로 진행되는 공정에서 책이나 인쇄물의 생산 시간을 최소화합니다.</li>
-        <li><strong>식품 가공:</strong> 원료 준비 &rarr; 조리 &rarr; 냉각 &rarr; 포장 등 정해진 순서를 따르는 식품 생산 라인의 처리량을 높입니다.</li>
-        <li><strong>반도체 일부 공정:</strong> 웨이퍼(Wafer)가 특정 장비들을 순서대로 거쳐가는 일부 연속 공정의 스케줄링에 적용됩니다.</li>
-    </ul>
+            <h4>해결 방법(Solution Methods) </h4>
+            <ul>
+                <li><strong>2-기계 문제:</strong> 존슨의 알고리즘 (Johnson's Algorithm)으로 최적해를 찾을 수 있습니다.</li>
+                <li><strong>3-기계 이상 문제:</strong> NP-hard 문제로, 최적해를 찾는 데 매우 오랜 시간이 걸릴 수 있습니다.
+                    따라서 CDS 휴리스틱, NEH 휴리스틱 방법이나, 정수 계획법(MIP),
+                    제약 프로그래밍(CP)과 같은 최적화 솔버를 사용합니다.</li>
+            </ul>
 
-    <h3>3. 수학적 모델 및 해법</h3>
-    <p> 가장 일반적인 순열 플로우샵(Permutation Flow Shop) 환경에서
-        <strong>총 완료 시간(Makespan) 최소화</strong>문제는 다음과 같이 모델링 될 수 있습니다.</p>
+            <h3>2. 산업 응용 분야</h3>
+            <p>공정의 순서가 고정된 많은 조립 라인 및 연속 공정에서 이 모델을 활용할 수 있습니다.</p>
+            <ul>
+                <li><strong>조립 라인 제조업:</strong> 자동차, 가전제품, 스마트폰 등 부품이 일정한 순서로 조립되는 생산 라인의 효율성을 극대화합니다.</li>
+                <li><strong>인쇄 및 출판:</strong> 인쇄 &rarr; 코팅 &rarr; 재단 &rarr; 제본 순서로 진행되는 공정에서 책이나 인쇄물의 생산 시간을 최소화합니다.</li>
+                <li><strong>식품 가공:</strong> 원료 준비 &rarr; 조리 &rarr; 냉각 &rarr; 포장 등 정해진 순서를 따르는 식품 생산 라인의 처리량을 높입니다.</li>
+                <li><strong>반도체 일부 공정:</strong> 웨이퍼(Wafer)가 특정 장비들을 순서대로 거쳐가는 일부 연속 공정의 스케줄링에 적용됩니다.</li>
+            </ul>
 
-    <div class="col-md-8 model-definition-content">
-        <h4 class="model-definition-content"><strong>입력 데이터:</strong></h4>
-        <ul>
-            <li><strong>\( i, k \in \{1, 2, \dots, n\} \)</strong> : 작업(Job)의 인덱스. n은 총 작업의 수</li>
-            <li><strong>\( j \in \{1, 2, \dots, m\} \)</strong> : 기계(Machine)의 인덱스. m은 총 기계의 수</li>
-            <li><strong>\( p_{ij} \)</strong> : 작업 \( i \) 를 기계 \( j \)에서 처리하는데 걸리는 시간(Processing time)</li>
-            <li><strong>\( BigM \)</strong> : 매우 큰 양의 상수</li>
-        </ul>
-        <hr>
+            <h3>3. 수학적 모델 및 해법</h3>
+            <p> 가장 일반적인 순열 플로우샵(Permutation Flow Shop) 환경에서
+                <strong>총 완료 시간(Makespan) 최소화</strong>문제는 다음과 같이 모델링 될 수 있습니다.</p>
 
-        <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
-        <ul>
-            <li><strong>\( C_{ij} \)</strong> : 작업 \( i \) 가 기계 \( j \)에서 처리를 마치는 완료 시간(Completion time)</li>
-            <li><strong>\( C_{max} \)</strong> : 모든 작업이 완료되는 시간 (Makespan)</li>
-            <li><strong>\( y_{ik} \)</strong> : 작업의 순서를 결정하는 이진 변수(Binary variable),
-                작업 \( i \) 가 작업 \( k \) 이전에 계획되면 1, 아니면 0</li>
-        </ul>
+            <div class="model-definition-content">
+                <h4 class="model-definition-content"><strong>입력 데이터:</strong></h4>
+                <ul>
+                    <li><strong>\( i, k \in \{1, 2, \dots, n\} \)</strong> : 작업(Job)의 인덱스. n은 총 작업의 수</li>
+                    <li><strong>\( j \in \{1, 2, \dots, m\} \)</strong> : 기계(Machine)의 인덱스. m은 총 기계의 수</li>
+                    <li><strong>\( p_{ij} \)</strong> : 작업 \( i \) 를 기계 \( j \)에서 처리하는데 걸리는 시간(Processing time)</li>
+                    <li><strong>\( BigM \)</strong> : 매우 큰 양의 상수</li>
+                </ul>
+                <hr>
 
-        <h4 class="model-definition-content"><strong> 목표 함수:</strong></h4>
-        <p>전체 작업 완료 시간(Makespan) 최소화. 이는 마지막 순서의 작업이 마지막 기계에서 완료되는 시간과 같습니다. </p>
-        <div class="math-block">
-            $$ \min C_{max} $$
+                <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
+                <ul>
+                    <li><strong>\( C_{ij} \)</strong> : 작업 \( i \) 가 기계 \( j \)에서 처리를 마치는 완료 시간(Completion time)</li>
+                    <li><strong>\( C_{max} \)</strong> : 모든 작업이 완료되는 시간 (Makespan)</li>
+                    <li><strong>\( y_{ik} \)</strong> : 작업의 순서를 결정하는 이진 변수(Binary variable),
+                        작업 \( i \) 가 작업 \( k \) 이전에 계획되면 1, 아니면 0</li>
+                </ul>
+
+                <h4 class="model-definition-content"><strong> 목표 함수:</strong></h4>
+                <p>전체 작업 완료 시간(Makespan) 최소화. 이는 마지막 순서의 작업이 마지막 기계에서 완료되는 시간과 같습니다. </p>
+                <div class="math-block">
+                    $$ \min C_{max} $$
+                </div>
+
+                <h4 class="model-definition-content"><strong>제약 조건</strong></h4>
+                <ul>
+                    <li><strong>Makespan \( C_{max} \)의 정의:</strong>
+                        <p>Makespan은 마지막 기계 \( m \) 에서 완료되는 모든 작업들의 완료 시간 중 가장 큰 값</p>
+                        <div class="math-block">
+                            $$ C_{max} \ge C_{im} \quad (\forall i=1,\dots,n)$$
+                        </div>
+                    </li>
+                    <li><strong>기계 순서 제약 (작업 흐름)</strong>
+                        <p>한 작업은 이전 단계의 기계에서 처리가 완료되어야만 다음 단계의 기계를 사용할 수 있습니다.
+                            예를 들어, 작업 \( i \)는 기계 \( j \)−1에서 완료된 후에야 기계 \( j \)에서 가공을 시작할 수 있습니다.</p>
+                        <div class="math-block">
+                            <p>$$ C_{ij} \ge C_{i, j-1} + p_{ij} \quad (\forall i=1,..,n, \forall j=2,..,m) $$</p>
+                            <p>첫 번째 기계 (\( j \)=1)에 대해서는 이전 기계가 없으므로, \( C_{i1} \ge p_{i1} \)입니다.
+                                위의 제약식에서 \( C_{i0} = 0 \) 으로 가정하면 동일하게 표현됩니다.</p>
+                        </div>
+                    </li>
+                    <li><strong>작업 순서 제약 (기계 독점)</strong>
+                        <p>각 기계는 한 번에 하나의 작업만 처리할 수 있습니다.
+                            따라서 어떤 두 작업 \( i \) 와 \( k \) 에 대해, 한 기계 위에서는 둘 중 하나가 반드시 먼저 끝나야 합니다. </p>
+                        <div class="math-block">
+                            $$ C_{kj} \ge C_{ij} + p_{kj} -BigM (1 - y_{ik})\quad (\forall j=1,\dots,m; \forall i, k \text{ where } i \ne k) $$
+                            $$ C_{ij} \ge C_{kj} + p_{ij} -BigM y_{ik}\quad (\forall j=1,\dots,m; \forall i, k \text{ where } i \ne k) $$
+                            <p>위 두 제약식은 \( y_{ik} \) 값에 따라 둘 중 하나만 실질적인 제약으로 기능하게 만듭니다.
+                            만약 \( y_{ik} = 1 \) 이면 첫 번째 식은 \( C_{kj} \ge C_{ij} + p_{kj} \)가 되고, 두 번째 식은 \( BigM \) 때문에 무의미해집니다.</p>
+                        </div>
+                    </li>
+                    <li><strong>이진 변수 조건:</strong> 두 작업 \( i \) 와 \( k \)의 순서는 반드시 하나로 결정
+                        <div class="math-block">
+                            $$ y_{ik} + y_{ki} = 1 \quad (\forall i, k \text{ where } i < k)$$
+                        </div>
+                    </li>
+                    <li><strong>변수 타입 및 범위:</strong> 모든 완료 시간은 0 이상
+                        <div class="math-block">
+                            $$ C_{ij} \ge 0, C_{max} \ge 0$$
+                        </div>
+                    </li>
+                </ul>
+            </div>
         </div>
 
-        <h4 class="model-definition-content"><strong>제약 조건</strong></h4>
-        <ul>
-            <li><strong>Makespan \( C_{max} \)의 정의:</strong>
-                <p>Makespan은 마지막 기계 \( m \) 에서 완료되는 모든 작업들의 완료 시간 중 가장 큰 값</p>
-                <div class="math-block">
-                    $$ C_{max} \ge C_{im} \quad (\forall i=1,\dots,n)$$
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-success text-white">
+                    <h4>Flow Shop Demo</h4>
                 </div>
-            </li>
-            <li><strong>기계 순서 제약 (작업 흐름)</strong>
-                <p>한 작업은 이전 단계의 기계에서 처리가 완료되어야만 다음 단계의 기계를 사용할 수 있습니다.
-                    예를 들어, 작업 \( i \)는 기계 \( j \)−1에서 완료된 후에야 기계 \( j \)에서 가공을 시작할 수 있습니다.</p>
-                <div class="math-block">
-                    <p>$$ C_{ij} \ge C_{i, j-1} + p_{ij} \quad (\forall i=1,..,n, \forall j=2,..,m) $$</p>
-                    <p>첫 번째 기계 (\( j \)=1)에 대해서는 이전 기계가 없으므로, \( C_{i1} \ge p_{i1} \)입니다.
-                        위의 제약식에서 \( C_{i0} = 0 \) 으로 가정하면 동일하게 표현됩니다.</p>
+                <div class="card-body">
+                    <p><strong>Flow Shop Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
+                    <ul>
+                        <li>작업 수와 기계 수를 설정</li>
+                        <li>작업별 기계 처리 시간 정보 입력</li>
+                        <li>전체 작업 완료 시간(Makespan)을 최소화하는 생산 계획 확인</li>
+                    </ul>
+                    <a href="{% url 'production_scheduling_app:flow_shop_demo' %}" class="btn btn-success mt-2">
+                        데모 페이지로 이동 &rarr;
+                    </a>
                 </div>
-            </li>
-            <li><strong>작업 순서 제약 (기계 독점)</strong>
-                <p>각 기계는 한 번에 하나의 작업만 처리할 수 있습니다.
-                    따라서 어떤 두 작업 \( i \) 와 \( k \) 에 대해, 한 기계 위에서는 둘 중 하나가 반드시 먼저 끝나야 합니다. </p>
-                <div class="math-block">
-                    $$ C_{kj} \ge C_{ij} + p_{kj} -BigM (1 - y_{ik})\quad (\forall j=1,\dots,m; \forall i, k \text{ where } i \ne k) $$
-                    $$ C_{ij} \ge C_{kj} + p_{ij} -BigM y_{ik}\quad (\forall j=1,\dots,m; \forall i, k \text{ where } i \ne k) $$
-                    <p>위 두 제약식은 \( y_{ik} \) 값에 따라 둘 중 하나만 실질적인 제약으로 기능하게 만듭니다.
-                    만약 \( y_{ik} = 1 \) 이면 첫 번째 식은 \( C_{kj} \ge C_{ij} + p_{kj} \)가 되고, 두 번째 식은 \( BigM \) 때문에 무의미해집니다.</p>
-                </div>
-            </li>
-            <li><strong>이진 변수 조건:</strong> 두 작업 \( i \) 와 \( k \)의 순서는 반드시 하나로 결정
-                <div class="math-block">
-                    $$ y_{ik} + y_{ki} = 1 \quad (\forall i, k \text{ where } i < k)$$
-                </div>
-            </li>
-            <li><strong>변수 타입 및 범위:</strong> 모든 완료 시간은 0 이상
-                <div class="math-block">
-                    $$ C_{ij} \ge 0, C_{max} \ge 0$$
-                </div>
-            </li>
-        </ul>
-    </div>
-    <h3>4. Flow Shop Demo</h3>
-    <div class="card-body">
-        <p><strong>Flow Shop Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
-        <ul>
-            <li>작업 수와 기계 수를 설정</li>
-            <li>작업별 기계 처리 시간 정보 입력</li>
-            <li>전체 작업 완료 시간(Makespan)을 최소화하는 생산 계획 확인</li>
-        </ul>
-        <a href="{% url 'production_scheduling_app:flow_shop_demo' %}" class="btn btn-success mt-2">
-            데모 페이지로 이동 &rarr;
-        </a>
+            </div>
+        </div>
     </div>
 
     <div class="highlight-box">

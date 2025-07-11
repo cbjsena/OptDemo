@@ -25,109 +25,119 @@
         <figcaption class="image-caption">그림 1: 간호사 스케줄링 개념 - 각 간호사의 선호, 능력과 병원의 인력 수요, 수많은 근무 규칙을 동시에 고려하여 최적의 근무표를 생성합니다.</figcaption>
     </figure>
 
-    <h3>1. 문제 설명 및 핵심 제약</h3>
-    <p>
-        간호사 스케줄링은 다양한 종류의 제약 조건으로 구성됩니다. 이 제약들은 크게 두 가지로 나눌 수 있습니다.
-    </p>
-    <ul>
-        <li><strong>반드시 지켜야 하는 '강성 제약 (Hard Constraints)':</strong>
+    <div class="row">
+        <div class="col-lg-8">
+            <h3>1. 문제 설명 및 핵심 제약</h3>
+            <p>
+                간호사 스케줄링은 다양한 종류의 제약 조건으로 구성됩니다. 이 제약들은 크게 두 가지로 나눌 수 있습니다.
+            </p>
             <ul>
-                <li><strong>인력 충원:</strong> 각 날짜의 각 근무 시간대(예: Day, Evening, Night)별로 요구되는 최소 간호사 수를 반드시 충족해야 합니다. (때로는 특정 기술을 가진 간호사 수를 요구하기도 합니다.)</li>
-                <li><strong>근무 시간:</strong> 각 간호사는 계약된 총 근무 시간을 초과할 수 없습니다.</li>
-                <li><strong>연속 근무:</strong> 한 간호사가 특정 횟수 이상의 연속된 근무를 할 수 없습니다.</li>
-                <li><strong>최소 휴식:</strong> 한 근무가 끝난 후 다음 근무가 시작되기 전까지 최소한의 휴식 시간(예: 11시간)이 보장되어야 합니다.</li>
+                <li><strong>반드시 지켜야 하는 '강성 제약 (Hard Constraints)':</strong>
+                    <ul>
+                        <li><strong>인력 충원:</strong> 각 날짜의 각 근무 시간대(예: Day, Evening, Night)별로 요구되는 최소 간호사 수를 반드시 충족해야 합니다. (때로는 특정 기술을 가진 간호사 수를 요구하기도 합니다.)</li>
+                        <li><strong>근무 시간:</strong> 각 간호사는 계약된 총 근무 시간을 초과할 수 없습니다.</li>
+                        <li><strong>연속 근무:</strong> 한 간호사가 특정 횟수 이상의 연속된 근무를 할 수 없습니다.</li>
+                        <li><strong>최소 휴식:</strong> 한 근무가 끝난 후 다음 근무가 시작되기 전까지 최소한의 휴식 시간(예: 11시간)이 보장되어야 합니다.</li>
+                    </ul>
+                </li>
+                <li><strong>가능한 한 만족시키고 싶은 '연성 제약 (Soft Constraints)':</strong>
+                    <ul>
+                        <li><strong>개인 선호:</strong> 특정 근무 시간대나 요일에 대한 간호사의 선호/비선호 요청을 최대한 반영합니다.</li>
+                        <li><strong>공정성:</strong> 주말 근무나 야간 근무가 특정 간호사에게 몰리지 않도록 공평하게 분배합니다.</li>
+                        <li><strong>근무 패턴:</strong> 선호되지 않는 근무 패턴(예: 야간 근무 후 바로 다음 날 주간 근무)을 최소화합니다.</li>
+                    </ul>
+                </li>
             </ul>
-        </li>
-        <li><strong>가능한 한 만족시키고 싶은 '연성 제약 (Soft Constraints)':</strong>
-            <ul>
-                <li><strong>개인 선호:</strong> 특정 근무 시간대나 요일에 대한 간호사의 선호/비선호 요청을 최대한 반영합니다.</li>
-                <li><strong>공정성:</strong> 주말 근무나 야간 근무가 특정 간호사에게 몰리지 않도록 공평하게 분배합니다.</li>
-                <li><strong>근무 패턴:</strong> 선호되지 않는 근무 패턴(예: 야간 근무 후 바로 다음 날 주간 근무)을 최소화합니다.</li>
-            </ul>
-        </li>
-    </ul>
 
-    <h3>2. 문제의 목표 및 특징</h3>
-    <p>
-        이 문제의 목표는 모든 강성 제약을 만족시키는 해를 찾으면서, 연성 제약을 위반하는 것에 대한 페널티(Penalty)의 총합을 최소화하는 것입니다.
-        즉, 근무자 만족도를 최대화하고 운영의 공정성을 높이는 것이 주된 목표가 됩니다.
-    </p>
-    <div class="col-md-8 model-definition-content">
-        <h4 class="model-definition-content"><strong>목적 함수 (예시):</strong> 페널티 최소화</h4>
-        <div class="math-block">
-            <p>$$ \min (\sum (\text{비선호 근무 배정 페널티}) + \sum (\text{불공정한 주말 근무 페널티}) + \dots) $$</p>
+            <h3>2. 문제의 목표 및 특징</h3>
+            <p>
+                이 문제의 목표는 모든 강성 제약을 만족시키는 해를 찾으면서, 연성 제약을 위반하는 것에 대한 페널티(Penalty)의 총합을 최소화하는 것입니다.
+                즉, 근무자 만족도를 최대화하고 운영의 공정성을 높이는 것이 주된 목표가 됩니다.
+            </p>
+            <div class="col-md-8 model-definition-content">
+                <h4 class="model-definition-content"><strong>목적 함수 (예시):</strong> 페널티 최소화</h4>
+                <div class="math-block">
+                    <p>$$ \min (\sum (\text{비선호 근무 배정 페널티}) + \sum (\text{불공정한 주말 근무 페널티}) + \dots) $$</p>
+                </div>
+            </div>
+
+            <h3>3. 수리 모델 (기본 모델)</h3>
+            <div class="model-definition-content">
+                <p>
+                    가장 기본적인 간호사 스케줄링 문제는 다음과 같은 요소들로 모델링될 수 있습니다.
+                </p>
+
+                <h4 class="model-definition-content"><strong>입력 데이터 (Parameters):</strong></h4>
+                <ul>
+                    <li> <strong>\( n \in N \)</strong> : 간호사(Nurse)의 집합.</li>
+                    <li> <strong>\( d \in D \)</strong> : 계획 기간 내의 날짜(Day)의 집합.</li>
+                    <li> <strong>\( s \in S \)</strong> : 하루의 근무 시간대(Shift)의 집합 (예: Day, Evening, Night).</li>
+                    <li> <strong>\( C_{ds} \)</strong> : 날짜 \( d \), 시프트 \( s \)에 필요한 최소 간호사 인원 수 (Coverage).</li>
+                    <li> <strong>\( P_{nds} \)</strong> : 간호사 \( n \)이 날짜 \( d \), 시프트 \( s \)에 배정되는 것에 대한 선호도 점수. (보통 비선호 근무일 경우 높은 페널티 값을 가짐).</li>
+                </ul>
+                <hr>
+
+                <h4 class="model-definition-content"><strong>결정 변수 (Decision Variables):</strong></h4>
+                <ul>
+                    <li> <strong>\( x_{nds} \)</strong> : 간호사 \( n \)이 날짜 \( d \), 시프트 \( s \)에 근무하면 1, 아니면 0 (이진 변수)
+                        <div class="math-block">
+                            $$ x_{nds} = \begin{cases} 1 & \text{if nurse } n \text{ works shift } s \text{ on day } d \\ 0 & \text{otherwise} \end{cases} $$
+                        </div>
+                    </li>
+                </ul>
+                <hr>
+
+                <h4 class="model-definition-content"><strong>목표 함수 (Objective Function):</strong></h4>
+                <p>모든 간호사의 비선호 근무 배정에 대한 페널티 총합을 최소화하여, 전반적인 근무 만족도를 최대화합니다.</p>
+                <div class="math-block">
+                    $$ \min \sum_{n \in N} \sum_{d \in D} \sum_{s \in S} P_{nds} \cdot x_{nds} $$
+                </div>
+                <hr>
+
+                <h4 class="model-definition-content"><strong>주요 제약 조건 (Constraints)</strong></h4>
+                <ul>
+                    <li><strong>1. 최소 인력 충원 제약 (Shift Coverage):</strong>
+                        <p>각 날짜, 각 시프트에 필요한 최소 인원은 반드시 충족되어야 합니다.</p>
+                        <div class="math-block">
+                            $$ \sum_{n \in N} x_{nds} \ge C_{ds} \quad (\forall d \in D, s \in S)$$
+                        </div>
+                    </li>
+                    <li><strong>2. 간호사별 하루 최대 근무 제약:</strong>
+                        <p>각 간호사는 하루에 최대 하나의 시프트만 근무할 수 있습니다.</p>
+                        <div class="math-block">
+                            $$ \sum_{s \in S} x_{nds} \le 1 \quad (\forall n \in N, d \in D)$$
+                        </div>
+                    </li>
+                    <li><strong>3. 총 근무일 수 제약 (선택 사항):</strong>
+                        <p>각 간호사의 총 근무일 수가 특정 범위(예: 한 달에 15일 이상, 20일 이하) 내에 있도록 하여 근무량을 공평하게 분배합니다.</p>
+                        <div class="math-block">
+                            $$ \text{MinDays} \le \sum_{d \in D} \sum_{s \in S} x_{nds} \le \text{MaxDays} \quad (\forall n \in N) $$
+                        </div>
+                    </li>
+                </ul>
+                <p>실제 모델에서는 야간 근무 후 최소 16시간 휴식, 최대 5일 연속 근무 등 훨씬 더 복잡하고 다양한 패턴 제약 조건들이 추가됩니다.
+               </p>
+            </div>
         </div>
-    </div>
 
-    <h3>3. 수리 모델 (기본 모델)</h3>
-    <div class="col-md-8 model-definition-content">
-        <p>
-            가장 기본적인 간호사 스케줄링 문제는 다음과 같은 요소들로 모델링될 수 있습니다.
-        </p>
-
-        <h4 class="model-definition-content"><strong>입력 데이터 (Parameters):</strong></h4>
-        <ul>
-            <li> <strong>\( n \in N \)</strong> : 간호사(Nurse)의 집합.</li>
-            <li> <strong>\( d \in D \)</strong> : 계획 기간 내의 날짜(Day)의 집합.</li>
-            <li> <strong>\( s \in S \)</strong> : 하루의 근무 시간대(Shift)의 집합 (예: Day, Evening, Night).</li>
-            <li> <strong>\( C_{ds} \)</strong> : 날짜 \( d \), 시프트 \( s \)에 필요한 최소 간호사 인원 수 (Coverage).</li>
-            <li> <strong>\( P_{nds} \)</strong> : 간호사 \( n \)이 날짜 \( d \), 시프트 \( s \)에 배정되는 것에 대한 선호도 점수. (보통 비선호 근무일 경우 높은 페널티 값을 가짐).</li>
-        </ul>
-        <hr>
-
-        <h4 class="model-definition-content"><strong>결정 변수 (Decision Variables):</strong></h4>
-        <ul>
-            <li> <strong>\( x_{nds} \)</strong> : 간호사 \( n \)이 날짜 \( d \), 시프트 \( s \)에 근무하면 1, 아니면 0 (이진 변수)
-                <div class="math-block">
-                    $$ x_{nds} = \begin{cases} 1 & \text{if nurse } n \text{ works shift } s \text{ on day } d \\ 0 & \text{otherwise} \end{cases} $$
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-success text-white">
+                    <h4>Nurse Rostering Demo</h4>
                 </div>
-            </li>
-        </ul>
-        <hr>
-
-        <h4 class="model-definition-content"><strong>목표 함수 (Objective Function):</strong></h4>
-        <p>모든 간호사의 비선호 근무 배정에 대한 페널티 총합을 최소화하여, 전반적인 근무 만족도를 최대화합니다.</p>
-        <div class="math-block">
-            $$ \min \sum_{n \in N} \sum_{d \in D} \sum_{s \in S} P_{nds} \cdot x_{nds} $$
+                <div class="card-body">
+                <p><strong>Nurse Rostering Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
+                <ul>
+                    <li>간호사 수와 근무 기간 설정</li>
+                    <li>시프트 별 필요 인원 설정</li>
+                    <li>최적 근무표와 간호사별 근무일 수 결과</li>
+                </ul>
+                <a href="{% url 'resource_allocation_app:nurse_rostering_demo' %}" class="btn btn-success mt-2">
+                    데모 페이지로 이동 &rarr;
+                </a>
+                </div>
+            </div>
         </div>
-        <hr>
-
-        <h4 class="model-definition-content"><strong>주요 제약 조건 (Constraints)</strong></h4>
-        <ul>
-            <li><strong>1. 최소 인력 충원 제약 (Shift Coverage):</strong>
-                <p>각 날짜, 각 시프트에 필요한 최소 인원은 반드시 충족되어야 합니다.</p>
-                <div class="math-block">
-                    $$ \sum_{n \in N} x_{nds} \ge C_{ds} \quad (\forall d \in D, s \in S)$$
-                </div>
-            </li>
-            <li><strong>2. 간호사별 하루 최대 근무 제약:</strong>
-                <p>각 간호사는 하루에 최대 하나의 시프트만 근무할 수 있습니다.</p>
-                <div class="math-block">
-                    $$ \sum_{s \in S} x_{nds} \le 1 \quad (\forall n \in N, d \in D)$$
-                </div>
-            </li>
-            <li><strong>3. 총 근무일 수 제약 (선택 사항):</strong>
-                <p>각 간호사의 총 근무일 수가 특정 범위(예: 한 달에 15일 이상, 20일 이하) 내에 있도록 하여 근무량을 공평하게 분배합니다.</p>
-                <div class="math-block">
-                    $$ \text{MinDays} \le \sum_{d \in D} \sum_{s \in S} x_{nds} \le \text{MaxDays} \quad (\forall n \in N) $$
-                </div>
-            </li>
-        </ul>
-        <p>실제 모델에서는 야간 근무 후 최소 16시간 휴식, 최대 5일 연속 근무 등 훨씬 더 복잡하고 다양한 패턴 제약 조건들이 추가됩니다.
-        </p>
-    </div>
-
-    <h3>4. Nurse Rostering Demo</h3>
-    <div class="card-body">
-        <p><strong>Nurse Rostering Demo</strong>에서는 아래와 같은 기능을 직접 체험해볼 수 있습니다.</p>
-        <ul>
-            <li>간호사 수와 근무 기간 설정</li>
-            <li>시프트 별 필요 인원 설정</li>
-            <li>최적 근무표와 간호사별 근무일 수 결과</li>
-        </ul>
-        <a href="{% url 'resource_allocation_app:nurse_rostering_demo' %}" class="btn btn-success mt-2">
-            데모 페이지로 이동 &rarr;
-        </a>
     </div>
 </div>
 {% endblock %}

@@ -18,18 +18,8 @@
         <h2>단일 기계 스케줄링 문제 (Single Machine Scheduling Problem) - Advanced</h2>
     </div>
 
-    <p>
-        <strong>단일 기계 스케줄링 문제</strong>는 모든 스케줄링 문제의 가장 기본이 되는 형태입니다.
-        단순해 보이지만, 어떤 목표를 설정하느냐에 따라 다양한 변형과 해법이 존재하며, 모든 복잡한 스케줄링 이론의 출발점이 됩니다.
-    </p>
-
     <h3>1. 주요 목표와 해결 방법</h3>
-    <p>
-        이 문제의 핵심은 <strong>최적의 작업 순서(Sequence) 찾기</strong>입니다.
-        각 작업은 고유한 처리 시간, 납기일, 중요도 등의 속성을 가지며, 최적화의 목표는 이러한 속성들을 바탕으로 가장 효율적인 작업 순서(sequence)를 찾는 것입니다.
-        어떤 순서로 작업을 처리하는지에 따라 전체 생산성, 납기 준수율 등이 크게 달라지기 때문입니다.
-        최적화의 목표는 다음과 같이 다양하게 설정될 수 있습니다.
-    </p>
+    <p> <strong>단일 기계 스케줄링 문제</strong>의 최적화의 목표는 다음과 같이 다양하게 설정될 수 있습니다.
 
     <h4>주요 목표</h4>
     <ul>
@@ -260,7 +250,74 @@
             짧은 작업을 먼저 처리하여 다른 작업들의 대기 시간을 줄이는 것이 압도적으로 유리합니다.
         </p>
     </div>
+
+    <div class="highlight-box">
+        <h4>🔬 두 가지 다른 수학적 모델 접근법</h4>
+        <p>
+            단일 기계 스케줄링 문제는 주로 두 가지 방식으로 모델링될 수 있습니다.
+            소개 페이지에서는 이해하기 쉬운 <strong>할당(Assignment) 모델</strong>을 설명했지만,
+            실제 데모에서는 더 강력하고 유연한 <strong>시간 기반(Time-based) 모델</strong>을 사용합니다.
+        </p>
+
+        <table class="table table-bordered comparison-table mt-3">
+            <thead class="thead-light">
+                <tr>
+                    <th>특징</th>
+                    <th>1. 할당(Assignment) 기반 모델 (소개 페이지)</th>
+                    <th>2. 시간(Interval) 기반 모델 (데모 구현)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>접근 방식</strong></td>
+                    <td>혼합 정수 계획법 (MIP)</td>
+                    <td>제약 프로그래밍 (CP-SAT)</td>
+                </tr>
+                <tr>
+                    <td><strong>핵심 질문</strong></td>
+                    <td>"어떤 작업을 <strong>몇 번째 순서</strong>에 놓을까?"</td>
+                    <td>"각 작업을 <strong>언제 시작하고 끝낼까</strong>?"</td>
+                </tr>
+                <tr>
+                    <td><strong>주요 변수</strong></td>
+                    <td>\( x_{ik} \) (작업 i를 순서 k에 할당할지 여부)</td>
+                    <td>\( \text{start}_i, \text{end}_i, \text{interval}_i \) (작업 \( i \)의 시작, 종료, 기간)</td>
+                </tr>
+                <tr>
+                    <td><strong>기계 독점 제약</strong></td>
+                    <td>각 순서 \( k \) 에는 하나의 작업만 할당 (\(\sum_{i} x_{ik} = 1\))</td>
+                    <td>모든 작업의 Interval들이 겹치지 않음 (<code>AddNoOverlap</code>)</td>
+                </tr>
+                 <tr>
+                    <td><strong>장점</strong></td>
+                    <td>구조가 간단하여 이해하기 쉬움.</td>
+                    <td>준비 시간, 납기일 등 현실적인 제약 추가가 매우 유연하고 강력함.</td>
+                </tr>
+                 <tr>
+                    <td><strong>적합한 문제</strong></td>
+                    <td>단순한 할당 및 순서 문제</td>
+                    <td>복잡한 제약 조건이 포함된 스케줄링 문제</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-4">왜 데모에서는 제약 프로그래밍을 사용했나요?</h5>
+        <p>
+            <strong>제약 프로그래밍</strong>으로 구현 시 각 작업의 시작, 종료, 처리 시간을 하나의 '구간' 객체로 묶어주는 AddNoOverlap 기능을 사용할 수 있습니다.
+        </p>
+        <p>
+            <strong>AddNoOverlap(interval_vars)</strong> 제약은 이 '구간'들의 리스트를 받아, "이 구간들은 타임라인 위에서 서로 절대 겹칠 수 없다"는 규칙을 단 한 줄로 정의합니다.
+            이것이 바로 '단일 기계는 한 번에 하나의 작업만 처리할 수 있다'는 제약 조건을 가장 자연스럽고 효율적으로 표현하는 방법입니다.
+        </p>
+        <p>
+            만약 할당(Assignment) 기반 모델에서 이 겹침 방지 제약을 구현하려면,
+            모든 작업 쌍에 대해 복잡한 'Big M' 제약식을 여러 개 추가해야 합니다.
+            따라서 CP-SAT의 `AddNoOverlap`을 사용하는 것이 훨씬 더 간결하고 강력하며, 더 복잡한 스케줄링 문제로 확장하기에도 용이합니다.
+        </p>
+    </div>
 </div>
+
+
 {% endblock %}
 
 {% block scripts %}
