@@ -47,9 +47,8 @@
             </ul>
 
             <h3>3. 수학적 모델</h3>
-            <p>PDP 모델은 VRP/CVRP 모델에 선행 및 쌍 제약을 모델링하기 위한 추가적인 제약식이 필요합니다.</p>
-            <h4>목적 함수 및 기본 제약 조건</h4>
-            <p>총 이동 거리를 최소화하는 목적 함수와 고객 방문, 차량 흐름 보존 등 VRP의 기본 제약 조건들은 그대로 유지됩니다.</p>
+            <p>PDP 모델은 VRP/CVRP 모델에 선행 및 쌍 제약을 모델링하기 위한 추가적인 제약식이 필요합니다.<br>
+                VRP의 기본 목적 함수와 제약 조건들(고객 방문, 차량 흐름 보존 등)은 그대로 유지됩니다.</p>
             <div class="model-definition-content highlight-box">
                 <h4 class="model-definition-content"><strong>추가 입력 데이터:</strong></h4>
                 <ul>
@@ -57,59 +56,63 @@
                     <li><strong>\( R \)</strong> : 수거-배송 요청(Request)의 집합, 각 요청 \(r \in R\)은 한 쌍의 노드 \((p_r, d_r)\)로 구성, (인덱스: \(r\))</li>
                     <li><strong>\( P \)</strong> : 수거 노드의 집합, \( p_r \in P \)</li>
                     <li><strong>\( D \)</strong> : 배송 노드의 집합. \( d_r \in D \)</li>
-                    <li><strong>\( N \)</strong> : 모든 작업 지점, \( N = P \cup  D \)</li>
+                    <li><strong>\( N_0 \)</strong> : 차고지(0)를 포함한 모든 노드 집합 (\(N_0 = P \cup D \cup \{0\}\))</li>
+                    <li><strong>\( d_{ij} \)</strong> : 노드 \(i\)에서 \(j\)로의 이동 비용/거리</li>
+                    <li><strong>\( t_{ij} \)</strong> : 노드 \(i\)에서 \(j\)로의 이동 시간</li>
                     <li><strong>\( q_r \)</strong> : 작업 \( r \) 과 관련된 물품의 양, 수거 시 양수, 배송 시 음수</li>
                     <li><strong>\( Q_k \)</strong> : 차량 \( k \)의 최대 적재 용량</li>
+                    <li><strong>\( s_i \)</strong> : 노드 \( i \) 에서의 서비스 시간 (상하차 등)</li>
                     <li><strong>\( BigM \)</strong> : 매우 큰 양의 상수</li>
-                    <li><strong>\( s_i \)</strong> : 노드 \( i \) 에서의 상하차 등 서비스에 소요되는 시간</li>
                 </ul>
                 <hr>
 
                 <h4 class="model-definition-content"><strong>추가 결정 변수:</strong></h4>
                 <ul>
-                    <li> <strong>\( u_{ik} \)</strong> : 차량 \( k \) 가 노드 \( i \) 에 도착하는 시간(선후 관계 정의용)</li>
-                    <li> <strong>\( l_{ik} \)</strong> : 차량 \( k \) 가 노드 \( i \) 에서 출발할 때의 적재량</li>
+                    <li><strong>\( x_{ijk} \)</strong> : 차량 \(k\) 가 노드 \(i\) 에서 \(j\) 로 직접 이동하면 1, 아니면 0</li>
+                    <li><strong>\( u_{ik} \)</strong> : 차량 \( k \) 가 노드 \( i \) 에 도착하는 시간(선후 관계 정의용)</li>
+                    <li><strong>\( l_{ik} \)</strong> : 차량 \( k \) 가 노드 \( i \) 에서 출발할 때의 적재량</li>
                 </ul>
                 <hr>
 
                 <h4 class="model-definition-content"><strong>PDP 핵심 제약 조건:</strong></h4>
                 <ul>
-                    <li><strong>시간 흐름 제약:</strong> 만약 차량 \( k \) 가 노드 \( i \) 를 방문한 후 바로 노드 j를 방문한다면(\( x_ijk = 1\)),
-                        \( j \)에 도착하는 시간 \( u_{jk} \) 은 \( i \) 에 도착하는 시간 \( u_{ik} \) 에 \( i \) 에서의 서비스 시간과
-                        \( i \) 에서 \( j \) 까지의 이동 시간을 더한 값보다 크거나 같아야 합니다.
+                    <li><strong>1. 쌍 제약 (Pairing):</strong> 각 요청의 수거와 배송은 반드시 동일한 차량으로 처리되어야 합니다.
+                        특정 차량 \( k \) 가 요청 \( r \)의 수거 지점과 배송 지점을 모두 방문하거나, 모두 방문하지 않도록 강제합니다.
                         <div class="math-block text-center p-2 my-2 bg-white rounded">
-                            $$u_{jk} \ge u_{ik} + s_i + d_{ij} - BigM \cdot (1 - x_{ijk}) \quad \forall i,j \in N_0, i \neq j, \forall k \in K$$
+                            $$ \sum_{i \in N_0} x_{i,p_r,k} = \sum_{j \in N_0} x_{j,d_r,k} \quad \forall r \in R, \forall k \in K $$
                         </div>
                     </li>
-                    <li><strong>선행 제약 (Precedence):</strong> 차량이 작업 \(r\)을 수행할 때, 배송 지점 \(d_r\)의 도착 시간은 수거 지점 \(p_r\)의 도착 시간보다 항상 나중이어야 합니다.
-                        <div class="math-block text-center p-2 my-2 bg-white rounded">
-                            $$ u_{p_r k} \le u_{d_r k} \quad \forall r \in R, \forall k \in K $$
-                        </div>
-                    </li>
-                    <li><strong>차량 방문 여부 확인 제약:</strong> 이 제약은 경로 변수 \(x_{ijk}\)와 방문 여부 변수 \(y_{ik}\)를 연결합니다.
-                        즉, '차량 \( k \) 가 어떤 노드에서든 고객 \( i \) 로 들어오는 경로가 있다면,
-                        해당 차량 \( k \) 는 고객 \( i \) 를 방문한 것 \( y_{ik}=1 \) 이다'를 의미합니다.</p>
-                        <div class="math-block text-center p-2 my-2 bg-white rounded">
-                            $$ \sum_{j \in N_0, j \neq i} x_{jik} = y_{ik} \quad \forall i \in N, \forall k \in K $$
-                        </div>
-                    </li>
-                    <li><strong>쌍 제약 (Pairing):</strong> 수거 지점 \(p_r\)과 배송 지점 \(d_r\)은 반드시 같은 차량 \(k\)에 의해 방문되어야 합니다.
-                        <div class="math-block text-center p-2 my-2 bg-white rounded">
-                            $$ \sum_{k \in K} y_{p_r,k} = \sum_{k \in K} y_{d_r,k} \quad \forall r \in R$$
-                        </div>
-                         <p class="small text-muted mb-0"><em>* 차량 k가 수거지점 \(p_r\)에 도착하는 횟수(0 또는 1)와 배송지점 \(d_r\)에 도착하는 횟수가 같아야 함을 의미합니다.</em></p>
-                    </li>
-                    <li><strong>동적 용량 제약(Dynamic Capacity):</strong> 경로의 각 지점에서의 누적 적재량을 추적하고, 차량의 최대 용량을 초과하지 않도록 제약 합니다.
-                        적재량 흐름 제약과 용량 한도 제약을 통해서 동적 용량을 제약합니다.
+                    <li><p><strong>2. 시간 흐름 및 선행 제약 (Time Flow & Precedence):</strong></p>
                         <div>
                             <ul>
-                                <li><strong>적재량 흐름 제약:</strong> 차량이 한 노드에서 다음 노드로 이동할 때 적재량이 올바르게 갱신되어야 합니다. 수거 지점에서는 화물량(\(q_r\))만큼 적재량이 늘어나고, 배송 지점에서는 줄어듭니다.
+                                <li><strong>시간 흐름 제약:</strong>경로가 시간을 거스르는 것을 방지합니다.
+                                    차량 \( k \) 가 노드 \( i \)  &rarr; 노드 \( j \) 이면 (\( x_{ijk} = 1\)), \( j \) 도착 시간 > \( i \) 출발 시간 입니다.
+                                    <div class="math-block text-center p-2 my-2 bg-white rounded">
+                                        $$u_{jk} \ge u_{ik} + s_i + t_{ij} - BigM \cdot (1 - x_{ijk}) \quad \forall i,j \in N_0, i \neq j, \forall k \in K$$
+                                    </div>
+                                </li>
+                                <li><strong>선행 제약 (Precedence):</strong> 배송지 도착 시간은 수거지에서 출발한 시간(도착 시간 + 서비스 시간)보다 나중이어야 한다
+                                    <div class="math-block text-center p-2 my-2 bg-white rounded">
+                                        $$ u_{d_r, k} \ge u_{p_r, k} + s_{p_r} + t_{p_r, d_r} \quad \forall r \in R, \forall k \in K $$
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li><p><strong>3. 동적 용량 제약(Dynamic Capacity):</strong> 경로의 각 지점에서의 누적 적재량을 추적하고, 차량의 최대 용량을 초과하지 않도록 제약 합니다.
+                        <div>
+                            <ul>
+                                <li><strong>적재량 흐름 제약:</strong>차량의 트렁크를 관리하는 규칙입니다.
+                                    수거 지점에서는 물건을 실어 화물량(\(q_r\))만큼 적재량이 늘어나고(+),
+                                    배송 지점에서는 물건을 내려 화물량(\(q_r\))만큼 적재량이 줄어드는(-) 과정을 표현합니다.
                                     <div class="math-block text-center p-2 my-2 bg-white rounded">
                                      $$ l_{jk} \ge l_{ik} + q_j - M \cdot (1-x_{ijk}) \quad \forall i,j \in N_0, \forall k \in K $$
                                     </div>
-                                     <p class="small text-muted mb-1"><em>* \(q_j\)는 노드 j에서의 수요량 (수거 시 + , 배송 시 -), M은 매우 큰 상수입니다. 이 제약은 \(x_{ijk}=1\)일 때만 \(l_{jk} \approx l_{ik} + q_j\)가 성립하도록 합니다.</em></p>
+                                     <p class="small text-muted mb-1"><em>* 차량 \( k \) 가 노드 \( i \) 를 방문한 후 바로 노드 \( j \) 를 방문한다면(\( x_{ijk} = 1\)),
+                                         노드 \( j \) 에 적재량 \( l_{jk} \) 는 노드 \( i \) 에 적재량 \( l_{ik} \) 에 노드 \( i \) 에서의 화물량 변화량을
+                                         반영한 값보다 크거나 같아야 합니다. \(l_{jk} \approx l_{ik} + q_j\)</em></p>
                                 </li>
-                                <li><strong>용량 한도 제약:</strong> 경로의 모든 지점에서, 차량의 적재량은 0 이상이어야 하며, 차량의 최대 용량(\(Q_k\))을 초과할 수 없습니다.
+                                <li><strong>용량 한도 제약:</strong> 차량에 실린 짐의 양은 언제나 0 이상이어야 하며, 트럭의 최대 적재 용량을 넘어설 수 없다는 직관적인 규칙입니다.
                                     <div class="math-block text-center p-2 my-2 bg-white rounded">
                                         $$ 0 \le l_{ik} \le Q_k \quad \forall i \in N_0, \forall k \in K $$
                                     </div>

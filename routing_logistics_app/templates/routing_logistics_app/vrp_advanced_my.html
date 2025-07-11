@@ -1,0 +1,197 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}VRP Model Definition{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+    <style>
+    .summary-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        font-size: 0.95em;
+    }
+    .summary-table th, .summary-table td {
+        border: 1px solid #dee2e6;
+        padding: 12px;
+        text-align: left;
+        vertical-align: top;
+    }
+    .summary-table th {
+        background-color: #343a40;
+        color: white;
+        font-weight: bold;
+    }
+    .summary-table tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+    .summary-table .math-block {
+        margin: 5px 0;
+        padding: 5px;
+        font-size: 1em;
+        text-align: left;
+    }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h2 class="h2">차량 경로 최적화 모델 정의 🚚⏱️📍</h2>
+    </div>
+
+    <p class="lead">차량 경로 문제(VRP)는 비즈니스 요구사항에 따라 다양한 목적과 제약 조건을 가진 모델로 확장될 수 있습니다. 여기서는 가장 기본적인 VRP 모델부터 시작하여 여러 주요 변형 모델들을 소개합니다.</p>
+
+    <h3>1. 기본 VRP 모델 (총 이동 거리 최소화)</h3>
+    <p>가장 고전적인 형태로, 모든 제약조건을 만족하며 총 이동 거리를 최소화하는 것을 목표로 합니다.</p>
+    <div class="highlight-box">
+        <p><strong>- 집합 및 파라미터:</strong> \(K\)(차량), \(N_0\)(전체 노드), \(d_{ij}\)(노드 간 거리)</p>
+        <p><strong>- 결정 변수:</strong> \(x_{ijk}\) (차량 k가 i에서 j로 이동 시 1)</p>
+        <p><strong>- 목적 함수:</strong></p>
+        <div class="math-block text-center p-2 my-2 bg-white rounded">
+            $$ \min \sum_{k \in K} \sum_{i \in N_0} \sum_{j \in N_0, i \neq j} d_{ij} \cdot x_{ijk} $$
+        </div>
+        <p><strong>- 핵심 제약 조건:</strong> 고객 방문, 차고지 출발/도착, 차량 흐름 보존, 부분 경로 제거 등이 포함됩니다.</p>
+    </div>
+
+    <h3>2. 주요 VRP 변형 모델 상세 설명</h3>
+    <p>기본 모델에 새로운 제약이나 다른 목적 함수를 적용하여 현실의 복잡한 문제들을 해결할 수 있습니다.<br>
+    다른 페이지에서 소개하는 CVRP와 PDP 문제 이외 변형 모델들을 소개합니다. </p>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h4 class="card-title mt-4">1. 사용 차량 수 최소화</h4>
+            <p>가능한 한 적은 수의 차량을 사용하여 모든 고객을 서비스하는 것을 목표로 합니다. 차량 운영 고정비를 절감하는 데 효과적입니다.</p>
+            <p><strong>- 추가 변수:</strong> \(y_k\) (차량 \( k \) 사용 시 1)</p>
+            <p><strong>- 목적 함수 (차량 수 최소화):</strong></p>
+            <div class="math-block">$$ \min \sum_{k \in K} y_k $$</div>
+            <p><strong>관련 제약식 (차량 사용 여부 연결):</strong></p>
+            <div class="math-block">
+                $$\sum_{i \in N_0} \sum_{j \in N_0, j \ne i} x_{ijk} \leq BigM \cdot y_k \quad \forall k \in K$$
+            </div>
+            <p>&rarr; 차량 \( k \) 가 어떤 경로라도 운행하면 ( \( x_{ijk} \) 중 하나라도 1이면) \( y_{k} = 1 \) 되어야 합니다.</p>
+            <hr>
+
+            <h4 class="card-title mt-4">2. 운송 비용 최소화 (가중합)</h4>
+            <p>이동 거리, 운행 시간, 차량 고정비 등 다양한 비용 요소를 종합적으로 고려하여 총비용을 최소화합니다.</p>
+            <p><strong>- 추가 파라미터:</strong> \(c_d\)(단위 거리당 비용), \(c_t\)(단위 시간당 비용), \(c_f\)(차량 고정비)</p>
+            <p><strong>- 추가 변수:</strong> \(y_k\) (차량 \( k \) 사용 시 1)</p>
+            <p><strong>- 목적 함수 (운송 비용 최소화):</strong></p>
+            <div class="math-block">$$ \min \left( \sum_{k,i,j} (c_d d_{ij} + c_t t_{ij}) x_{ijk} + \sum_{k} c_f y_k \right) $$</div>
+            <hr>
+
+            <h4 class="card-title mt-4">3. Makespan 최소화</h4>
+            <p>모든 차량의 전체 운행이 끝나는 시점을 최소화하는 것을 목표로 합니다. 이동 시간과 서비스 시간을 함께 고려합니다.</p>
+            <p><strong>- 추가 파라미터:</strong> \(t_{ij}\)(노드간 이동 시간), \(s_{i}\) (노드 \(i\)에서의 서비스 시간)
+            <p><strong>- 추가 변수:</strong>
+            <ul>
+                <li> <strong>\( u_{ik} \)</strong> : 차량 \( k \) 가 노드 \( i \) 에서 서비스를 시작하는 시간</li>
+                <li> <strong>\( L \)</strong> : 모든 차량의 서비스 종료(또는 복귀) 시간 중 가장 늦은 시간</li>
+            </ul>
+            <p><strong>- 목적 함수:</strong></p>
+            <div class="math-block">$$ \min L $$</div>
+            <p><strong>- 추가 제약 조건:</strong></p>
+            <div class="math-block">
+                $$ u_{ik} + s_i + t_{i0} \cdot x_{i0k} \leq L \quad \forall i \in N, k \in K $$
+            </div>
+            <hr>
+
+            <h4 class="card-title mt-4">4. VRPTW (Vehicle Routing Problem with Time Windows)</h4>
+            <p>Makespan 최소화 문제에 고객이 서비스를 받을 수 있는 시간(예: 오전 9시~11시) 조건이 추가되는 경우입니다. <br>
+            Makespan 최소화에 다음 항목들이 추가 됩니다.</p>
+            <p><strong>- 추가 파라미터:</strong> \(e_i\)(서비스 가능한 최초 도착 시간), \(l_i\)(서비스 가능한 최대 허용 시간)</p>
+            <ul class="math-block"><strong>추가 제약 조건:</strong></ul>
+                <ul>
+                <li><strong>차량별 최종 작업 완료 시간</strong>
+                    <div class="math-block">
+                        $$ u_{ik} + s_i + t_{i0} \cdot x_{i0k} \leq L \quad \forall i \in N, k \in K $$
+                    </div>
+                </li>
+                <li><strong>고객 서비스 시간 창 만족</strong>
+                    <div class="math-block">
+                        $$ e_i \leq u_{ik} \leq l_i \quad \forall i \in N, k \in K $$
+                    </div>
+                </li>
+                <li><strong>시간 흐름 추적</strong>
+                    <div class="math-block">
+                        $$ u_{jk} \geq u_{ik} + s_i + t_{ij} - BigM \cdot (1 - x_{ijk}) \quad \forall i, j \in N, k \in K $$
+                    </div>
+                </li>
+            </ul>
+            <hr>
+        </div>
+    </div>
+
+    <h3>3. 종합 정리</h3>
+    <div class="table-responsive">
+        <table class="summary-table">
+            <thead class="thead-dark">
+                <tr>
+                    <th>유형</th>
+                    <th>핵심 목표 / 제약</th>
+                    <th>주요 추가 파라미터/변수</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>VRP (기본)</strong><br><small>총 거리 최소화</small></td>
+                    <td><div class="math-block">$$\min \sum_{k,i,j} d_{ij} x_{ijk}$$</div></td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td><strong>CVRP</strong><br><small>용량 제약</small></td>
+                    <td><div class="math-block">$$\min \sum_{k,i,j} d_{ij} x_{ijk}$$</div>
+                        <p>차량 용량 제약</p>$$\sum_{i \in N} q_i \cdot y_{ik} \le Q_k$$
+                    </td>
+                    <td>\(q_i\) (수요량), \(Q_k\) (차량 용량)</td>
+                </tr>
+                 <tr>
+                    <td><strong>PDP</strong><br><small>수거 및 배송</small></td>
+                    <td><div class="math-block">$$\min \sum_{k,i,j} d_{ij} x_{ijk}$$</div>
+                       <p>선행 제약 (수거 후 배송)</p>$$ u_{d_r k} \ge u_{p_r k} + s_{p_r} + t_{p_r d_r}$$
+                    </td>
+                    <td>\(p_r, d_r\) (수거/배송 쌍), \(u_{ik}\) (시간)</td>
+                </tr>
+                <tr>
+                    <td><strong>차량 수 최소화</strong></td>
+                    <td><div class="math-block">$$\min \sum_{k \in K} y_k$$</div>
+                        <p>차량 사용 여부 제약</p>$$\sum_{i \in N_0} \sum_{j \in N_0, j \ne i} x_{ijk} \leq BigM \cdot y_k \quad \forall k \in K$$
+                    </td>
+                    <td>\(y_k\) (차량 사용 여부)</td>
+                </tr>
+                <tr>
+                    <td><strong>운송 비용 최소화 (가중합)</strong></td>
+                    <td><div class="math-block">$$ \min \left( \sum_{k,i,j} (c_d d_{ij} + c_t t_{ij}) x_{ijk} + \sum_{k} c_f y_k \right) $$</div>
+                    </td>
+                    <td>\(c_d, c_t, c_f\) (각종 비용 계수)</td>
+                </tr>
+
+
+                <tr>
+                    <td><strong>Makespan 최소화</strong></td>
+                    <td><div class="math-block">$$\min L $$</div>
+                        <p>작업 완료 시간 제약</p>$$ u_{ik} + s_i + t_{i0} \cdot x_{i0k} \leq L \quad \forall i \in N, k \in K $$
+                    </td>
+                    <td>\(e_i, l_i\) (시간 창), \(u_ik\) (시간 변수)</td>
+                </tr>
+
+                <tr>
+                    <td><strong>VRPTW</strong><br><small>시간 창 제약</small></td>
+                    <td><div class="math-block">$$\min \sum_{k,i,j} d_{ij} x_{ijk}$$</div>
+                        <p>시간 흐름 추적</p>$$ u_{jk} \geq u_{ik} + s_i + t_{ij} - BigM \cdot (1 - x_{ijk})$$
+                    </td>
+                    <td>\(e_i, l_i\) (시간 창), \(u_ik\) (시간 변수)</td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+{% endblock %}
