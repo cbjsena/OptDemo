@@ -12,7 +12,7 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
-COPY .env.prod .env
+
 # 정적 파일 폴더 생성 및 수집
 RUN mkdir -p /usr/src/app/static
 RUN python manage.py collectstatic --noinput

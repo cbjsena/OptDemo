@@ -51,12 +51,12 @@ for demo_key, dir_path in DEMO_DIR_MAP.items():
     if not os.path.exists(dir_path):
         os.makedirs(dir_path, exist_ok=True)
 
-
-dotenv_path = BASE_DIR / '.env.dev'
-# 로컬에서 실행 중이면 .env.local을 우선으로 사용
-if os.path.exists(BASE_DIR / '.env.local'):
-    dotenv_path = BASE_DIR / '.env.local'
-load_dotenv(dotenv_path=dotenv_path)
+# .env.local 파일이 있으면 로컬 개발 환경으로 간주하고 해당 파일을 로드합니다.
+local_env_path = BASE_DIR / '.env.local'
+if os.path.exists(local_env_path):
+    load_dotenv(dotenv_path=local_env_path)
+# 만약 .env.local이 없다면, docker-compose나 Cloud Run 등에서 주입된
+# 시스템 환경 변수를 사용하게 되므로 추가적인 load_dotenv 호출이 필요 없습니다.
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY=os.environ.get('SECRET_KEY', 'django-insecure-5)=z06nprnb$ua_#)c**%n01&+*0%+d33lfqnl1l0n3qolcurx')
@@ -118,14 +118,7 @@ WSGI_APPLICATION = 'optdemo_project.wsgi.application'
 
 DATABASE_BACKEND = os.environ.get('DATABASE_BACKEND', 'postgres')
 
-if DATABASE_BACKEND == 'sqlite3':
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-elif 'test' in sys.argv:
+if 'test' in sys.argv:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -136,15 +129,15 @@ elif 'test' in sys.argv:
             'PORT': os.getenv('SQL_PORT', '5432'),
         }
     }
-elif DATABASE_BACKEND == 'postgres':
+elif DATABASE_BACKEND == 'postgresql':
     DATABASES = {
         'default': {
             'ENGINE': os.environ.get('SQL_ENGINE', 'django.db.backends.sqlite3'),
             'NAME': os.environ.get('SQL_DATABASE', BASE_DIR / 'db.sqlite3'),
-            'USER': os.environ.get('SQL_USER', 'user'),
-            'PASSWORD': os.environ.get('SQL_PASSWORD', 'password'),
-            'HOST': os.environ.get('SQL_HOST', 'localhost'),
-            'PORT': os.environ.get('SQL_PORT', '5432'),
+            'USER': os.environ.get('SQL_USER'),
+            'PASSWORD': os.environ.get('SQL_PASSWORD'),
+            'HOST': os.environ.get('SQL_HOST'),
+            'PORT': os.environ.get('SQL_PORT'),
         }
     }
 else:
