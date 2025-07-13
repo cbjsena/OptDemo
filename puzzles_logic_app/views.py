@@ -269,7 +269,6 @@ def tsp_demo_view(request):
 
     if request.method == 'POST':
         form_data = request.POST
-        logger.info(form_data)
         action = form_data.get('action', 'optimize')
         selected_city_names = form_data.getlist('cities')
         context['selected_cities'] = selected_city_names
@@ -302,9 +301,6 @@ def tsp_demo_view(request):
                         context['original_input_json'] = json.dumps(selected_cities_data, ensure_ascii=False)
 
                 elif action == 'manual_check':
-                    logger.info(form_data)
-                    #TODO
-                    # manual_tour에 서울 포함되지 않음
                     manual_tour_str = form_data.get('manual_tour', '')
                     original_input_str = form_data.get('original_input_json', '[]')
 
@@ -315,11 +311,11 @@ def tsp_demo_view(request):
                         raise ValueError("수동 경로의 도시 수가 원래 문제와 다릅니다.")
 
                     # 수동 경로 거리 계산
-                    manual_distance = calculate_manual_tour_distance(manual_tour_cities, all_city_names,
+                    manual_distance = calculate_manual_tour_distance(manual_tour_cities, preset_tsp_all_cities,
                                                                      preset_tsp_distance_matrix)
 
                     context['manual_results'] = {
-                        'tour': ' → '.join(['서울'] + manual_tour_cities + ['서울']),
+                        'tour': ' → '.join(manual_tour_cities + ['서울']),
                         'distance': manual_distance
                     }
                     # 비교를 위해 최적 결과도 다시 context에 추가

@@ -1,0 +1,146 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load puzzles_filters %}
+
+{% block title %}Traveling Salesperson Problem Demo{% endblock %}
+{% block styles %}
+    {# Leaflet.js CSS 파일 추가 #}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+    <style>
+        /* 지도가 표시될 영역의 크기 지정 */
+        #map { height: 500px; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h2">Traveling Salesperson Problem (TSP) Demo</h1>
+    <p>외판원 문제(TSP)는 여러 도시를 한 번씩만 방문하고 출발점으로 돌아오는 가장 짧은 경로를 찾는 문제입니다. 아래에서 방문할 도시를 선택하고 '최단 경로 찾기' 버튼을 눌러주세요.</p>
+
+    <form method="POST" id="tspForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="optimize">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>방문할 도시 선택 (2개 이상)</strong>
+                {# --- [신규] 전체 선택 및 랜덤 선택 버튼 추가 --- #}
+                <div>
+                    <button type="button" class="btn btn-sm btn-info" id="selectAllBtn">전체 선택</button>
+                    <button type="button" class="btn btn-sm btn-success" id="randomSelectBtn">랜덤 선택</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for city in all_cities %}
+                        {% if city != '서울' %}
+                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                            <div class="form-check">
+                                <input class="form-check-input city-checkbox" type="checkbox" name="cities" value="{{ city }}" id="city_{{ forloop.counter0 }}"
+                                    {% if city in selected_cities %}checked{% endif %}>
+                                <label class="form-check-label" for="city_{{ forloop.counter0 }}">
+                                    {{ city }}
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최단 경로 찾기</button>
+    </form>
+
+    {# --- 이하 결과 표시 및 수동 비교 폼은 기존과 동일 --- #}
+    {% if error_message or success_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Result</h3>
+    {% endif %}
+    {% if error_message %}
+        <div class="alert alert-danger" role="alert"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+        <div class="alert alert-success" role="alert">{{ success_message }}</div>
+    {% endif %}
+     {% if results %}
+        {# ... #}
+     {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.city-checkbox');
+
+    // --- [신규] 전체 선택 버튼 로직 ---
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', function() {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+        });
+    }
+
+    // --- [신규] 랜덤 선택 버튼 로직 ---
+    const randomSelectBtn = document.getElementById('randomSelectBtn');
+    if (randomSelectBtn) {
+        randomSelectBtn.addEventListener('click', function() {
+            // 1. 모든 체크박스 해제
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+
+            // 2. 랜덤 개수 선택 (예: 5개에서 10개 사이)
+            const min = 5;
+            const max = Math.min(10, checkboxes.length);
+            const numToSelect = Math.floor(Math.random() * (max - min + 1)) + min;
+
+            // 3. 체크박스 리스트를 무작위로 섞어서 앞에서부터 선택
+            const shuffled = Array.from(checkboxes).sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, numToSelect);
+
+            selected.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+        });
+    }
+
+    // --- [기존] 지도 생성 스크립트 ---
+    {% if results %}
+        const tourData = {{ results.tour_cities_data|safe }};
+        const coordinates = tourData.map(city => [city.lat, city.lon]);
+        const map = L.map('map').setView([36.5, 127.5], 7);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        const polyline = L.polyline(coordinates, {color: 'blue'}).addTo(map);
+        const decorator = L.polylineDecorator(polyline, {
+            patterns: [
+                {
+                    offset: 25,
+                    repeat: 150,
+                    symbol: L.Symbol.arrowHead({
+                        pixelSize: 12,
+                        pathOptions: { color: 'red', fillOpacity: 1, weight: 0 }
+                    })
+                }
+            ]
+        }).addTo(map);
+        tourData.forEach((city, index) => {
+            L.marker([city.lat, city.lon])
+                .addTo(map)
+                .bindTooltip(`<b>${index}. ${city.name}</b>`, { permanent: true, direction: 'right' });
+        });
+        map.fitBounds(polyline.getBounds().pad(0.1));
+    {% endif %}
+});
+</script>
+{% endblock %}

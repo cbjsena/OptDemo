@@ -23,21 +23,25 @@
         {% csrf_token %}
         <input type="hidden" name="action" value="optimize">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>방문할 도시 선택 (2개 이상)</strong>
+                <div>
+                    <button type="button" class="btn btn-sm btn-info" id="selectAllBtn">전체 선택</button>
+                    <button type="button" class="btn btn-sm btn-success" id="randomSelectBtn">랜덤 선택</button>
+                </div>
             </div>
             <div class="card-body">
                 <div class="row">
                     {% for city in all_cities %}
-                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="cities" value="{{ city }}" id="city_{{ forloop.counter0 }}"
-                                {% if city in selected_cities %}checked{% endif %}>
-                            <label class="form-check-label" for="city_{{ forloop.counter0 }}">
-                                {{ city }}
-                            </label>
+                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                            <div class="form-check">
+                                <input class="form-check-input city-checkbox" type="checkbox" name="cities" value="{{ city }}" id="city_{{ forloop.counter0 }}"
+                                    {% if city in selected_cities %}checked{% endif %}>
+                                <label class="form-check-label" for="city_{{ forloop.counter0 }}">
+                                    {{ city }}
+                                </label>
+                            </div>
                         </div>
-                    </div>
                     {% endfor %}
                 </div>
             </div>
@@ -114,7 +118,7 @@
             <div class="form-group">
                 <label for="manual_tour"><strong>방문 순서 입력</strong></label>
                 <input type="text" class="form-control" id="manual_tour" name="manual_tour"
-                       value="{{ results.tour_cities_data|slice:'1:-1'|join_names:' → ' }}">
+                       value="{{ results.tour_cities_data|slice:'0:-1'|join_names:' → ' }}">
             </div>
             <button type="submit" class="btn btn-secondary mt-2">수동 경로 거리 계산</button>
         </form>
@@ -132,54 +136,89 @@
 
 <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
 
-{# 결과가 있을 때만 지도 생성 스크립트 실행 #}
-{% if results %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // 1. Django 컨텍스트 변수를 Javascript 변수로 변환
-        const tourData = {{ results.tour_cities_data|safe }};
-        const coordinates = tourData.map(city => [city.lat, city.lon]);
+        const checkboxes = document.querySelectorAll('.city-checkbox');
 
-        // 2. 지도 초기화 (한국 중심 좌표)
-        const map = L.map('map').setView([36.5, 127.5], 7);
+        // 전체 선택 버튼 로직 ---
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', function() {
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+            });
+        }
 
-        // 3. 배경 지도 타일 추가 (OpenStreetMap)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+        // 랜덤 선택 버튼 로직 ---
+        const randomSelectBtn = document.getElementById('randomSelectBtn');
+        if (randomSelectBtn) {
+            randomSelectBtn.addEventListener('click', function() {
+                // 1. 모든 체크박스 해제
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
 
-        // 4. 경로(Polyline) 그리기
-        const polyline = L.polyline(coordinates, {color: 'blue'}).addTo(map);
+                // 2. 랜덤 개수 선택 (예: 5개에서 10개 사이)
+                const min = 5;
+                const max = Math.min(10, checkboxes.length);
+                const numToSelect = Math.floor(Math.random() * (max - min + 1)) + min;
 
-        // 경로 위에 화살표 데코레이터 추가
-        const decorator = L.polylineDecorator(polyline, {
-            patterns: [
-                {
-<!--                    offset: '50%', // 각 선분의 중간에 화살표 표시-->
-                    offset: 25,       // 경로 시작부터 25px 떨어진 곳에서 첫 화살표 시작
-                    repeat: 150,      // 150px 간격으로 화살표 반복
-                    symbol: L.Symbol.arrowHead({
-                        pixelSize: 12,
-                        pathOptions: {
-                            color: 'red',
-                            fillOpacity: 1,
-                            weight: 0
-                        }
-                    })
-                }
-            ]
-        }).addTo(map);
+                // 3. 체크박스 리스트를 무작위로 섞어서 앞에서부터 선택
+                const shuffled = Array.from(checkboxes).sort(() => 0.5 - Math.random());
+                const selected = shuffled.slice(0, numToSelect);
 
-        // 5. 각 도시에 마커(핀)와 툴팁 추가
-        tourData.forEach((city, index) => {
-            L.marker([city.lat, city.lon])
-                .addTo(map)
-                .bindTooltip(`<b>${index}. ${city.name}</b>`, { permanent: true, direction: 'right' });
-        });
+                selected.forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+            });
+        }
 
-        // 6. 모든 마커와 경로가 보이도록 지도 뷰 자동 조절
-        map.fitBounds(polyline.getBounds().pad(0.1));
+        {% if results %}
+            // 1. Django 컨텍스트 변수를 Javascript 변수로 변환
+            const tourData = {{ results.tour_cities_data|safe }};
+            const coordinates = tourData.map(city => [city.lat, city.lon]);
+
+            // 2. 지도 초기화 (한국 중심 좌표)
+            const map = L.map('map').setView([36.5, 127.5], 7);
+
+            // 3. 배경 지도 타일 추가 (OpenStreetMap)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            // 4. 경로(Polyline) 그리기
+            const polyline = L.polyline(coordinates, {color: 'blue'}).addTo(map);
+
+            // 경로 위에 화살표 데코레이터 추가
+            const decorator = L.polylineDecorator(polyline, {
+                patterns: [
+                    {
+    <!--                    offset: '50%', // 각 선분의 중간에 화살표 표시-->
+                        offset: 25,       // 경로 시작부터 25px 떨어진 곳에서 첫 화살표 시작
+                        repeat: 150,      // 150px 간격으로 화살표 반복
+                        symbol: L.Symbol.arrowHead({
+                            pixelSize: 12,
+                            pathOptions: {
+                                color: 'red',
+                                fillOpacity: 1,
+                                weight: 0
+                            }
+                        })
+                    }
+                ]
+            }).addTo(map);
+
+            // 5. 각 도시에 마커(핀)와 툴팁 추가
+            tourData.forEach((city, index) => {
+                L.marker([city.lat, city.lon])
+                    .addTo(map)
+                    .bindTooltip(`<b>${index}. ${city.name}</b>`, { permanent: true, direction: 'right' });
+            });
+
+            // 6. 모든 마커와 경로가 보이도록 지도 뷰 자동 조절
+            map.fitBounds(polyline.getBounds().pad(0.1));
+        {% endif %}
     });
 </script>
-{% endif %}
 {% endblock %}
