@@ -117,7 +117,8 @@
                                 {% for skill in skill_options %}
                                 <div class="col">
                                     <label class="small">{{ skill }}</label>
-                                    <input type="number" name="req_{{ s_name }}_{{ skill }}" value="{{ skill_requirements|get_item:s_name|get_item:skill }}" class="form-control form-control-sm skill-req" data-shift="{{ s_name }}" min="0">
+                                    <input type="number" name="req_{{ s_name }}_{{ skill }}" value="{{ skill_requirements|get_item:s_name|get_item:skill }}"
+                                           class="form-control form-control-sm skill-req" data-shift="{{ s_name }}" min="0">
                                 </div>
                                 {% endfor %}
                                 <div class="col">
@@ -177,8 +178,8 @@
                         {% for day in results.schedule.keys %}
                         <td>
                             <div class="nurse-list">
-                            {% for nurse_id in results.schedule|get_item:day|get_item:forloop.parentloop.counter0 %}
-                                <div>{{ nurses_data|get_item:nurse_id|get_item:'name' }}</div>
+                            {% for nurse_name in results.schedule|get_item:day|get_item:forloop.parentloop.counter0 %}
+                                <div>{{ nurse_name  }}</div>
                             {% empty %}
                                 -
                             {% endfor %}
@@ -234,6 +235,7 @@
         const settingsForm = document.getElementById('settingsForm');
         settingsForm.innerHTML = ''; // 폼 초기화
 
+        // 1. 상단 컨트롤러 값 추가
         const controls = ['num_nurses_get', 'num_days_get', 'min_shifts_get', 'max_shifts_get'];
         const names = ['num_nurses', 'num_days', 'min_shifts', 'max_shifts'];
         controls.forEach((id, index) => {
@@ -245,6 +247,7 @@
             settingsForm.appendChild(hiddenInput);
         });
 
+        // 2. 현재 간호사 정보 테이블 값 추가 (이름, 숙련도, 휴가)
         const numNurses = document.getElementById('num_nurses_get').value;
         for (let i = 0; i < numNurses; i++) {
             ['name', 'skill', 'vacation'].forEach(field => {
@@ -258,6 +261,24 @@
                 }
             });
         }
+
+        // 3. [신규] 현재 시프트별 필요 인원 값 추가
+        document.querySelectorAll('.skill-req').forEach(input => {
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = input.name;
+            hiddenInput.value = input.value;
+            settingsForm.appendChild(hiddenInput);
+        });
+
+        // 4. [신규] 현재 공정성 목표 체크박스 값 추가
+        document.querySelectorAll('input[name="fairness_options"]:checked').forEach(checkbox => {
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'fairness_options';
+            hiddenInput.value = checkbox.value;
+            settingsForm.appendChild(hiddenInput);
+        });
         settingsForm.submit();
     }
 
