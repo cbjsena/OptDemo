@@ -12,10 +12,12 @@ def solving_log(solver, problem_type:str, model=None):
     logger.info(f"Solving the {problem_type} model")
     if solver.__class__.__name__ == "CpSolver":
         status = solver.Solve(model)
+        status_name = solver.StatusName(status)
     else:
         status = solver.Solve()
+        status_name = solver.StatusName(status)
     processing_time = get_solving_time_sec(solver)
-    logger.info(f"Solver finished. Status: {status}, Time: {processing_time} sec")
+    logger.info(f"Solver finished. Status: {status_name}, Time: {processing_time} sec")
 
     return status, processing_time
 

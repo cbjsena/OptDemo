@@ -770,6 +770,9 @@ def run_nurse_roster_advanced_optimizer(input_data):
     """
     problem_type = input_data['problem_type']
     start_log(problem_type)
+    # TODO
+    # 1.간호사별 MAX, MIN 근무일 반영
+    # 2. 공정성 제약 확인
 
     SHIFT_NIGHT = preset_nurse_rostering_shifts[2]
     # --- 입력 데이터 파싱 ---
@@ -805,7 +808,9 @@ def run_nurse_roster_advanced_optimizer(input_data):
         for n_id in nurse_ids:
             for d in range(num_days):
                 for s in range(num_shifts_per_day):
-                    assigns[(n_id, d, s)] = model.NewBoolVar(f'assigns_n{n_id}_d{d}_s{s}')
+                    varName = f"assigns_{nurses_data[n_id].get('name')}_{d + 1}_{shifts[s]}"
+                    logger.solve(f'BoolVar: {varName}')
+                    assigns[(n_id, d, s)] = model.NewBoolVar(varName)
 
         # --- 2. 강성 제약 조건 (Hard Constraints) ---
 
@@ -875,7 +880,7 @@ def run_nurse_roster_advanced_optimizer(input_data):
         # --- 5. 문제 해결 ---
         solver = cp_model.CpSolver()
         solver.parameters.max_time_in_seconds = 30.0
-        status, processing_time = solving_log(solver, problem_type)
+        status, processing_time = solving_log(solver, problem_type, model)
 
         # --- 6. 결과 추출 ---
         if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
@@ -883,7 +888,7 @@ def run_nurse_roster_advanced_optimizer(input_data):
             for d in range(num_days):
                 schedule[d] = {}
                 for s_idx, s_name in enumerate(shifts):
-                    schedule[d][s_idx] = [n_id for n_id in nurse_ids if solver.Value(assigns[(n_id, d, s_idx)]) == 1]
+                    schedule[d][s_idx] = [nurses_data[n_id].get('name') for n_id in nurse_ids if solver.Value(assigns[(n_id, d, s_idx)]) == 1]
 
             # 각 간호사별 통계 계산
             total_shifts = [
@@ -909,7 +914,7 @@ def run_nurse_roster_advanced_optimizer(input_data):
                 },
                 'total_penalty': solver.ObjectiveValue()
             }
-            logger.info(f'results_data:{results_data}')
+            # logger.info(f'results_data:{results_data}')
             return results_data, None, processing_time
         else:
             return None, "해를 찾을 수 없었습니다. 제약 조건이 너무 엄격하거나, 필요 인원이 간호사 수에 비해 너무 많을 수 있습니다.", round(processing_time, 4)
