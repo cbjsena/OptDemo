@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.conf import settings
 import json
 
+from common_utils.nurseRosteringSolver import NurseRosteringSolver
 from common_utils.data_utils_allocation import *
 from common_utils.run_alloctaion_opt import *
 
@@ -486,7 +487,8 @@ def nurse_rostering_advanced_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = run_nurse_roster_advanced_optimizer(input_data)
+            # results_data, error_msg_opt, processing_time = run_nurse_roster_advanced_optimizer(input_data)
+            results_data, error_msg_opt, processing_time = NurseRosteringSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
