@@ -129,9 +129,9 @@
                         {% endfor %}
                         <hr>
                         <h6>적용할 공정성 목표</h6>
-<!--                        <div class="form-check">-->
-<!--                            <input class="form-check-input" type="checkbox" name="fairness_options" value="fair_weekends"-->
-<!--                                   id="f_w" {% if 'fair_weekends' in submitted_fairness|default_if_none:'' or not submitted_fairness %}checked{% endif %}><label class="form-check-label" for="f_w">주말 근무 공평 분배</label></div>-->
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="fairness_options" value="fair_weekends"
+                                   id="f_w" {% if 'fair_weekends' in submitted_fairness|default_if_none:'' or not submitted_fairness %}checked{% endif %}><label class="form-check-label" for="f_w">주말 근무 공평 분배</label></div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="fairness_options" value="fair_nights"
                                    id="f_n" {% if 'fair_nights' in submitted_fairness|default_if_none:'' or not submitted_fairness %}checked{% endif %}><label class="form-check-label" for="f_n">야간 근무 공평 분배</label></div>

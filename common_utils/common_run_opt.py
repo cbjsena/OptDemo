@@ -1,8 +1,18 @@
 import datetime
 import logging
-
+from ortools.linear_solver import pywraplp
 
 logger = logging.getLogger(__name__)
+
+status_map = {
+    pywraplp.Solver.OPTIMAL: "OPTIMAL",
+    pywraplp.Solver.FEASIBLE: "FEASIBLE",
+    pywraplp.Solver.INFEASIBLE: "INFEASIBLE",
+    pywraplp.Solver.UNBOUNDED: "UNBOUNDED",
+    pywraplp.Solver.ABNORMAL: "ABNORMAL",
+    pywraplp.Solver.MODEL_INVALID: "MODEL_INVALID",
+    pywraplp.Solver.NOT_SOLVED: "NOT_SOLVED",
+}
 
 def start_log(problem_type:str):
     logger.info(f"Running Optimizer {problem_type}")
@@ -15,7 +25,7 @@ def solving_log(solver, problem_type:str, model=None):
         status_name = solver.StatusName(status)
     else:
         status = solver.Solve()
-        status_name = solver.StatusName(status)
+        status_name = status_map.get(status, "UNKNOWN")
     processing_time = get_solving_time_sec(solver)
     logger.info(f"Solver finished. Status: {status_name}, Time: {processing_time} sec")
 

@@ -438,7 +438,7 @@ def nurse_rostering_advanced_demo_view(request):
     for s_name in preset_nurse_rostering_shifts:
         skill_requirements[s_name] = {}
         for skill in preset_nurse_rostering_skill_options:
-            default_req = {'H': 1, 'M': 2, 'L': 1}.get(skill, 1)  # 예시 기본값
+            default_req = preset_nurse_rostering_shift_requirements.get(s_name).get(skill, '0')
             skill_requirements[s_name][skill] = int(source.get(f'req_{s_name}_{skill}', default_req))
 
     submitted_vacations = {i: source.get(f'nurse_{i}_vacation', '') for i in range(submitted_num_nurses)}

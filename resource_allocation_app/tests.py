@@ -163,6 +163,15 @@ class ResourceAllocationAppTests(TestCase):
         self.assertTemplateUsed(response, 'resource_allocation_app/nurse_rostering_demo.html')
         self.assertContains(response, 'Nurse Rostering Demo')
 
+    def test_nurse_rostering_advanced_view_loads_successfully(self):
+        """Advanced Nurse Rostering 데모 페이지가 GET 요청 시 정상적으로 로드되는지 테스트합니다."""
+        url = reverse('resource_allocation_app:nurse_rostering_advanced_demo')
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'resource_allocation_app/nurse_rostering_advanced_demo.html')
+        self.assertContains(response, 'Advanced Nurse Rostering Demo')
+
     def test_nurse_rostering_demo_post_request_returns_solution(self):
         """Nurse Rostering 데모가 POST 요청 시 최적 계획을 계산하는지 테스트합니다."""
         url = reverse('resource_allocation_app:nurse_rostering_demo')
@@ -170,9 +179,9 @@ class ResourceAllocationAppTests(TestCase):
         post_data = {
             'problem_type': 'nurse_rostering',
             'num_nurses': '15',
-            'num_days': '14',
-            'min_shifts': '5',
-            'max_shifts': '8',
+            'num_days': '7',
+            'min_shifts': '2',
+            'max_shifts': '6',
             'shift_0_req': '4',  # 주간(D) 필요 인원
             'shift_1_req': '3',  # 오후(E) 필요 인원
             'shift_2_req': '2',  # 야간(N) 필요 인원
@@ -187,3 +196,47 @@ class ResourceAllocationAppTests(TestCase):
         self.assertIn('최적의 근무표를 생성했습니다!', response.context.get('success_message', ''))
         self.assertContains(response, "2주 근무표")
         self.assertContains(response, "간호사별 근무일 수 요약")
+
+    def test_nurse_rostering_advanced_post_request_returns_solution(self):
+        """Advanced Nurse Rostering 데모가 POST 요청 시 최적 계획을 계산하는지 테스트합니다."""
+        url = reverse('resource_allocation_app:nurse_rostering_advanced_demo')
+
+        post_data = {
+            'problem_type': 'nurse_rostering',
+            'num_nurses': '15',
+            'num_days': '7',
+            'min_shifts': '2',
+            'max_shifts': '6',
+            # 간호사 15명 정보
+            'nurse_0_name': 'NurA', 'nurse_0_skill': 'L', 'nurse_0_vacation': '',
+            'nurse_1_name': 'NurB', 'nurse_1_skill': 'M', 'nurse_1_vacation': '',
+            'nurse_2_name': 'NurC', 'nurse_2_skill': 'L', 'nurse_2_vacation': '',
+            'nurse_3_name': 'NurD', 'nurse_3_skill': 'H', 'nurse_3_vacation': '',
+            'nurse_4_name': 'NurE', 'nurse_4_skill': 'M', 'nurse_4_vacation': '',
+            'nurse_5_name': 'NurF', 'nurse_5_skill': 'H', 'nurse_5_vacation': '',
+            'nurse_6_name': 'NurG', 'nurse_6_skill': 'M', 'nurse_6_vacation': '',
+            'nurse_7_name': 'NurH', 'nurse_7_skill': 'L', 'nurse_7_vacation': '',
+            'nurse_8_name': 'NurI', 'nurse_8_skill': 'H', 'nurse_8_vacation': '',
+            'nurse_9_name': 'NurJ', 'nurse_9_skill': 'M', 'nurse_9_vacation': '',
+            'nurse_10_name': 'NurK', 'nurse_10_skill': 'L', 'nurse_10_vacation': '',
+            'nurse_11_name': 'NurL', 'nurse_11_skill': 'M', 'nurse_11_vacation': '',
+            'nurse_12_name': 'NurM', 'nurse_12_skill': 'H', 'nurse_12_vacation': '',
+            'nurse_13_name': 'NurN', 'nurse_13_skill': 'M', 'nurse_13_vacation': '',
+            'nurse_14_name': 'NurO', 'nurse_14_skill': 'M', 'nurse_14_vacation': '',
+            # 시프트별 필요인원
+            'req_Day_H': '1', 'req_Day_M': '2', 'req_Day_L': '1',
+            'req_Aft_H': '1', 'req_Aft_M': '2', 'req_Aft_L': '1',
+            'req_Ngt_H': '1', 'req_Ngt_M': '0', 'req_Ngt_L': '1',
+            # 공정성 옵션
+            'fairness_options': ['fair_weekends', 'fair_nights', 'fair_offs']
+        }
+
+        # POST 요청 시뮬레이션
+        response = self.client.post(url, post_data)
+
+        # 결과 검증
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(response.context.get('results'))
+        self.assertIn('최적의 근무표를 생성했습니다', response.context.get('success_message', ''))
+        self.assertContains(response, "생성된 근무표")
+        self.assertContains(response, "간호사별 근무 통계")

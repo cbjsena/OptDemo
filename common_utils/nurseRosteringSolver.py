@@ -1,5 +1,4 @@
 from ortools.sat.python import cp_model
-from common_utils.data_utils_allocation import *
 from common_utils.common_run_opt import *
 import logging
 
@@ -46,21 +45,19 @@ class NurseRosteringSolver:
         self.assigns ={}
         logger.info(f"Num nurses: {self.num_nurses}, Num days: {self.num_days}, Shifts: {self.shifts}")
 
-    def set_variables_assign(self):
+    def _set_variables_assign(self):
         """
         특정 간호사를 특정 날짜, 특정 시프트에 배정하면 1, 아니면 0인 이진변수
         """
         logger.solve("--- Setting Variables assign ---")
-        assigns = {}
         for n_id in self.nurse_ids:
             for d in self.all_days:
                 for s in self.all_shifts:
                     varName = f"assigns_{self.nurses_data[n_id].get('name')}_{d + 1}_{self.shifts[s]}"
-                    logger.solve(f'BoolVar: {varName}')
+                    # logger.solve(f'BoolVar: {varName}')
                     self.assigns[(n_id, d, s)] = self.model.NewBoolVar(varName)
-        return assigns
 
-    def set_constraints_day_work_one(self):
+    def _set_constraints_day_work_one(self):
         """
         제약 1: 각 간호사는 하루 최대 1개 시프트 근무
         Hard constraint
@@ -70,10 +67,9 @@ class NurseRosteringSolver:
             for d in self.all_days:
                 self.model.AddAtMostOne(self.assigns[(n_id, d, s)] for s in self.all_shifts)
 
-    def set_constraints_skill_req(self):
+    def _set_constraints_skill_req(self):
         """
         제약 2: 숙련도별 필요 인원 충족
-        Hard constraint
         """
         logger.solve("--- Setting Equations SkillReq ---")
         for d in self.all_days:
@@ -82,7 +78,7 @@ class NurseRosteringSolver:
                     nurses_with_that_skill = self.nurses_by_skill[skill]
                     self.model.Add(sum(self.assigns[(n_id, d, s_idx)] for n_id in nurses_with_that_skill) >= required_count)
 
-    def set_constraints_vacation_req(self):
+    def _set_constraints_vacation_req(self):
         """
         제약 3: 휴가 요청 반영
         Hard constraint
@@ -90,24 +86,23 @@ class NurseRosteringSolver:
         logger.solve("--- Setting Equations Vacation ---")
         for n_id, off_days in self.vacation_requests.items():
             for d in off_days:
-                self.model.Add(sum(self.assigns[(n_id, d, s)] for s in self.shifts) == 0)
+                self.model.Add(sum(self.assigns[(n_id, d, s)] for s in self.all_shifts) == 0)
 
-    def set_constrains_days_req(self):
+    def _set_constraints_min_max_day_req(self):
         """
-        제약 4: 최소, 최대 근무일 반영
+        제약 4: 간호사별 최소/최대 근무일 제약
         Hard constraint
         """
-        logger.solve("--- Setting Min / Max Days ---")
-        for d in self.all_days:
-            for s_idx, s_name in enumerate(self.shifts):
-                for shift, requirements in self.skill_requirements[s_name].items():
-                    total_sum = sum(requirements.values())+3
-                    self.model.Add(sum(self.assigns[n_id, d, s_idx] for n_id in self.nurse_ids) <= total_sum)
+        logger.solve("--- Setting Equations Min Max Work Day ---")
+        for n_id in self.nurse_ids:
+            total_shifts_for_nurse = sum(self.assigns[(n_id, d, s)] for d in self.all_days for s in self.all_shifts)
+            self.model.AddLinearConstraint(total_shifts_for_nurse, self.min_shifts_per_nurse, self.max_shifts_per_nurse)
 
-    def set_constrains_fair_nights(self):
+    def _set_constrains_fair_nights(self):
         """
         목표 1: 공평한 야간 근무 분배 페널티 측정
         """
+        logger.solve("--- Setting Fair Nights ---")
         if 'fair_nights' in self.enabled_fairness:
             night_shift_idx = self.shifts.index(self.SHIFT_NIGHT)
             night_shifts_worked = [sum(self.assigns[(n_id, d, night_shift_idx)] for d in self.all_days) for n_id in
@@ -122,10 +117,11 @@ class NurseRosteringSolver:
 
         return night_gap
 
-    def set_constrains_fair_offs(self):
+    def _set_constrains_fair_offs(self):
         """
         목표 2: 공평한 휴무일 분배 페널티 측정
         """
+        logger.solve("--- Setting Fair Offs ---")
         if 'fair_offs' in self.enabled_fairness:
             total_shifts_worked = [
                 sum(self.assigns[(n_id, d, s)] for d in self.all_days for s in self.all_shifts) for n_id in
@@ -141,55 +137,78 @@ class NurseRosteringSolver:
 
         return off_gap
 
-    def set_constrains_fair_nights(self):
+    def _set_constraints_fair_weekends(self):
         """
-        목표 1: 공평한 야간 근무 분배 페널티 측정
+        목표 3: 공평한 주말 근무 분배
         """
-        if 'fair_nights' in self.enabled_fairness:
-            night_shift_idx = self.shifts.index(self.SHIFT_NIGHT)
-            night_shifts_worked = [sum(self.assigns[(n_id, d, night_shift_idx)] for d in range(self.num_days)) for n_id
-                                   in
-                                   self.nurse_ids]
-            min_nights = self.model.NewIntVar(0, self.num_days, 'min_nights')
-            max_nights = self.model.NewIntVar(0, self.num_days, 'max_nights')
-            self.model.AddMinEquality(min_nights, night_shifts_worked)
-            self.model.AddMaxEquality(max_nights, night_shifts_worked)
-            night_gap = max_nights - min_nights
-        else:
-            night_gap = 0
-
-        return night_gap
-
-    def set_constraints_fair_weekends(self):
-        # 목표 3: [기존] 공평한 주말 근무 분배
+        logger.solve("--- Setting Fair Weekends ---")
         if 'fair_weekends' in self.enabled_fairness:
-            weekend_shifts_worked = [sum(self.assigns[(n_id, d, s)] for d in self.weekend_days for s in self.all_skills)
+            weekend_shifts_worked = [sum(self.assigns[(n_id, d, s)] for d in self.weekend_days for s in self.all_shifts )
                                      for n_id in self.nurse_ids]
-            min_weekend_shifts = self.model.NewIntVar(0, len(self.weekend_days), 'min_weekend')
-            max_weekend_shifts = self.model.NewIntVar(0, len(self.weekend_days), 'max_weekend')
+            min_weekend_shifts = self.model.NewIntVar(0, len(self.weekend_days) * len(self.shifts), 'min_weekend')
+            max_weekend_shifts = self.model.NewIntVar(0, len(self.weekend_days) * len(self.shifts), 'max_weekend')
             self.model.AddMinEquality(min_weekend_shifts, weekend_shifts_worked)
             self.model.AddMaxEquality(max_weekend_shifts, weekend_shifts_worked)
             weekend_gap = max_weekend_shifts - min_weekend_shifts
         else:
             weekend_gap = 0
-            weekend_shifts_worked = [0] * self.num_nurses  # 결과 표시를 위한 기본값
 
-        return weekend_gap, weekend_shifts_worked
+        return weekend_gap
+
+    def _set_constraints_over_shift(self):
+        """
+        목표 4: 초과 배정 최소화
+        """
+        logger.solve("--- Setting Over Shift ---")
+        over_staffing_penalties = []
+        for d in self.all_days:
+            for s_idx, s_name in enumerate(self.shifts):
+                # 해당 시프트에 배정된 총 인원
+                total_assigned = sum(self.assigns[(n_id, d, s_idx)] for n_id in self.nurse_ids)
+                # 해당 시프트의 최소 필요 총인원
+                total_required = sum(self.skill_requirements[s_name].values())
+
+                # 초과 인원에 대한 페널티 변수 생성
+                over_staff = self.model.NewIntVar(0, self.num_nurses, f'over_staff_d{d}_s{s_idx}')
+                self.model.Add(total_assigned - total_required <= over_staff)
+                over_staffing_penalties.append(over_staff)
+        return over_staffing_penalties
+
+    def _set_objective_function(self):
+        """목표 함수를 설정하고, 관련된 변수들을 반환합니다."""
+        logger.solve("--- Setting Objective Function (Fairness) ---")
+
+        # 야간 근무 공정성
+        night_gap = 0
+        if 'fair_nights' in self.enabled_fairness and self.SHIFT_NIGHT:
+            night_gap = self._set_constrains_fair_nights()
+
+        # 휴무일 공정성
+        off_gap = 0
+        if 'fair_offs' in self.enabled_fairness:
+            off_gap = self._set_constrains_fair_offs()
+
+        # 주말 근무 공정성
+        weekend_gap = 0
+        weekend_shifts_worked = None
+        if 'fair_weekends' in self.enabled_fairness:
+            weekend_gap = self._set_constraints_fair_weekends()
+
+        over_staffing_penalties = self._set_constraints_over_shift()
+        # 목표 함수 설정
+        self.model.Minimize(night_gap * 2 + off_gap + weekend_gap * 3 + sum(over_staffing_penalties)*10)
 
     def solve(self):
         try:
             """
             전체 스케줄링 문제를 해결하는 메인 메서드.
             """
-            self.set_variables_assign()
-            self.set_constraints_day_work_one()
-            self.set_constraints_skill_req()
-            self.set_constraints_vacation_req()
-            night_gap = self.set_constrains_fair_nights()
-            off_gap = self.set_constrains_fair_offs()
-            weekend_gap, weekend_shifts_worked = self.set_constraints_fair_weekends()
-
-            self.model.Minimize(night_gap * 2 + off_gap + weekend_gap * 3)
+            self._set_variables_assign()
+            self._set_constraints_day_work_one()
+            self._set_constraints_skill_req()
+            self._set_constraints_vacation_req()
+            self._set_constraints_min_max_day_req()
+            self._set_objective_function()
             solver = cp_model.CpSolver()
             solver.parameters.max_time_in_seconds = 30.0
             status, processing_time = solving_log(solver, self.problem_type, self.model)
@@ -201,32 +220,44 @@ class NurseRosteringSolver:
                     for s_idx, s_name in enumerate(self.shifts):
                         schedule[d][s_idx] = [self.nurses_data[n_id].get('name') for n_id in self.nurse_ids if solver.Value(self.assigns[(n_id, d, s_idx)]) == 1]
 
-                # 각 간호사별 통계 계산
-                total_shifts = [
-                    sum(solver.Value(self.assigns[(n_id, d, s)]) for d in self.all_days for s in self.all_shifts) for
-                    n_id in self.nurse_ids]
-                if 'fair_nights' in self.enabled_fairness and self.SHIFT_NIGHT in self.shifts:
+                # 각 간호사별 총 근무일 수
+                total_shifts = [sum(
+                    solver.Value(self.assigns[(n_id, d, s)]) for d in self.all_days for s in self.all_shifts)
+                                for n_id in self.nurse_ids]
+
+                # 각 간호사별 총 야간 근무일 수
+                if self.SHIFT_NIGHT in self.shifts:
                     night_shift_idx = self.shifts.index(self.SHIFT_NIGHT)
-                    total_nights = [sum(solver.Value(self.assigns[(n_id, d, night_shift_idx)]) for d in self.all_days) for n_id
-                                    in self.nurse_ids]
+                    total_nights = [
+                        sum(solver.Value(self.assigns[(n_id, d, night_shift_idx)]) for d in self.all_days) for
+                        n_id in self.nurse_ids]
                 else:
                     total_nights = [0] * self.num_nurses
-                total_weekends = [solver.Value(w) for w in
-                                  weekend_shifts_worked] if 'fair_weekends' in self.enabled_fairness else [0] * self.num_nurses
+
+                # 각 간호사별 총 주말 근무일 수
+                total_weekends = [sum(
+                    solver.Value(self.assigns[(n_id, d, s)]) for d in self.weekend_days for s in
+                    self.all_shifts) for n_id in self.nurse_ids]
+
+                # 각 간호사별 총 휴무일 수
                 total_offs = [self.num_days - ts for ts in total_shifts]
 
                 results_data = {
                     'schedule': schedule,
                     'nurse_stats': {
                         n_id: {
-                            'total': total_shifts[i], 'nights': total_nights[i],
-                            'weekends': total_weekends[i], 'offs': total_offs[i]
+                            'name': self.nurses_data[i]['name'],
+                            'skill': self.nurses_data[i]['skill'],
+                            'total': total_shifts[i],
+                            'nights': total_nights[i],
+                            'weekends': total_weekends[i],
+                            'offs': total_offs[i]
                         } for i, n_id in enumerate(self.nurse_ids)
                     },
                     'total_penalty': solver.ObjectiveValue()
                 }
                 return results_data, None, processing_time
             else:
-                return None, "해를 찾을 수 없었습니다. 제약 조건이 너무 엄격하거나, 필요 인원이 간호사 수에 비해 너무 많을 수 있습니다.", round(processing_time, 4)
+                return None, "해를 찾을 수 없었습니다. 제약 조건이 너무 엄격하거나, 필요 인원이 간호사 수에 비해 너무 많을 수 있습니다.", None
         except Exception as e:
             return None, f"오류 발생: {str(e)}", None

@@ -40,45 +40,45 @@ preset_datacenter_services = [
 ]
 
 preset_nurse_rostering_num_nurses = 15
-preset_nurse_rostering_days = 14
+preset_nurse_rostering_days = 7
 preset_nurse_rostering_shifts = ['Day', 'Aft', 'Ngt']
-preset_nurse_rostering_skill_options = ['H', 'M', 'L']
 preset_nurse_rostering_requests = {'Day': 4, 'Aft': 3, 'Ngt': 2}
 preset_nurse_rostering_day_requests = [[4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
                                        [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
                                        [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
                                        [4, 3, 2], [4, 3, 2]]
-preset_nurse_rostering_min_shifts = 5
-preset_nurse_rostering_max_shifts = 8
+preset_nurse_rostering_min_shifts = 2
+preset_nurse_rostering_max_shifts = 6
 preset_nurse_rostering_nurses_data = [
-    {'id': 0, 'name': 'Nur_A', 'skill': 'L'},
-    {'id': 1, 'name': 'Nur_B', 'skill': 'M'},
-    {'id': 2, 'name': 'Nur_C', 'skill': 'L'},
-    {'id': 3, 'name': 'Nur_D', 'skill': 'H'},
-    {'id': 4, 'name': 'Nur_E', 'skill': 'M'},
-    {'id': 5, 'name': 'Nur_F', 'skill': 'H'},
-    {'id': 6, 'name': 'Nur_G', 'skill': 'M'},
-    {'id': 7, 'name': 'Nur_H', 'skill': 'L'},
-    {'id': 8, 'name': 'Nur_I', 'skill': 'H'},
-    {'id': 9, 'name': 'Nur_J', 'skill': 'M'},
-    {'id': 10, 'name': 'Nur_K', 'skill': 'L'},
-    {'id': 11, 'name': 'Nur_L', 'skill': 'M'},
-    {'id': 12, 'name': 'Nur_M', 'skill': 'H'},
-    {'id': 13, 'name': 'Nur_N', 'skill': 'M'},
-    {'id': 14, 'name': 'Nur_O', 'skill': 'M'},
-    {'id': 15, 'name': 'Nur_K', 'skill': 'L'},
-    {'id': 16, 'name': 'Nur_L', 'skill': 'L'},
-    {'id': 17, 'name': 'Nur_M', 'skill': 'M'},
-    {'id': 18, 'name': 'Nur_N', 'skill': 'H'},
-    {'id': 19, 'name': 'Nur_O', 'skill': 'M'},
+    {'id': 1, 'name': 'Nur1', 'skill': 'L'},
+    {'id': 2, 'name': 'Nur2', 'skill': 'M'},
+    {'id': 3, 'name': 'Nur3', 'skill': 'L'},
+    {'id': 4, 'name': 'Nur4', 'skill': 'H'},
+    {'id': 5, 'name': 'Nur5', 'skill': 'M'},
+    {'id': 6, 'name': 'Nur6', 'skill': 'H'},
+    {'id': 7, 'name': 'Nur7', 'skill': 'M'},
+    {'id': 8, 'name': 'Nur8', 'skill': 'L'},
+    {'id': 9, 'name': 'Nur9', 'skill': 'H'},
+    {'id': 10, 'name': 'Nur10', 'skill': 'M'},
+    {'id': 11, 'name': 'Nur11', 'skill': 'L'},
+    {'id': 12, 'name': 'Nur12', 'skill': 'M'},
+    {'id': 13, 'name': 'Nur13', 'skill': 'H'},
+    {'id': 14, 'name': 'Nur14', 'skill': 'M'},
+    {'id': 15, 'name': 'Nur15', 'skill': 'M'},
+    {'id': 16, 'name': 'Nur16', 'skill': 'L'},
+    {'id': 17, 'name': 'Nur17', 'skill': 'L'},
+    {'id': 18, 'name': 'Nur18', 'skill': 'M'},
+    {'id': 19, 'name': 'Nur19', 'skill': 'H'},
+    {'id': 20, 'name': 'Nur2O', 'skill': 'M'},
     # {'id': i, 'name': f'Nur{chr(65+i)}', 'skill': random.choice(['H', 'M', 'L'])} for i in range(15)
 ]
+preset_nurse_rostering_skill_options = ['H', 'M', 'L']
 preset_nurse_rostering_shift_requirements = {
-    'Day': {'H': 1, 'M': 2, 'L': 1},
-    'Aft': {'H': 1, 'M': 1, 'L': 1},
-    'Ngt': {'H': 1, 'L': 1}
+    'Day': {'H': '1', 'M': '2', 'L': '1'},
+    'Aft': {'H': '1', 'M': '2', 'L': '1'},
+    'Ngt': {'H': '1', 'L': '1'}
 }
-preset_nurse_rostering_enabled_fairness = ['fair_nights', 'fair_offs']  # 'fair_weekends'
+preset_nurse_rostering_enabled_fairness = ['fair_weekends', 'fair_nights', 'fair_offs']  # 'fair_weekends'
 
 
 def create_budget_allocation_json_data(form_data, num_items):
