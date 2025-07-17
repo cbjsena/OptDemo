@@ -46,35 +46,45 @@
     </div>
     <p>아래 캔버스를 클릭하여 차고지, 수거, 배송 위치를 지정하고 최적 경로를 계산합니다.</p>
 
-    <form method="GET" class="mb-3 form-inline">
-        <div class="form-group mr-2">
-            <label for="num_pairs_to_show" class="mr-2">작업 쌍 수 (1-5):</label>
-            <select name="num_pairs_to_show" id="num_pairs_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
-                {% for i in num_pairs_options %}
-                    <option value="{{ i }}" {% if i == submitted_num_pairs %}selected{% endif %}>{{ i }}개</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group mr-2">
-            <label for="num_vehicles_to_show" class="mr-2">차량 수 (1-5):</label>
-            <select name="num_vehicles_to_show" id="num_vehicles_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
-                {% for i in num_vehicles_options %}
-                    <option value="{{ i }}" {% if i == submitted_num_vehicles %}selected{% endif %}>{{ i }}대</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group mr-2">
-            <label for="num_vehicle_capa_to_show" class="mr-2">차량 용량 (50-200), (모든 차량 동일)</label>
-            <select name="num_vehicle_capa_to_show" id="num_vehicle_capa_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
-                {% for i in vehicle_capa_options %}
-                    <option value="{{ i }}" {% if i == submitted_vehicle_capa %}selected{% endif %}>{{ i }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        (고객 수나 차량 수 또는 차량 용량을 변경하면 작업 정보가 초기화 됩니다.)
-        <noscript><button type="submit" class="btn btn-sm btn-secondary">설정 적용</button></noscript>
-    </form>
+    <!-- 설정 변경 GET 폼 (숨겨짐) -->
+    <form method="GET" id="settingsForm" style="display: none;"></form>
 
+    <!-- 상단 컨트롤러 -->
+    <div class="card mb-4">
+        <div class="card-body bg-light">
+            <div class="form-row align-items-end">
+                <div class="form-group col-md-3 col-lg-2">
+                    <label for="num_pairs_to_show" class="small font-weight-bold">작업 쌍 수</label>
+                    <select name="num_pairs_to_show" id="num_pairs_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                        {% for i in num_pairs_options %}
+                        <option value="{{ i }}" {% if i == submitted_num_pairs %}selected{% endif %}>{{ i }}개</option>
+                    {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group col-md-3 col-lg-2">
+                    <label for="num_vehicles_to_show" class="small font-weight-bold">차량 수</label>
+                    <select name="num_vehicles_to_show" id="num_vehicles_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                        {% for i in num_vehicles_options %}
+                        <option value="{{ i }}" {% if i == submitted_num_vehicles %}selected{% endif %}>{{ i }}대</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group col-md-3 col-lg-2">
+                    <label for="vehicle_capacity_to_show" class="small font-weight-bold">차량 용량</label>
+                    <select name="vehicle_capacity_to_show" id="vehicle_capacity_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                        {% for i in vehicle_capa_options %}
+                        <option value="{{ i }}" {% if i == submitted_vehicle_capa %}selected{% endif %}>{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group col-md-3 col-lg-6 text-lg-right mt-3 mt-lg-0">
+                    <a href="{% url 'routing_logistics_app:pdp_demo' %}" class="btn btn-sm btn-warning">Default 설정</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 최적화 실행 POST 폼 -->
     <form method="POST" id="pdpForm">
         {% csrf_token %}
         <input type="hidden" name="problem_type" value="PDP" id="problem_type">

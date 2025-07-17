@@ -47,8 +47,8 @@ def vrp_demo_view(request):
         submitted_num_vehicles = max(1, min(5, submitted_num_vehicles))
         submitted_vehicle_capa = max(50, min(100, submitted_vehicle_capa))
 
-        form_data['depot_x'] = preset_depot_location.get('x')
-        form_data['depot_y'] = preset_depot_location.get('y')
+        form_data['depot_x'] = request.GET.get('depot_x', preset_depot_location.get('x'))
+        form_data['depot_y'] = request.GET.get('depot_y', preset_depot_location.get('y'))
         for i in range(len(preset_customer_locations)):
             preset = preset_customer_locations[i % len(preset_customer_locations)]
             for key, default_val in preset.items():
@@ -59,6 +59,8 @@ def vrp_demo_view(request):
         submitted_num_customers = int(form_data.get('num_customers', preset_num_customers))
         submitted_num_vehicles = int(form_data.get('num_vehicles', preset_num_vehicles))
         submitted_vehicle_capa= int(form_data.get('vehicle_capa', preset_vehicle_capacity))
+        form_data['depot_x'] = form_data.get('depot_x', preset_depot_location.get('x'))
+        form_data['depot_y'] = form_data.get('depot_y', preset_depot_location.get('y'))
 
     context = {
         'active_model': 'Routing & Logistics',
@@ -159,10 +161,10 @@ def cvrp_demo_view(request):
         submitted_vehicle_capa = int(request.GET.get('num_vehicle_capa_to_show', preset_vehicle_capacity))
         submitted_num_customers = max(1, min(10, submitted_num_customers))
         submitted_num_vehicles = max(1, min(5, submitted_num_vehicles))
-        submitted_vehicle_capa = max(50, min(100, submitted_vehicle_capa))
+        submitted_vehicle_capa = max(50, min(200, submitted_vehicle_capa))
 
-        form_data['depot_x'] = preset_depot_location.get('x')
-        form_data['depot_y'] = preset_depot_location.get('y')
+        form_data['depot_x'] = request.GET.get('depot_x', preset_depot_location.get('x'))
+        form_data['depot_y'] = request.GET.get('depot_y', preset_depot_location.get('y'))
         form_data['vehicle_capacity'] = preset_vehicle_capacity
 
         for i in range(len(preset_customer_locations)):
@@ -174,7 +176,9 @@ def cvrp_demo_view(request):
         form_data = request.POST.copy()
         submitted_num_customers = int(form_data.get('num_customers', preset_num_customers))
         submitted_num_vehicles = int(form_data.get('num_vehicles', preset_num_vehicles))
-        submitted_vehicle_capa = int(form_data.get('vehicle_capa', preset_vehicle_capacity))
+        submitted_vehicle_capa = int(form_data.get('vehicle_capacity', preset_vehicle_capacity))
+        form_data['depot_x'] = form_data.get('depot_x', preset_depot_location.get('x'))
+        form_data['depot_y'] = form_data.get('depot_y', preset_depot_location.get('y'))
 
     context = {
         'active_model': 'Routing & Logistics',
@@ -283,8 +287,8 @@ def pdp_demo_view(request):
         submitted_num_vehicles = max(1, min(5, submitted_num_vehicles))
         submitted_vehicle_capa = max(50, min(100, submitted_vehicle_capa))
 
-        form_data['depot_x'] = preset_depot_location.get('x')
-        form_data['depot_y'] = preset_depot_location.get('y')
+        form_data['depot_x'] = request.GET.get('depot_x', preset_depot_location.get('x'))
+        form_data['depot_y'] = request.GET.get('depot_y', preset_depot_location.get('y'))
         form_data['vehicle_capacity'] = preset_vehicle_capacity
 
         for i in range(len(preset_pair_locations)):
@@ -297,6 +301,8 @@ def pdp_demo_view(request):
         submitted_num_pairs = int(form_data.get('num_pairs', preset_num_pairs))
         submitted_num_vehicles = int(form_data.get('num_vehicles', preset_num_vehicles))
         submitted_vehicle_capa = int(form_data.get('vehicle_capa', preset_vehicle_capacity))
+        form_data['depot_x'] = form_data.get('depot_x', preset_depot_location.get('x'))
+        form_data['depot_y'] = form_data.get('depot_y', preset_depot_location.get('y'))
 
     context = {
         'active_model': 'Routing & Logistics',

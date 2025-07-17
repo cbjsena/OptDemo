@@ -301,7 +301,7 @@ LOGGING = {
         },
         'resource_allocation_app': { # 우리 앱 로거
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'SOLVE', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
             'propagate': False,
         },
         'routing_logistics_app': { # 우리 앱 로거
