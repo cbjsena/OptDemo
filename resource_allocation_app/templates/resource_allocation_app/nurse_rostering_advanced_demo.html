@@ -131,13 +131,26 @@
                         <h6>적용할 공정성 목표</h6>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="fairness_options" value="fair_weekends"
-                                   id="f_w" {% if 'fair_weekends' in submitted_fairness|default_if_none:'' or not submitted_fairness %}checked{% endif %}><label class="form-check-label" for="f_w">주말 근무 공평 분배</label></div>
+                                   id="f_w" {% if 'fair_weekends' in submitted_fairness|default_if_none:'' or not submitted_fairness %}checked{% endif %}>
+                            <label class="form-check-label" for="f_w">주말 근무 공평 분배</label></div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="fairness_options" value="fair_nights"
-                                   id="f_n" {% if 'fair_nights' in submitted_fairness|default_if_none:'' or not submitted_fairness %}checked{% endif %}><label class="form-check-label" for="f_n">야간 근무 공평 분배</label></div>
+                                   id="f_n" {% if 'fair_nights' in submitted_fairness|default_if_none:'' or not submitted_fairness %}checked{% endif %}>
+                            <label class="form-check-label" for="f_n">야간 근무 공평 분배</label></div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="fairness_options" value="fair_offs"
-                                   id="f_o" {% if 'fair_offs' in submitted_fairness|default_if_none:'' or not submitted_fairness %}checked{% endif %}><label class="form-check-label" for="f_o">총 휴무일 공평 분배</label></div>
+                                   id="f_o" {% if 'fair_offs' in submitted_fairness|default_if_none:'' or not submitted_fairness %}checked{% endif %}>
+                            <label class="form-check-label" for="f_o">총 휴무일 공평 분배</label></div>
+                         <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="fairness_options" value="no_work_after_night_shift"
+                                   id="f_night_after_day" {% if 'no_work_after_night_shift' in submitted_fairness|default_if_none:'' %}checked{% endif %}>
+                            <label class="form-check-label" for="f_night_after_day">야간 근무 후 다음날 근무 금지</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="fairness_options" value="no_three_consecutive_work_days"
+                                   id="f_three_consecutive" {% if 'no_three_consecutive_work_days' in submitted_fairness|default_if_none:'' %}checked{% endif %}>
+                            <label class="form-check-label" for="f_three_consecutive">3일 연속 근무 금지</label>
+                        </div>
                     </div>
                 </div>
             </div>

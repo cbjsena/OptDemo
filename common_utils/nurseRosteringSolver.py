@@ -62,8 +62,7 @@ class NurseRosteringSolver:
 
     def _set_constraints_day_work_one(self):
         """
-        제약 1: 각 간호사는 하루 최대 1개 시프트 근무
-        Hard constraint
+        제약: 각 간호사는 하루 최대 1개 시프트 근무
         """
         logger.solve("--- Setting Equations DayWorkOne ---")
         try:
@@ -75,7 +74,7 @@ class NurseRosteringSolver:
 
     def _set_constraints_skill_req(self):
         """
-        제약 2: 숙련도별 필요 인원 충족
+        제약: 숙련도별 필요 인원 충족
         """
         logger.solve("--- Setting Equations SkillReq ---")
         try:
@@ -89,8 +88,7 @@ class NurseRosteringSolver:
 
     def _set_constraints_vacation_req(self):
         """
-        제약 3: 휴가 요청 반영
-        Hard constraint
+        제약: 휴가 요청 반영
         """
         logger.solve("--- Setting Equations Vacation ---")
         try:
@@ -99,7 +97,67 @@ class NurseRosteringSolver:
                 for d in off_days:
                     self.model.Add(sum(self.assigns[(n_index, d, s)] for s in self.all_shifts) == 0)
         except Exception as e:
-            logger.error(e)
+            logger.error(f"[No Night Followed by Day] {e}")
+
+    def _set_constraints_no_night_followed_by_day(self):
+        """
+        제약: 야간 근무 다음날 근무 금지 (e.g. Ngt → Day/Aft 근무 방지)
+        """
+        logger.solve("--- Setting No Night Followed by Day ---")
+        try:
+            night_shift_idx = self.shifts.index(self.SHIFT_NIGHT)
+            for n_id in self.nurse_ids:
+                for d in range(self.num_days - 1):
+                    worked_night = self.assigns[(n_id, d, night_shift_idx)]
+                    worked_next_day = sum(self.assigns[(n_id, d + 1, s)] for s in self.all_shifts)
+                    self.model.Add(worked_night + worked_next_day <= 1)
+        except Exception as e:
+            logger.error(f"[No Night Followed by Day] {e}")
+
+    def _set_constraints_no_3_consecutive_work(self):
+        """
+        제약: 간호사가 3일 연속 근무하지 못하도록 금지
+        """
+        logger.solve("--- Setting No 3 Consecutive Days ---")
+        try:
+            for n_id in self.nurse_ids:
+                # 각 날짜 d에 대해, d, d+1, d+2 세 날짜를 확인해야 하므로,
+                # d는 num_days - 3까지 반복합니다. (인덱스 0부터 시작하므로 num_days - 2)
+                for d_idx in range(self.num_days - 2):
+                    # 현재 날짜 (d_idx), 다음 날짜 (d_idx + 1), 그 다음 날짜 (d_idx + 2)
+                    day1 = self.all_days[d_idx]
+                    day2 = self.all_days[d_idx + 1]
+                    day3 = self.all_days[d_idx + 2]
+
+                    # 각 날짜에 간호사가 근무하는지 여부를 나타내는 불리언 변수를 생성합니다.
+                    # 이 변수는 해당 날짜의 어떤 교대 근무라도 배정되면 True가 됩니다.
+                    worked_on_day1 = self.model.NewBoolVar(f'worked_n{n_id}_d{day1}')
+                    worked_on_day2 = self.model.NewBoolVar(f'worked_n{n_id}_d{day2}')
+                    worked_on_day3 = self.model.NewBoolVar(f'worked_n{n_id}_d{day3}')
+
+                    # worked_on_day1 변수와 실제 근무 여부 연결
+                    # worked_on_day1이 True이면, 해당 날짜에 최소 하나의 시프트에 배정되어야 합니다.
+                    # worked_on_day1이 False이면, 해당 날짜에 어떤 시프트에도 배정되지 않아야 합니다.
+                    self.model.AddBoolOr([self.assigns[(n_id, day1, s)] for s in self.all_shifts]).OnlyEnforceIf(worked_on_day1)
+                    self.model.AddBoolAnd([self.assigns[(n_id, day1, s)].Not() for s in self.all_shifts]).OnlyEnforceIf(
+                        worked_on_day1.Not())
+
+                    # worked_on_day2 변수와 실제 근무 여부 연결
+                    self.model.AddBoolOr([self.assigns[(n_id, day2, s)] for s in self.all_shifts]).OnlyEnforceIf(worked_on_day2)
+                    self.model.AddBoolAnd([self.assigns[(n_id, day2, s)].Not() for s in self.all_shifts]).OnlyEnforceIf(
+                        worked_on_day2.Not())
+
+                    # worked_on_day3 변수와 실제 근무 여부 연결
+                    self.model.AddBoolOr([self.assigns[(n_id, day3, s)] for s in self.all_shifts]).OnlyEnforceIf(worked_on_day3)
+                    self.model.AddBoolAnd([self.assigns[(n_id, day3, s)].Not() for s in self.all_shifts]).OnlyEnforceIf(
+                        worked_on_day3.Not())
+
+                    # 핵심 제약: worked_on_day1, worked_on_day2, worked_on_day3 중
+                    # 적어도 하나는 False여야 합니다. (즉, 3일 연속 True가 될 수 없습니다.)
+                    # 이는 "NOT (A AND B AND C)" 와 동일하며, 드 모르간 법칙에 따라 "(NOT A) OR (NOT B) OR (NOT C)" 입니다.
+                    self.model.AddBoolOr([worked_on_day1.Not(), worked_on_day2.Not(), worked_on_day3.Not()])
+        except Exception as e:
+            logger.error(f"[No 3-Day Consecutive Constraint] {e}")
 
     def _set_constraints_min_max_day_req(self):
         """
@@ -241,6 +299,10 @@ class NurseRosteringSolver:
             self._set_constraints_skill_req()
             self._set_constraints_vacation_req()
             self._set_constraints_min_max_day_req()
+            if 'no_work_after_night_shift' in self.enabled_fairness:
+                self._set_constraints_no_night_followed_by_day()
+            if 'no_three_consecutive_work_days' in self.enabled_fairness:
+                self._set_constraints_no_3_consecutive_work()
             self._set_objective_function()
             solver = cp_model.CpSolver()
             # export_model_proto(self.model, "local_model.pb.txt")
