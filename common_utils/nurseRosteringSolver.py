@@ -50,12 +50,15 @@ class NurseRosteringSolver:
         특정 간호사를 특정 날짜, 특정 시프트에 배정하면 1, 아니면 0인 이진변수
         """
         logger.solve("--- Setting Variables assign ---")
-        for n_id in self.nurse_ids:
-            for d in self.all_days:
-                for s in self.all_shifts:
-                    varName = f"assigns_{self.nurses_data[n_id].get('name')}_{d + 1}_{self.shifts[s]}"
-                    # logger.solve(f'BoolVar: {varName}')
-                    self.assigns[(n_id, d, s)] = self.model.NewBoolVar(varName)
+        try:
+            for n_id in self.nurse_ids:
+                for d in self.all_days:
+                    for s in self.all_shifts:
+                        varName = f"assigns_{self.nurses_data[n_id].get('name')}_{d + 1}_{self.shifts[s]}"
+                        # logger.solve(f'BoolVar: {varName}')
+                        self.assigns[(n_id, d, s)] = self.model.NewBoolVar(varName)
+        except Exception as e:
+            logger.error(e)
 
     def _set_constraints_day_work_one(self):
         """
@@ -63,20 +66,26 @@ class NurseRosteringSolver:
         Hard constraint
         """
         logger.solve("--- Setting Equations DayWorkOne ---")
-        for n_id in self.nurse_ids:
-            for d in self.all_days:
-                self.model.AddAtMostOne(self.assigns[(n_id, d, s)] for s in self.all_shifts)
+        try:
+            for n_id in self.nurse_ids:
+                for d in self.all_days:
+                    self.model.AddAtMostOne(self.assigns[(n_id, d, s)] for s in self.all_shifts)
+        except Exception as e:
+            logger.error(e)
 
     def _set_constraints_skill_req(self):
         """
         제약 2: 숙련도별 필요 인원 충족
         """
         logger.solve("--- Setting Equations SkillReq ---")
-        for d in self.all_days:
-            for s_idx, s_name in enumerate(self.shifts):
-                for skill, required_count in self.skill_requirements[s_name].items():
-                    nurses_with_that_skill = self.nurses_by_skill[skill]
-                    self.model.Add(sum(self.assigns[(n_id, d, s_idx)] for n_id in nurses_with_that_skill) >= required_count)
+        try:
+            for d in self.all_days:
+                for s_idx, s_name in enumerate(self.shifts):
+                    for skill, required_count in self.skill_requirements[s_name].items():
+                        nurses_with_that_skill = self.nurses_by_skill[skill]
+                        self.model.Add(sum(self.assigns[(n_id, d, s_idx)] for n_id in nurses_with_that_skill) >= required_count)
+        except Exception as e:
+            logger.error(e)
 
     def _set_constraints_vacation_req(self):
         """
@@ -84,9 +93,13 @@ class NurseRosteringSolver:
         Hard constraint
         """
         logger.solve("--- Setting Equations Vacation ---")
-        for n_id, off_days in self.vacation_requests.items():
-            for d in off_days:
-                self.model.Add(sum(self.assigns[(n_id, d, s)] for s in self.all_shifts) == 0)
+        try:
+            for n_id, off_days in self.vacation_requests.items():
+                n_index = int(n_id)
+                for d in off_days:
+                    self.model.Add(sum(self.assigns[(n_index, d, s)] for s in self.all_shifts) == 0)
+        except Exception as e:
+            logger.error(e)
 
     def _set_constraints_min_max_day_req(self):
         """
@@ -94,9 +107,12 @@ class NurseRosteringSolver:
         Hard constraint
         """
         logger.solve("--- Setting Equations Min Max Work Day ---")
-        for n_id in self.nurse_ids:
-            total_shifts_for_nurse = sum(self.assigns[(n_id, d, s)] for d in self.all_days for s in self.all_shifts)
-            self.model.AddLinearConstraint(total_shifts_for_nurse, self.min_shifts_per_nurse, self.max_shifts_per_nurse)
+        try:
+            for n_id in self.nurse_ids:
+                total_shifts_for_nurse = sum(self.assigns[(n_id, d, s)] for d in self.all_days for s in self.all_shifts)
+                self.model.AddLinearConstraint(total_shifts_for_nurse, self.min_shifts_per_nurse, self.max_shifts_per_nurse)
+        except Exception as e:
+            logger.error(e)
 
     def _set_constrains_fair_nights(self):
         """
@@ -104,14 +120,17 @@ class NurseRosteringSolver:
         """
         logger.solve("--- Setting Fair Nights ---")
         if 'fair_nights' in self.enabled_fairness:
-            night_shift_idx = self.shifts.index(self.SHIFT_NIGHT)
-            night_shifts_worked = [sum(self.assigns[(n_id, d, night_shift_idx)] for d in self.all_days) for n_id in
-                                   self.nurse_ids]
-            min_nights = self.model.NewIntVar(0, self.num_days, 'min_nights')
-            max_nights = self.model.NewIntVar(0, self.num_days, 'max_nights')
-            self.model.AddMinEquality(min_nights, night_shifts_worked)
-            self.model.AddMaxEquality(max_nights, night_shifts_worked)
-            night_gap = max_nights - min_nights
+            try:
+                night_shift_idx = self.shifts.index(self.SHIFT_NIGHT)
+                night_shifts_worked = [sum(self.assigns[(n_id, d, night_shift_idx)] for d in self.all_days)
+                                       for n_id in self.nurse_ids]
+                min_nights = self.model.NewIntVar(0, self.num_days, 'min_nights')
+                max_nights = self.model.NewIntVar(0, self.num_days, 'max_nights')
+                self.model.AddMinEquality(min_nights, night_shifts_worked)
+                self.model.AddMaxEquality(max_nights, night_shifts_worked)
+                night_gap = max_nights - min_nights
+            except Exception as e:
+                logger.error(e)
         else:
             night_gap = 0
 
@@ -123,15 +142,23 @@ class NurseRosteringSolver:
         """
         logger.solve("--- Setting Fair Offs ---")
         if 'fair_offs' in self.enabled_fairness:
-            total_shifts_worked = [
-                sum(self.assigns[(n_id, d, s)] for d in self.all_days for s in self.all_shifts) for n_id in
-                self.nurse_ids]
-            off_days_per_nurse = [self.num_days - s for s in total_shifts_worked]
-            min_offs = self.model.NewIntVar(0, self.num_days, 'min_offs')
-            max_offs = self.model.NewIntVar(0, self.num_days, 'max_offs')
-            self.model.AddMinEquality(min_offs, off_days_per_nurse)
-            self.model.AddMaxEquality(max_offs, off_days_per_nurse)
-            off_gap = max_offs - min_offs
+            try:
+                off_days_per_nurse = [
+                    self.model.NewIntVar(0, self.num_days, f'off_days_{n_id}')
+                    for n_id in self.nurse_ids
+                ]
+
+                for i, n_id in enumerate(self.nurse_ids):
+                    self.model.Add(off_days_per_nurse[i] == self.num_days -
+                                   sum(self.assigns[(n_id, d, s)] for d in self.all_days for s in self.all_shifts))
+
+                min_offs = self.model.NewIntVar(0, self.num_days, 'min_offs')
+                max_offs = self.model.NewIntVar(0, self.num_days, 'max_offs')
+                self.model.AddMinEquality(min_offs, off_days_per_nurse)
+                self.model.AddMaxEquality(max_offs, off_days_per_nurse)
+                off_gap = max_offs - min_offs
+            except Exception as e:
+                logger.error(e)
         else:
             off_gap = 0
 
@@ -143,13 +170,16 @@ class NurseRosteringSolver:
         """
         logger.solve("--- Setting Fair Weekends ---")
         if 'fair_weekends' in self.enabled_fairness:
-            weekend_shifts_worked = [sum(self.assigns[(n_id, d, s)] for d in self.weekend_days for s in self.all_shifts )
-                                     for n_id in self.nurse_ids]
-            min_weekend_shifts = self.model.NewIntVar(0, len(self.weekend_days) * len(self.shifts), 'min_weekend')
-            max_weekend_shifts = self.model.NewIntVar(0, len(self.weekend_days) * len(self.shifts), 'max_weekend')
-            self.model.AddMinEquality(min_weekend_shifts, weekend_shifts_worked)
-            self.model.AddMaxEquality(max_weekend_shifts, weekend_shifts_worked)
-            weekend_gap = max_weekend_shifts - min_weekend_shifts
+            try:
+                weekend_shifts_worked = [sum(self.assigns[(n_id, d, s)] for d in self.weekend_days for s in self.all_shifts )
+                                         for n_id in self.nurse_ids]
+                min_weekend_shifts = self.model.NewIntVar(0, len(self.weekend_days) * len(self.shifts), 'min_weekend')
+                max_weekend_shifts = self.model.NewIntVar(0, len(self.weekend_days) * len(self.shifts), 'max_weekend')
+                self.model.AddMinEquality(min_weekend_shifts, weekend_shifts_worked)
+                self.model.AddMaxEquality(max_weekend_shifts, weekend_shifts_worked)
+                weekend_gap = max_weekend_shifts - min_weekend_shifts
+            except Exception as e:
+                logger.error(e)
         else:
             weekend_gap = 0
 
@@ -160,18 +190,21 @@ class NurseRosteringSolver:
         목표 4: 초과 배정 최소화
         """
         logger.solve("--- Setting Over Shift ---")
-        over_staffing_penalties = []
-        for d in self.all_days:
-            for s_idx, s_name in enumerate(self.shifts):
-                # 해당 시프트에 배정된 총 인원
-                total_assigned = sum(self.assigns[(n_id, d, s_idx)] for n_id in self.nurse_ids)
-                # 해당 시프트의 최소 필요 총인원
-                total_required = sum(self.skill_requirements[s_name].values())
+        try:
+            over_staffing_penalties = []
+            for d in self.all_days:
+                for s_idx, s_name in enumerate(self.shifts):
+                    # 해당 시프트에 배정된 총 인원
+                    total_assigned = sum(self.assigns[(n_id, d, s_idx)] for n_id in self.nurse_ids)
+                    # 해당 시프트의 최소 필요 총인원
+                    total_required = sum(self.skill_requirements[s_name].values())
 
-                # 초과 인원에 대한 페널티 변수 생성
-                over_staff = self.model.NewIntVar(0, self.num_nurses, f'over_staff_d{d}_s{s_idx}')
-                self.model.Add(total_assigned - total_required <= over_staff)
-                over_staffing_penalties.append(over_staff)
+                    # 초과 인원에 대한 페널티 변수 생성
+                    over_staff = self.model.NewIntVar(0, self.num_nurses, f'over_staff_d{d}_s{s_idx}')
+                    self.model.Add(total_assigned - total_required <= over_staff)
+                    over_staffing_penalties.append(over_staff)
+        except Exception as e:
+            logger.error(e)
         return over_staffing_penalties
 
     def _set_objective_function(self):
@@ -210,6 +243,8 @@ class NurseRosteringSolver:
             self._set_constraints_min_max_day_req()
             self._set_objective_function()
             solver = cp_model.CpSolver()
+            # export_model_proto(self.model, "local_model.pb.txt")
+            # solver.parameters.log_search_progress = True  # 자세한 진행 출력
             solver.parameters.max_time_in_seconds = 30.0
             status, processing_time = solving_log(solver, self.problem_type, self.model)
 
