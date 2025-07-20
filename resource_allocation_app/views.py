@@ -351,24 +351,17 @@ def nurse_rostering_introduction_view(request):
 
 def nurse_rostering_demo_view(request):
     form_data = {}
-    shift_requests = {}
-    if request.method == 'GET':
-        submitted_num_nurses = int(request.GET.get('num_nurses', preset_nurse_rostering_num_nurses))
-        submitted_num_days = int(request.GET.get('num_days', preset_nurse_rostering_days))
-        submitted_min_shifts = int(request.GET.get('min_shifts', preset_nurse_rostering_min_shifts))
-        submitted_max_shifts = int(request.GET.get('max_shifts', preset_nurse_rostering_max_shifts))
-        shift_requests = preset_nurse_rostering_requests
+    source = request.POST if request.method == 'POST' else request.GET
+    submitted_num_nurses = int(source.get('num_nurses', preset_nurse_rostering_num_nurses))
+    submitted_num_days = int(source.get('num_days', preset_nurse_rostering_days))
+    submitted_min_shifts = int(source.get('min_shifts', preset_nurse_rostering_min_shifts))
+    submitted_max_shifts = int(source.get('max_shifts', preset_nurse_rostering_max_shifts))
+    shift_requests = preset_nurse_rostering_requests
 
-    elif request.method == 'POST':
-        form_data = request.POST.copy()
-        submitted_num_nurses = int(form_data.get('num_nurses'))
-        submitted_num_days = int(form_data.get('num_days'))
-        submitted_min_shifts = int(form_data.get('min_shifts'))
-        submitted_max_shifts = int(form_data.get('max_shifts'))
-        shift_requests = preset_nurse_rostering_requests
+    if request.method == 'POST':
         shift_requests_parsed = {}
         for s_idx, s_name in enumerate(preset_nurse_rostering_shifts):
-            required = int(request.POST.get(f'shift_{s_idx}_req'))
+            required = int(source.get(f'shift_{s_idx}_req'))
             for d in range(submitted_num_days):
                 shift_requests_parsed[(d, s_idx)] = required
 
@@ -389,7 +382,7 @@ def nurse_rostering_demo_view(request):
 
     if request.method == 'POST':
         try:
-            input_data = create_nurse_rostering_json_data(form_data)
+            input_data = create_nurse_rostering_json_data(source)
 
             if settings.SAVE_DATA_FILE:
                 success_save_message, save_error = save_allocation_json_data(input_data)
