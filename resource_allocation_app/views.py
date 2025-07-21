@@ -369,15 +369,21 @@ def nurse_rostering_demo_view(request):
     context = {
         'active_model': 'Resource Allocation',
         'active_submenu': 'Nurse Rostering Demo',
-        'num_nurses': submitted_num_nurses,
-        'num_days': submitted_num_days,
         'shifts': preset_nurse_rostering_shifts,
         'shift_requests': shift_requests,
-        'min_shifts_per_nurse': submitted_min_shifts,
-        'max_shifts_per_nurse': submitted_max_shifts,
         'schedule_weekdays': schedule_weekdays,
         'results': None, 'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
+        # 설정 옵션
+        'num_nurses_options': preset_nurse_num_nurses_options,
+        'num_days_options': preset_nurse_num_days_options,
+        'min_shifts_options': preset_nurse_min_shifts_options,
+        'max_shifts_options': preset_nurse_max_shifts_options,
+        # 현재 선택된 값
+        'submitted_num_nurses': submitted_num_nurses,
+        'submitted_num_days': submitted_num_days,
+        'submitted_min_shifts': submitted_min_shifts,
+        'submitted_max_shifts': submitted_max_shifts,
     }
 
     if request.method == 'POST':
@@ -454,10 +460,10 @@ def nurse_rostering_advanced_demo_view(request):
         'results': None, 'error_message': None, 'success_message': None, 'success_save_message': None,
         'processing_time_seconds': "N/A",
         # 설정 옵션
-        'num_nurses_options': range(5, 21),
-        'num_days_options': [7, 10, 14, 21, 28],
-        'min_shifts_options': range(2, 11),
-        'max_shifts_options': range(5, 16),
+        'num_nurses_options': preset_nurse_num_nurses_options,
+        'num_days_options': preset_nurse_num_days_options,
+        'min_shifts_options': preset_nurse_min_shifts_options,
+        'max_shifts_options': preset_nurse_max_shifts_options,
         # 현재 선택된 값
         'submitted_num_nurses': submitted_num_nurses,
         'submitted_num_days': submitted_num_days,

@@ -80,7 +80,7 @@
     <!-- 최적화 실행 POST 폼 -->
     <form method="POST" id="cvrpForm">
         {% csrf_token %}
-        <input type="hidden" name="problem_type" value="CVRP" id="problem_type">
+        <input type="hidden" name="problem_type" value="cvrp" id="problem_type">
         <input type="hidden" name="num_customers" value="{{ submitted_num_customers }}" id="form_num_customers">
         <input type="hidden" name="num_vehicles" value="{{ submitted_num_vehicles }}" id="form_num_vehicles">
         <input type="hidden" name="vehicle_capacity" value="{{ submitted_vehicle_capa }}" id="form_vehicle_capa">

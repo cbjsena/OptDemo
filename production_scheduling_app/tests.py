@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -61,6 +62,8 @@ class ResourceAllocationAppTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))
         self.assertIn('최적 생산 계획 수립 완료', response.context.get('success_message', ''))
         self.assertContains(response, "최소 총 비용")
@@ -120,6 +123,8 @@ class ResourceAllocationAppTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))
         self.assertIn('최적 스케줄 계산 완료', response.context.get('success_message', ''))
         self.assertContains(response, "결과 요약")
@@ -186,6 +191,8 @@ class ResourceAllocationAppTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))
         self.assertIn('최적 스케줄 계산 완료', response.context.get('success_message', ''))
         self.assertContains(response, "결과 요약")
@@ -239,6 +246,8 @@ class ResourceAllocationAppTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))
         self.assertIn('최적 스케줄 계산 완료', response.context.get('success_message', ''))
         self.assertContains(response, "결과 요약")
@@ -298,6 +307,8 @@ class ResourceAllocationAppTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))
         self.assertIn('최적 프로젝트 스케줄 수립 완료', response.context.get('success_message', ''))
         self.assertContains(response, "결과 요약")

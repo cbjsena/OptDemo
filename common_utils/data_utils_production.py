@@ -339,7 +339,7 @@ def create_rcpsp_json_data(form_data):
 
 def save_production_json_data(input_data):
     problem_type = input_data.get('problem_type')
-    dir=f'production_{problem_type}_data'
+    model_data_type=f'production_{problem_type}_data'
     filename_pattern = ''
     if "lot_sizing" == input_data.get('problem_type'):
         num_periods = input_data.get('num_periods')
@@ -359,4 +359,4 @@ def save_production_json_data(input_data):
         num_resources = input_data.get('num_resources')
         num_activities = input_data.get('num_activities')
         filename_pattern = f"resource{num_resources}_activities{num_activities}"
-    return save_json_data(input_data, dir, filename_pattern)
+    return save_json_data(input_data, model_data_type, filename_pattern)

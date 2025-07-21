@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -54,6 +55,8 @@ class MatchingAssignmentAppTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))
         self.assertIn('최적 할당 완료', response.context.get('success_message', ''))
         self.assertContains(response, "결과 요약")
@@ -100,6 +103,8 @@ class MatchingAssignmentAppTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))
         self.assertIn('최적 팀 구성 완료', response.context.get('success_message', ''))
         self.assertContains(response, "결과 요약")
@@ -131,6 +136,8 @@ class MatchingAssignmentAppTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNone(response.context.get('results'))
         self.assertIsNotNone(response.context.get('error_message'))
         self.assertContains(response, "실행 불가능한 문제입니다. 다음 요구사항을 충족할 수 없습니다")

@@ -61,10 +61,11 @@ def create_vrp_json_data(form_data):
         "num_depots":num_depots,
         "vehicle_capacities":vehicle_capacities,
         # 추가적으로 저장하고 싶은 다른 form_data 항목들
-        "form_parameters": {
-            key: value for key, value in form_data.items() if key not in ['csrfmiddlewaretoken']
-        }
+        # "form_parameters": {
+        #     key: value for key, value in form_data.items() if key not in ['csrfmiddlewaretoken']
+        # }
     }
+
     return input_data
 
 
@@ -124,24 +125,20 @@ def create_vehicle_capacities(vehicle_capacity, num_vehicles):
     return vehicle_capacities
 
 def save_vrp_json_data(input_data):
+    problem_type = input_data.get('problem_type')
+    model_data_type = f'routing_{problem_type}_data'
+    filename_pattern = ''
+
     num_depots = input_data.get('num_depots')
     num_vehicles = input_data.get('num_vehicles')
-    filename_pattern=''
-    if "PDP" == input_data.get('problem_type'):
+    if "pdp" == problem_type:
         num_pairs = len(input_data.get('pickup_delivery_pairs'))
         filename_pattern = f"dep{num_depots}_pair{num_pairs}_veh{num_vehicles}"
-    elif input_data.get('problem_type') in ("CVRP","VRP"):
+    elif problem_type in ("cvrp","vrp"):
         num_customers = len(input_data.get('customer_locations'))
         filename_pattern = f"dep{num_depots}_cus{num_customers}_veh{num_vehicles}"
 
-    if "VRP" == input_data.get('problem_type'):
-        dir ='routing_vrp_data'
-    elif "CVRP" == input_data.get('problem_type'):
-        dir ='routing_cvrp_data'
-    elif "PDP" == input_data.get('problem_type'):
-        dir ='routing_pdp_data'
-
-    return save_json_data(input_data, dir, filename_pattern)
+    return save_json_data(input_data, model_data_type, filename_pattern)
 
 
 

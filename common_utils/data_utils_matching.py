@@ -180,7 +180,7 @@ def validate_required_skills(input_data):
 
 def save_matching_assignment_json_data(input_data):
     problem_type = input_data.get('problem_type')
-    dir = f'matching_{problem_type}_data'
+    model_data_type = f'matching_{problem_type}_data'
     filename_pattern = ''
     if "transport assignment" == problem_type:
         num_driver = len(input_data.get('driver_names'))
@@ -191,5 +191,5 @@ def save_matching_assignment_json_data(input_data):
         num_projects = input_data.get('num_projects')
         filename_pattern = f"resource{num_resources}_project{num_projects}"
 
-    return save_json_data(input_data, dir, filename_pattern)
+    return save_json_data(input_data, model_data_type, filename_pattern)
 

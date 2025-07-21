@@ -1,6 +1,5 @@
 import logging
 import datetime
-import random
 
 from common_utils.common_data_utils import save_json_data
 
@@ -29,7 +28,6 @@ preset_datacenter_servers = [
     {'id': 'SrvC', 'cost': '800', 'cpu_cores': '128', 'ram_gb': '512', 'storage_tb': '20', 'power_kva': '0.8',
      'space_sqm': '0.3'}
 ]
-
 preset_datacenter_services = [
     {'id': 'WebPool', 'revenue_per_unit': '100', 'req_cpu_cores': '4', 'req_ram_gb': '8',
      'req_storage_tb': '0.1', 'max_units': '50'},
@@ -41,14 +39,15 @@ preset_datacenter_services = [
 
 preset_nurse_rostering_num_nurses = 15
 preset_nurse_rostering_days = 7
+preset_nurse_rostering_min_shifts = 2
+preset_nurse_rostering_max_shifts = 7
+preset_nurse_num_nurses_options= range(5, 21)
+preset_nurse_num_days_options = [7, 10, 14, 21, 28]
+preset_nurse_min_shifts_options = range(2, 14)
+preset_nurse_max_shifts_options = range(7, 28)
 preset_nurse_rostering_shifts = ['Day', 'Aft', 'Ngt']
 preset_nurse_rostering_requests = {'Day': 4, 'Aft': 3, 'Ngt': 2}
-preset_nurse_rostering_day_requests = [[4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
-                                       [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
-                                       [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 2],
-                                       [4, 3, 2], [4, 3, 2]]
-preset_nurse_rostering_min_shifts = 2
-preset_nurse_rostering_max_shifts = 6
+
 preset_nurse_rostering_nurses_data = [
     {'id': 1, 'name': 'Nur1', 'skill': 'L'},
     {'id': 2, 'name': 'Nur2', 'skill': 'M'},
@@ -176,7 +175,7 @@ def create_datacenter_allocation_json_data(form_data, submitted_num_server_types
             server['storage_tb'] = float(server['storage_tb'])
             server['power_kva'] = float(server['power_kva'])
             server['space_sqm'] = float(server['space_sqm'])
-            if not (server['cost'] >= 0 and server['cpu_cores'] >= 0 and server['ram_gb'] >= 0 and \
+            if not (server['cost'] >= 0 and server['cpu_cores'] >= 0 and server['ram_gb'] >= 0 and
                     server['storage_tb'] >= 0 and server['power_kva'] >= 0 and server['space_sqm'] >= 0):
                 return f"서버 유형 (ID: {server.get('id')})의 숫자 속성값은 음수가 될 수 없습니다."
         except (ValueError, TypeError) as e:
@@ -213,7 +212,7 @@ def create_datacenter_allocation_json_data(form_data, submitted_num_server_types
                 service['max_units'] = int(service['max_units'])
                 if service['max_units'] < 0: return f"서비스 수요 (ID: {service.get('id')})의 최대 유닛 수는 음수가 될 수 없습니다."
 
-            if not (service['revenue_per_unit'] >= 0 and service['req_cpu_cores'] >= 0 and \
+            if not (service['revenue_per_unit'] >= 0 and service['req_cpu_cores'] >= 0 and
                     service['req_ram_gb'] >= 0 and service['req_storage_tb'] >= 0):
                 return f"서비스 수요 (ID: {service.get('id')})의 숫자 속성값(수익, 요구자원)은 음수가 될 수 없습니다."
         except (ValueError, TypeError) as e:
@@ -311,7 +310,7 @@ def create_nurse_rostering_advanced_json_data(form_data):
     schedule_dates = [today + datetime.timedelta(days=i) for i in range(num_days)]
     weekdays = ["월", "화", "수", "목", "금", "토", "일"]
     schedule_weekdays = [weekdays[d.weekday()] for d in schedule_dates]
-    weekend_days = [i for i, day_name in enumerate(schedule_weekdays) if day_name in ['토', '일']]
+    # weekend_days = [i for i, day_name in enumerate(schedule_weekdays) if day_name in ['토', '일']]
 
     # 간호사 정보 파싱
     nurses_data = [
@@ -350,7 +349,7 @@ def create_nurse_rostering_advanced_json_data(form_data):
 
 def save_allocation_json_data(input_data):
     problem_type = input_data.get('problem_type')
-    dir = f'allocation_{problem_type}_data'
+    model_data_type = f'allocation_{problem_type}_data'
     filename_pattern = ''
     if "budget" == problem_type:
         num_items = input_data.get('num_items')
@@ -364,7 +363,7 @@ def save_allocation_json_data(input_data):
         num_days = input_data.get('num_days')
         filename_pattern = f"nurse{num_nurses}_day{num_days}"
 
-    return save_json_data(input_data, dir, filename_pattern)
+    return save_json_data(input_data, model_data_type, filename_pattern)
 
 
 def get_schedule_weekdays(num_days):

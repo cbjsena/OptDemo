@@ -20,58 +20,36 @@
 {% block content %}
 <div class="container-fluid">
     <h1 class="h2">Nurse Rostering Demo</h1>
-    <p>간호사 스케줄링 문제는 병원의 필수 인력을 유지하면서, 근무자들의 복잡한 요구사항과 규정을 만족시키는 근무표를 작성하는 문제입니다.</p>
+    <p>간호사 스케줄링 문제는 병원의 필수 인력을 유지하면서, 근무자들의 복잡한 요구사항과 규정을 만족시키는 근무표를 작성하는 문제입니다.
+        주말 근무 공정성, 최소 휴식 시간 보장 등 복잡한 제약 조건을 반영하여 2주간의 간호사 근무표를 생성합니다.</p>
 
-    <!-- [신규] 상단 설정 컨트롤러 (Advanced 페이지와 동일한 구조) -->
-    <div class="card mb-4">
-        <div class="card-body bg-light">
-            <div class="form-row align-items-end">
-                <div class="form-group col-md-3 col-lg-2">
-                    <label for="num_nurses_get" class="small font-weight-bold">총 간호사 수</label>
-                    <select id="num_nurses_get" name="num_nurses" class="form-control form-control-sm" onchange="submitSettingsForm()">
-                        {% for i in num_nurses_options %}<option value="{{ i }}" {% if i == submitted_num_nurses %}selected{% endif %}>{{ i }}명</option>{% endfor %}
-                    </select>
-                </div>
-                <div class="form-group col-md-3 col-lg-2">
-                    <label for="num_days_get" class="small font-weight-bold">근무 기간 (일)</label>
-                    <select id="num_days_get" name="num_days" class="form-control form-control-sm" onchange="submitSettingsForm()">
-                         {% for i in num_days_options %}<option value="{{ i }}" {% if i == submitted_num_days %}selected{% endif %}>{{ i }}일</option>{% endfor %}
-                    </select>
-                </div>
-                <div class="form-group col-md-3 col-lg-2">
-                    <label for="min_shifts_get" class="small font-weight-bold">최소 근무일</label>
-                    <select id="min_shifts_get" name="min_shifts" class="form-control form-control-sm" onchange="submitSettingsForm()">
-                        {% for i in min_shifts_options %}<option value="{{ i }}" {% if i == submitted_min_shifts %}selected{% endif %}>{{ i }}일</option>{% endfor %}
-                    </select>
-                </div>
-                <div class="form-group col-md-3 col-lg-2">
-                    <label for="max_shifts_get" class="small font-weight-bold">최대 근무일</label>
-                     <select id="max_shifts_get" name="max_shifts"  class="form-control form-control-sm" onchange="submitSettingsForm()">
-                        {% for i in max_shifts_options %}<option value="{{ i }}" {% if i == submitted_max_shifts %}selected{% endif %}>{{ i }}일</option>{% endfor %}
-                    </select>
-                </div>
-                <div class="form-group col-md-12 col-lg-4 text-lg-right mt-3 mt-lg-0">
-                    <a href="{% url 'resource_allocation_app:nurse_rostering_demo' %}" class="btn btn-sm btn-warning">Default 설정</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 설정 변경을 위한 숨겨진 GET 폼 -->
-    <form method="GET" id="settingsForm" style="display: none;"></form>
-
-    <!-- 최적화 실행을 위한 POST 폼 -->
     <form method="POST" id="rosterForm">
         {% csrf_token %}
         <input type="hidden" name="problem_type" value="nurse_rostering" id="problem_type">
-        <input type="hidden" name="num_nurses" value="{{ submitted_num_nurses }}">
-        <input type="hidden" name="num_days" value="{{ submitted_num_days }}">
-        <input type="hidden" name="min_shifts" value="{{ submitted_min_shifts }}">
-        <input type="hidden" name="max_shifts" value="{{ submitted_max_shifts }}">
 
         <div class="card mb-4">
-            <div class="card-header"><strong>시프트별 필요 인원 설정</strong></div>
+            <div class="card-header"><strong>근무 조건 설정</strong></div>
             <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 form-group">
+                        <label for="num_nurses">총 간호사 수</label>
+                        <input type="number" class="form-control" id="num_nurses" name="num_nurses" value="{{ num_nurses }}" min="1">
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="num_days">근무 기간 (일)</label>
+                        <input type="number" class="form-control" id="num_days" name="num_days" value="{{ num_days }}" min="1">
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="min_shifts">간호사별 최소 근무일</label>
+                        <input type="number" class="form-control" id="min_shifts" name="min_shifts" value="{{ min_shifts_per_nurse }}" min="0">
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="max_shifts">간호사별 최대 근무일</label>
+                        <input type="number" class="form-control" id="max_shifts" name="max_shifts" value="{{ max_shifts_per_nurse }}" min="0">
+                    </div>
+                </div>
+                <hr>
+                <h6>시프트별 필요 인원</h6>
                 <div class="row">
                     {% for shift_name, required in shift_requests.items %}
                     <div class="col-md-4 form-group">
@@ -110,7 +88,7 @@
     </div>
 
     <div class="card mt-3">
-        <div class="card-header"><strong>생성된 근무표</strong></div>
+        <div class="card-header"><strong>2주 근무표</strong></div>
         <div class="table-responsive">
             <table class="table table-bordered table-sm schedule-table mb-0">
                 <thead class="thead-light">
@@ -150,7 +128,7 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-lg-6">
-                    <h6>총 근무일 (목표: {{ submitted_min_shifts }}~{{ submitted_max_shifts }}일)</h6><hr>
+                    <h6>총 근무일 (목표: {{ min_shifts_per_nurse }}~{{ max_shifts_per_nurse }}일)</h6><hr>
                     <div class="row">
                     {% for work_days in results.nurse_work_days %}
                         <div class="col-6 col-md-4 mb-2">
@@ -174,38 +152,4 @@
     </div>
     {% endif %}
 </div>
-{% endblock %}
-
-{% block scripts %}
-{{ block.super }}
-<script>
-    // [신규] 상단 설정 변경 시, 현재 입력된 값을 유지하며 페이지를 리로드하는 함수
-    function submitSettingsForm() {
-        const settingsForm = document.getElementById('settingsForm');
-        settingsForm.innerHTML = '';
-
-        // 상단 컨트롤러 값 추가
-        const controls = ['num_nurses_get', 'num_days_get', 'min_shifts_get', 'max_shifts_get'];
-        const names = ['num_nurses', 'num_days', 'min_shifts', 'max_shifts'];
-        controls.forEach((id, index) => {
-            const select = document.getElementById(id);
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = names[index];
-            hiddenInput.value = select.value;
-            settingsForm.appendChild(hiddenInput);
-        });
-
-        // 현재 시프트별 필요 인원 값 추가
-        document.querySelectorAll('input[name^="shift_"]').forEach(input => {
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = input.name;
-            hiddenInput.value = input.value;
-            settingsForm.appendChild(hiddenInput);
-        });
-
-        settingsForm.submit();
-    }
-</script>
 {% endblock %}

@@ -280,7 +280,17 @@ def tsp_demo_view(request):
                 if action == 'optimize':
                     selected_cities_data = [city for city in preset_tsp_all_cities if city['name'] in selected_city_names]
                     # 1. 선택된 도시에 대한 부분 거리 행렬 생성
-                    input_data = create_tsp_json_data(selected_cities_data)
+                    validation_error_msg, input_data = create_tsp_json_data(selected_cities_data)
+
+                    # 2. 파일 저장
+                    if settings.SAVE_DATA_FILE:
+                        success_save_message, save_error = save_puzzle_json_data(input_data)
+                        if save_error:
+                            context['error_message'] = save_error
+                        elif success_save_message:
+                            context['success_save_message'] = success_save_message
+                    if validation_error_msg:
+                        context['error_message'] = validation_error_msg
 
                     # 2. 최적화 실행
                     results_data, error_msg, processing_time = run_tsp_optimizer(input_data)

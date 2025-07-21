@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -67,6 +68,8 @@ class ResourceAllocationAppTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         # 성공 메시지나 결과가 context에 포함되어 있는지 확인
         self.assertIsNotNone(response.context.get('results'))
         self.assertIn('최적 예산 분배 수립 완료', response.context.get('success_message', ''))
@@ -140,6 +143,8 @@ class ResourceAllocationAppTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))
         self.assertIn('데이터 센터 용량 계획 최적화 완료', response.context.get('success_message', ''))
         self.assertContains(response, "최적화 결과 요약")
@@ -192,9 +197,11 @@ class ResourceAllocationAppTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))
         self.assertIn('최적의 근무표를 생성했습니다!', response.context.get('success_message', ''))
-        self.assertContains(response, "2주 근무표")
+        self.assertContains(response, "생성된 근무표")
         self.assertContains(response, "간호사별 근무일 수 요약")
 
     def test_nurse_rostering_advanced_post_request_returns_solution(self):
@@ -236,6 +243,8 @@ class ResourceAllocationAppTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))
         self.assertIn('최적의 근무표를 생성했습니다', response.context.get('success_message', ''))
         self.assertContains(response, "생성된 근무표")

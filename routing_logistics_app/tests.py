@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -28,7 +29,7 @@ class VrpDemoTests(TestCase):
         url = reverse('routing_logistics_app:vrp_demo')
 
         post_data = {
-            'problem_type': 'VRP',
+            'problem_type': 'vrp',
             'num_customers': '5',
             'num_vehicles': '3',
             'depot_x': '300.0', 'depot_y': '250.0',
@@ -46,6 +47,8 @@ class VrpDemoTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.context.get('opt_results'))
         self.assertIn('VRP 최적 경로 계산 완료', response.context.get('success_message', ''))
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertContains(response, "결과 요약")
         self.assertContains(response, "차량별 최적 경로")
         self.assertContains(response, "경로 시각화 (VRP)")
@@ -86,7 +89,7 @@ class CvrpDemoTests(TestCase):
 
         # CVRP의 특성에 맞는 POST 데이터 (차량 용량 추가)
         post_data = {
-            'problem_type': 'CVRP',
+            'problem_type': 'cvrp',
             'num_customers': '5',
             'num_vehicles': '3',
             'vehicle_capacity': '100',
@@ -103,6 +106,8 @@ class CvrpDemoTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('opt_results'))
         self.assertIn('CVRP 최적 경로 계산 완료', response.context.get('success_message', ''))
         self.assertContains(response, "결과 요약")
@@ -133,7 +138,7 @@ class PdpDemoTests(TestCase):
 
         # PDP의 특성에 맞는 POST 데이터 (픽업-배송 쌍 정보)
         post_data = {
-            'problem_type': 'PDP',
+            'problem_type': 'pdp',
             'num_pairs': '3',
             'num_vehicles': '3',
             'vehicle_capacity': '100',
@@ -155,6 +160,8 @@ class PdpDemoTests(TestCase):
 
         response = self.client.post(url, post_data)
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         # self.assertIsNotNone(response.context.get('opt_results'))
         self.assertIn('PDP 최적 경로 계산 완료', response.context.get('success_message', ''))
         self.assertContains(response, "결과 요약")

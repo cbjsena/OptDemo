@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -81,6 +82,8 @@ class PuzzlesLogicAppTests(TestCase):
 
         # 3. 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))  # 결과 데이터가 있는지 확인
         self.assertIn('최적 식단 계산 완료! 최소 비용', response.context.get('success_message', ''))  # 성공 메시지 확인
         self.assertContains(response, '최소 총 비용')  # 결과 페이지에 특정 텍스트가 있는지 확인
@@ -125,6 +128,8 @@ class PuzzlesLogicAppTests(TestCase):
 
         # 3. 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))  # 결과 데이터가 있는지 확인
         self.assertIn('Total distance', response.context.get('success_message', ''))  # 성공 메시지 확인
         self.assertContains(response, '시즌 대진표 요약')  # 결과 페이지에 특정 텍스트가 있는지 확인
@@ -161,6 +166,8 @@ class PuzzlesLogicAppTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))
         self.assertIn('최단 경로를 찾았습니다', response.context.get('success_message', ''))
         self.assertContains(response, "최적 경로")  # 결과 페이지에 특정 텍스트가 있는지 확인
@@ -212,6 +219,8 @@ class PuzzlesLogicAppTests(TestCase):
         response = self.client.post(url, post_data)
 
         self.assertEqual(response.status_code, 200)  # 1. 요청이 성공했는지 확인
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))  # 2. 결과 데이터가 context에 있는지 확인
         self.assertIn('스도쿠 퍼즐을 성공적으로 풀었습니다', response.context.get('success_message', ''))  # 3. 성공 메시지가 있는지 확인
         self.assertContains(response, 'Solver Result')  # 4. 결과 섹션이 HTML에 렌더링 되었는지 확인

@@ -87,7 +87,7 @@
     <!-- 최적화 실행 POST 폼 -->
     <form method="POST" id="pdpForm">
         {% csrf_token %}
-        <input type="hidden" name="problem_type" value="PDP" id="problem_type">
+        <input type="hidden" name="problem_type" value="pdp" id="problem_type">
         <input type="hidden" name="num_pairs" value="{{ submitted_num_pairs }}" id="form_num_pairs">
         <input type="hidden" name="num_vehicles" value="{{ submitted_num_vehicles }}">
         <input type="hidden" name="vehicle_capacity" value="{{ submitted_vehicle_capa }}">

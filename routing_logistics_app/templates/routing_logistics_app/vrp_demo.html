@@ -80,7 +80,7 @@
 
     <form method="POST" id="vrpForm">
         {% csrf_token %}
-        <input type="hidden" name="problem_type" value="VRP" id="problem_type">
+        <input type="hidden" name="problem_type" value="vrp" id="problem_type">
         <input type="hidden" name="num_customers" value="{{ submitted_num_customers }}" id="form_num_customers">
         <input type="hidden" name="num_vehicles" value="{{ submitted_num_vehicles }}" id="form_num_vehicles">
 

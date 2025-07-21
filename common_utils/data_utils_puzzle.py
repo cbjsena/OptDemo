@@ -317,7 +317,7 @@ def create_tsp_json_data(selected_cities_data):
         'num_cities': num_cities
     }
 
-    return  input_data
+    return  None, input_data
 
 
 def create_sudoku_json_data(form_data):
@@ -399,7 +399,7 @@ def validate_sudoku_input(board):
 
 def save_puzzle_json_data(input_data):
     problem_type = input_data.get('problem_type')
-    dir = f'puzzles_{problem_type}_data'
+    model_data_type = f'puzzles_{problem_type}_data'
     filename_pattern = ''
 
     if "diet_problem" == problem_type:
@@ -423,4 +423,4 @@ def save_puzzle_json_data(input_data):
         difficulty = input_data.get('difficulty')
         filename_pattern = f"{num_size}_{difficulty}"
 
-    return save_json_data(input_data, dir, filename_pattern)
+    return save_json_data(input_data, model_data_type, filename_pattern)
