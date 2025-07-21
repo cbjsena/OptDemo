@@ -180,11 +180,23 @@ Cloud Run은 내부적으로 PORT=8080을 설정
 클라우드      최초 gcloud run jobs create optdemo-migrate --image gcr.io/my-optimization-demo/optdemo --region asia-northeast3 --command "python" --args "manage.py","migrate" --set-cloudsql-instances my-optimization-demo:asia-northeast3:my-optimization-db --env-vars-file .env.yaml
              이후 gcloud run jobs execute optdemo-migrate --region asia-northeast3 실행
 
-############### Static 파일 추가 시
+############### Static 폴더에 파일 추가 시
 개발          해당 폴더에 추가
 로컬 테스트    docker-compose up 후 별도 cmd에서 실행 docker-compose exec web python manage.py collectstatic --noinput
-             빌드 필요 없이 반영됨
+             빌드 필요 없이 반영됨 -> entrypoint.sh 파일 이용으로 변경
 클라우드       Cloud storage의 Buckets에 파일 업로드(추후에 명령어로 되도록 수정 필요)
+
+** static 폴더 추가 시 로컬 테스트 에러 발생하는 원인
+문제의 핵심: 빌드(Build) 시점 vs. 실행(Run) 시점
+1. 빌드 시점 (docker-compose build): Dockerfile의 지시에 따라 Django 애플리케이션의 "설계도"인 Docker 이미지가 만들어집니다.
+  이 과정에서 RUN python manage.py collectstatic이 실행되면, 모든 정적 파일들은 이 이미지 안의
+  /usr/src/app/static 폴더에 잘 저장됩니다.
+2. 실행 시점 (docker-compose up): 컨테이너가 실제로 실행될 때, docker-compose.yml의 volumes 설정이 적용됩니다.
+    volumes:
+        - static_volume:/usr/src/app/static
+이 설정은 비어있는 static_volume이라는 별도의 저장 공간을, 이미지 안에 있던 /usr/src/app/static 폴더 위에 덮어씌웁니다.
+3. 해결책: collectstatic 명령을 빌드 시점이 아닌, 컨테이너가 실행되는 시점에 실행하여 비어있는 static_volume 생성.
+    이 역할을 하는 것이 바로 entrypoint.sh 스크립트입니다
 
 ########## Cloud Run 서비스 계정에 Storage Object Admin 설정
 1. Cloud Run 서비스 계정 확인 방법

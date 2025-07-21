@@ -11,6 +11,8 @@ services:
       - web
   web:
     build: .
+# [신규] entrypoint를 docker-compose에서 직접 지정하여 명확성을 높입니다.
+    entrypoint: /usr/src/app/entrypoint.sh
 #    command: python manage.py runserver 0.0.0.0:8000
 #    command: gunicorn optdemo_project.wsgi:application --bind 0.0.0.0:8000
     command: gunicorn optdemo_project.wsgi:application --bind 0.0.0.0:8080

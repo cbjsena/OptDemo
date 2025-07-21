@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OptDemo - {% block title %}Optimization Demo{% endblock %}</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!--<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">-->
+    <link rel="stylesheet" href="{% static 'core/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
     {% block styles %}
     {% endblock styles %}
@@ -262,11 +263,41 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-<!--    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
+<!--    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>-->
+<!--    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>-->
+<!--    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>-->
+<!--    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>-->
+    <script src="{% static 'core/js/jquery-3.5.1.slim.min.js' %}"></script>
+    <script src="{% static 'core/js/popper.min.js' %}"></script>
+    <script src="{% static 'core/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'core/js/chart.min.js' %}"></script>
+    <!--<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>-->
+    {# --- MathJax 로컬 경로 설정 스크립트 --- #}
+    <!-- 이 스크립트는 반드시 MathJax 메인 스크립트보다 먼저 와야 합니다. -->
+    <script>
+      window.MathJax = {
+        // MathJax가 자신의 구성 요소를 찾을 기본 경로를 설정합니다.
+        loader: {
+          paths: {
+            mathjax: "{% static 'core/js/jsdelivr/mathjax/es5' %}"
+          }
+        },
+        // 로드할 TeX 확장 기능 설정 (필요에 따라 추가)
+        tex: {
+          packages: {'[+]': ['ams']}
+        },
+        // 시작 설정
+        startup: {
+          ready: () => {
+            MathJax.startup.defaultReady();
+            MathJax.startup.promise.then(() => {
+              console.log('MathJax local version loaded successfully!');
+            });
+          }
+        }
+      };
+    </script>
+    <script id="MathJax-script" async src="{% static 'core/js/jsdelivr/mathjax/es5/tex-mml-chtml.js' %}"></script>
     {% block scripts %}
     {% endblock %}
 </body>

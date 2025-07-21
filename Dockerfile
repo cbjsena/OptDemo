@@ -13,9 +13,12 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
 
-# 정적 파일 폴더 생성 및 수집
-RUN mkdir -p /usr/src/app/static
-RUN python manage.py collectstatic --noinput
+## 정적 파일 폴더 생성 및 수집
+#RUN mkdir -p /usr/src/app/static
+#RUN python manage.py collectstatic --noinput
+# [신규] entrypoint 스크립트를 이미지 안으로 복사하고 실행 권한을 부여합니다.
+COPY ./entrypoint.sh /usr/src/app/
+RUN chmod +x /usr/src/app/entrypoint.sh
 
 # Cloud SQL용 소켓 경로 생성
 RUN mkdir -p /cloudsql
