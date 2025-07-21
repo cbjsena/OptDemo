@@ -1,7 +1,6 @@
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp # OR-Tools VRP
 import logging
-import datetime  # 파일명 생성 등에 사용 가능
 from math import sqrt
 from common_utils.common_run_opt import ortools_routing_solving_log, start_log
 
@@ -237,8 +236,6 @@ def run_cvrp_optimizer(input_data):
         cvrp_results['total_distance'] = solution.ObjectiveValue() / 100.0
         total_demand_served_on_routes = 0
 
-        capacity_dimension = routing.GetDimensionOrDie('Capacity')
-
         for vehicle_id in range(data['num_vehicles']):
             index = routing.Start(vehicle_id)
             route_nodes = []
@@ -406,7 +403,7 @@ def run_pdp_optimizer(input_data):
 
     # 검색 파라미터 설정
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
-    search_parameters.first_solution_strategy = (routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION)
+    search_parameters.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION
     search_parameters.time_limit.FromSeconds(5)  # 시간 제한
 
     solution, status, processing_time = ortools_routing_solving_log(routing, search_parameters, problem_type)

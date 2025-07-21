@@ -1,4 +1,3 @@
-from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 LP 솔버 사용)
 from common_utils.common_run_opt import *
 import logging
 
@@ -379,9 +378,6 @@ def run_skill_matching_optimizer(input_data):
     for i in range(num_resources):
         solver.Add(sum(x[i, j] for j in range(num_projects)) <= 1)
     logger.debug("Added resource assignment constraints.")
-
-    # 제약 2: 각 프로젝트에 요구되는 모든 기술은 반드시 충족되어야 함
-    all_skills = {skill for p in projects_data for skill in p.get('required_skills', [])}
 
     logger.info("Phase 1: Solving for feasibility...")
 

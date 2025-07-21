@@ -1,8 +1,5 @@
 import collections
 
-from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 LP 솔버 사용)
-from ortools.sat.python import cp_model # CP-SAT 솔버 사용
-
 from common_utils.common_run_opt import *
 import logging
 
@@ -220,7 +217,7 @@ def run_flow_shop_optimizer(input_data):
 
     # 2. 작업 순서 제약 (기계 독점) - 순열(Permutation) 플로우샵 가정
     # y_ik = 1 if job i is before job k
-    y = {(i, k): model.NewBoolVar(f'y_{i}_{k}') for i in range(num_jobs) for k in range(num_jobs) if i < k}
+    # y = {(i, k): model.NewBoolVar(f'y_{i}_{k}') for i in range(num_jobs) for k in range(num_jobs) if i < k}
 
     for j in range(num_machines):  # 모든 기계에서
         for i in range(num_jobs):

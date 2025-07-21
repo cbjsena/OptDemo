@@ -2,14 +2,11 @@ import random
 
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
-from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 LP 솔버 사용)
-from ortools.sat.python import cp_model
 from gurobipy import Model, GRB, quicksum
 
 from common_utils.common_run_opt import *
 from common_utils.data_utils_puzzle import *
 
-import datetime
 import logging
 
 logger = logging.getLogger('puzzles_logic_app')
@@ -33,16 +30,16 @@ def run_diet_optimizer(input_data):
     logger.debug(f"Created {len(x)} food variables.")
 
     # 제약: 각 영양소의 최소/최대 섭취량 만족
-    for i in range(num_nutrients):
-        constraint = solver.Constraint(nutrients[i]['min'], nutrients[i]['max'], nutrients[i]['name'])
-        for j in range(num_foods):
-            constraint.SetCoefficient(x[j], foods[j]['nutrients'][i])
+    for nut in range(num_nutrients):
+        constraint = solver.Constraint(nutrients[nut]['min'], nutrients[nut]['max'], nutrients[nut]['name'])
+        for food in range(num_foods):
+            constraint.SetCoefficient(x[food], foods[food]['nutrients'][nut])
     logger.debug(f"Added {num_nutrients} nutrient constraints.")
 
     # 목표 함수: 총 비용 최소화
     objective = solver.Objective()
-    for i in range(num_foods):
-        objective.SetCoefficient(x[i], foods[i]['cost'])
+    for nut in range(num_foods):
+        objective.SetCoefficient(x[nut], foods[nut]['cost'])
     objective.SetMinimization()
     logger.debug("Objective set to minimize total cost.")
 
@@ -56,21 +53,21 @@ def run_diet_optimizer(input_data):
     if status == pywraplp.Solver.OPTIMAL:
         results['total_cost'] = solver.Objective().Value()
 
-        for i in range(num_foods):
-            intake = x[i].solution_value()
+        for nut in range(num_foods):
+            intake = x[nut].solution_value()
             if intake > 1e-6:  # 매우 작은 값은 무시
                 results['diet_plan'].append({
-                    'name': foods[i]['name'],
+                    'name': foods[nut]['name'],
                     'intake': round(intake, 2),
-                    'cost': round(intake * foods[i]['cost'], 2)
+                    'cost': round(intake * foods[nut]['cost'], 2)
                 })
 
-        for i in range(num_nutrients):
-            total_nutrient_intake = sum(foods[j]['nutrients'][i] * x[j].solution_value() for j in range(num_foods))
+        for nut in range(num_nutrients):
+            total_nutrient_intake = sum(foods[food]['nutrients'][nut] * x[food].solution_value() for food in range(num_foods))
             results['nutrient_summary'].append({
-                'name': nutrients[i]['name'],
-                'min_req': nutrients[i]['min'],
-                'max_req': nutrients[i]['max'],
+                'name': nutrients[nut]['name'],
+                'min_req': nutrients[nut]['min'],
+                'max_req': nutrients[nut]['max'],
                 'actual_intake': round(total_nutrient_intake, 2)
             })
     else:
@@ -89,20 +86,20 @@ def calculate_manual_diet_result(input_data, manual_quantities):
     manual_results = {'diet_plan': [], 'total_cost': 0, 'nutrient_summary': []}
     total_cost = 0
 
-    for j in range(num_foods):
-        quantity = manual_quantities[j]
-        total_cost += foods[j]['cost'] * quantity
+    for food in range(num_foods):
+        quantity = manual_quantities[food]
+        total_cost += foods[food]['cost'] * quantity
         if quantity > 0:
-            manual_results['diet_plan'].append({'name': foods[j]['name'], 'quantity': quantity})
+            manual_results['diet_plan'].append({'name': foods[food]['name'], 'quantity': quantity})
     manual_results['total_cost'] = round(total_cost, 2)
 
-    for i in range(num_nutrients):
-        total_nutrient = sum(foods[j]['nutrients'][i] * manual_quantities[j] for j in range(num_foods))
-        is_ok = nutrients[i]['min'] <= total_nutrient <= nutrients[i]['max']
+    for nut in range(num_nutrients):
+        total_nutrient = sum(foods[food]['nutrients'][nut] * manual_quantities[food] for food in range(num_foods))
+        is_ok = nutrients[nut]['min'] <= total_nutrient <= nutrients[nut]['max']
         manual_results['nutrient_summary'].append({
-            'name': nutrients[i]['name'],
-            'min': nutrients[i]['min'],
-            'max': nutrients[i]['max'],
+            'name': nutrients[nut]['name'],
+            'min': nutrients[nut]['min'],
+            'max': nutrients[nut]['max'],
             'total': round(total_nutrient, 2),
             'is_ok': is_ok
         })
@@ -122,7 +119,6 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
     teams = input_data.get('teams', [])
     distance_matrix = input_data.get('distance_matrix')
     max_consecutive = input_data.get('max_consecutive')
-    num_teams_original = len(teams)
 
     num_teams_original = len(teams)
     logger.info(
@@ -197,7 +193,7 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
     # 제약 3: 최대 연속 홈/원정 경기 수 제한
     for t_idx in range(num_teams_original):
         for s in range(num_slots - max_consecutive):
-            away_games_in_window = [plays.get((i, h, t_idx)) for i in range(s, s + max_consecutive + 1) for h in
+            away_games_in_window = [plays.get((idx, h, t_idx)) for idx in range(s, s + max_consecutive + 1) for h in
                                     range(num_teams) if t_idx != h]
             constraint = model.Add(sum(away_games_in_window) <= max_consecutive)
             constraint_name = f"MaxAway_{teams[t_idx]}_s{s + 1}"
@@ -205,7 +201,7 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
             logger.solve(
                 f"{constraint_name}: {' + '.join(v.Name() for v in away_games_in_window)} <= {max_consecutive}")
 
-            home_games_in_window = [plays.get((i, t_idx, a)) for i in range(s, s + max_consecutive + 1) for a in
+            home_games_in_window = [plays.get((idx, t_idx, a)) for idx in range(s, s + max_consecutive + 1) for a in
                                     range(num_teams) if t_idx != a]
             constraint = model.Add(sum(home_games_in_window) <= max_consecutive)
             constraint_name = f"MaxHome_{teams[t_idx]}_s{s + 1}"
@@ -224,7 +220,7 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
     #                 model.Add(match_s + match_s_plus_1 <= 1)
 
     # 제약 5: 팀별 이동 거리 계산을 위한 제약
-    team_travel_vars = [model.NewIntVar(0, 10000000, f'travel_{i}') for i in range(num_teams_original)]
+    team_travel_vars = [model.NewIntVar(0, 10000000, f'travel_{idx}') for idx in range(num_teams_original)]
     for t_idx in range(num_teams_original):
         travel_dist_terms = []
         for s in range(num_slots):
@@ -305,9 +301,9 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
         # 결과 지표 계산
         total_dist_calc = 0
         team_distances_calc = []
-        for i in range(num_teams_original):
-            dist_val = solver.Value(team_travel_vars[i])
-            team_distances_calc.append({'name': input_data['teams'][i], 'distance': round(dist_val)})
+        for idx in range(num_teams_original):
+            dist_val = solver.Value(team_travel_vars[idx])
+            team_distances_calc.append({'name': input_data['teams'][idx], 'distance': round(dist_val)})
             total_dist_calc += dist_val
 
         results['total_distance'] = round(total_dist_calc)
@@ -362,9 +358,8 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
     num_slots = 2 * (num_teams_original - 1) if schedule_type == 'double' else num_teams - 1
     num_cities = len(distance_matrix)
 
-    team_to_idx = {name: i for i, name in enumerate(teams)}
-    original_team_to_idx = {name: i for i, name in enumerate(team_names_original)}
-    home_city_of_team = {i: original_team_to_idx.get(teams[i], -1) for i in range(num_teams)}
+    original_team_to_idx = {name: idx for idx, name in enumerate(team_names_original)}
+    home_city_of_team = {idx: original_team_to_idx.get(teams[idx], -1) for idx in range(num_teams)}
 
     try:
         model = cp_model.CpModel()
@@ -427,7 +422,7 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
         # 제약 3: 최대 연속 홈/원정 경기 수 제한
         for t_idx in range(num_teams_original):
             for s in range(num_slots - max_consecutive):
-                away_games_in_window = [plays.get((i, h, t_idx)) for i in range(s, s + max_consecutive + 1) for h in
+                away_games_in_window = [plays.get((idx, h, t_idx)) for idx in range(s, s + max_consecutive + 1) for h in
                                         range(num_teams) if t_idx != h]
                 constraint = model.Add(sum(away_games_in_window) <= max_consecutive)
                 constraint_name = f"MaxAway_{teams[t_idx]}_s{s + 1}"
@@ -435,7 +430,7 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
                 logger.solve(
                     f"{constraint_name}: {' + '.join(v.Name() for v in away_games_in_window)} <= {max_consecutive}")
 
-                home_games_in_window = [plays.get((i, t_idx, a)) for i in range(s, s + max_consecutive + 1) for a in
+                home_games_in_window = [plays.get((idx, t_idx, a)) for idx in range(s, s + max_consecutive + 1) for a in
                                         range(num_teams) if t_idx != a]
                 constraint = model.Add(sum(home_games_in_window) <= max_consecutive)
                 constraint_name = f"MaxHome_{teams[t_idx]}_s{s + 1}"
@@ -601,9 +596,9 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
             # 결과 지표 계산
             total_dist_calc = 0
             team_distances_calc = []
-            for i in range(num_teams):
-                dist_val = solver.Value(team_travel_vars[i])
-                team_distances_calc.append({'name': input_data['teams'][i], 'distance': round(dist_val)})
+            for idx in range(num_teams):
+                dist_val = solver.Value(team_travel_vars[idx])
+                team_distances_calc.append({'name': input_data['teams'][idx], 'distance': round(dist_val)})
                 total_dist_calc += dist_val
 
             results['total_distance'] = round(total_dist_calc)
@@ -700,10 +695,10 @@ def run_sports_scheduling_optimizer_gurobi1(input_data):
         for t in range(num_teams_original):
             for s in range(num_slots - max_consecutive):
                 model.addConstr(quicksum(
-                    plays[i, h, t] for i in range(s, s + max_consecutive + 1) for h in range(num_teams) if
+                    plays[idx, h, t] for idx in range(s, s + max_consecutive + 1) for h in range(num_teams) if
                     t != h) <= max_consecutive)
                 model.addConstr(quicksum(
-                    plays[i, t, a] for i in range(s, s + max_consecutive + 1) for a in range(num_teams) if
+                    plays[idx, t, a] for idx in range(s, s + max_consecutive + 1) for a in range(num_teams) if
                     t != a) <= max_consecutive)
 
         # --- 4. 목표 함수 설정 ---
@@ -766,9 +761,9 @@ def run_sports_scheduling_optimizer_gurobi1(input_data):
             # 결과 지표 계산
             total_dist_calc = 0
             team_distances_calc = []
-            for i in range(num_teams):
-                dist_val = team_travel_vars[i].X
-                team_distances_calc.append({'name': input_data['teams'][i], 'distance': round(dist_val)})
+            for idx in range(num_teams):
+                dist_val = team_travel_vars[idx].X
+                team_distances_calc.append({'name': input_data['teams'][idx], 'distance': round(dist_val)})
                 total_dist_calc += dist_val
 
             results['total_distance'] = round(total_dist_calc)
@@ -831,9 +826,8 @@ def run_sports_scheduling_optimizer_gurobi2(input_data):
     num_cities = len(distance_matrix)
 
     # 팀 이름 -> 인덱스, 홈 도시 인덱스 매핑
-    team_to_idx = {name: i for i, name in enumerate(teams)}
-    original_team_to_idx = {name: i for i, name in enumerate(team_names_original)}
-    home_city_of_team = {i: original_team_to_idx.get(teams[i], -1) for i in range(num_teams)}  # -1 for BYE team
+    original_team_to_idx = {name: idx for idx, name in enumerate(team_names_original)}
+    home_city_of_team = {idx: original_team_to_idx.get(teams[idx], -1) for idx in range(num_teams)}  # -1 for BYE team
 
     try:
         model = Model("AdvancedSportsScheduling")
@@ -863,10 +857,10 @@ def run_sports_scheduling_optimizer_gurobi2(input_data):
         for t in range(num_teams_original):
             for s in range(num_slots - max_consecutive):
                 model.addConstr(quicksum(
-                    plays[i, h, t] for i in range(s, s + max_consecutive + 1) for h in range(num_teams_original) if
+                    plays[idx, h, t] for idx in range(s, s + max_consecutive + 1) for h in range(num_teams_original) if
                     t != h) <= max_consecutive)
                 model.addConstr(quicksum(
-                    plays[i, t, a] for i in range(s, s + max_consecutive + 1) for a in range(num_teams_original) if
+                    plays[idx, t, a] for idx in range(s, s + max_consecutive + 1) for a in range(num_teams_original) if
                     t != a) <= max_consecutive)
 
         # [NEW] 제약 4: 팀 위치 결정
@@ -984,9 +978,9 @@ def run_sports_scheduling_optimizer_gurobi2(input_data):
             # 결과 지표 계산
             total_dist_calc = 0
             team_distances_calc = []
-            for i in range(num_teams):
-                dist_val = team_travel_vars[i].X
-                team_distances_calc.append({'name': input_data['teams'][i], 'distance': round(dist_val)})
+            for idx in range(num_teams):
+                dist_val = team_travel_vars[idx].X
+                team_distances_calc.append({'name': input_data['teams'][idx], 'distance': round(dist_val)})
                 total_dist_calc += dist_val
 
             results['total_distance'] = round(total_dist_calc)
@@ -1051,7 +1045,6 @@ def run_tsp_optimizer(input_data):
         solution, status, processing_time = ortools_routing_solving_log(routing, search_parameters, problem_type)
 
         # 5. 결과 추출
-        results_data = {}
         if solution:
             index = routing.Start(0)
             tour = []
@@ -1078,7 +1071,7 @@ def run_sudoku_solver_optimizer(input_data):
     OR-Tools CP-SAT를 사용하여 스도쿠 퍼즐을 해결합니다.
 
     Args:
-        initial_grid (list of list of int): num_size x num_size 스도쿠 퍼즐. 빈 칸은 0으로 표시.
+        input_data (list of list of int): num_size x num_size 스도쿠 퍼즐. 빈 칸은 0으로 표시.
 
     Returns:
         tuple: (solved_grid, error_message, processing_time)
@@ -1094,33 +1087,33 @@ def run_sudoku_solver_optimizer(input_data):
     # 1. 결정 변수 생성
     # 각 셀은 1에서 num_size 사이의 정수 값을 가집니다.
     grid = {}
-    for i in range(num_size):
-        for j in range(num_size):
-            grid[(i, j)] = model.NewIntVar(1, num_size, f'cell_{i}_{j}')
+    for row in range(num_size):
+        for col in range(num_size):
+            grid[(row, col)] = model.NewIntVar(1, num_size, f'cell_{row}_{col}')
 
     # 2. 제약 조건 추가
     # 각 행(row)의 모든 숫자는 달라야 합니다.
-    for i in range(num_size):
-        model.AddAllDifferent([grid[(i, j)] for j in range(num_size)])
+    for row in range(num_size):
+        model.AddAllDifferent([grid[(row, col)] for col in range(num_size)])
 
     # 각 열(column)의 모든 숫자는 달라야 합니다.
-    for j in range(num_size):
-        model.AddAllDifferent([grid[(i, j)] for i in range(num_size)])
+    for col in range(num_size):
+        model.AddAllDifferent([grid[(row, col)] for row in range(num_size)])
 
     # 각 서브그리드의 모든 숫자는 달라야 합니다.
-    for i in range(0, num_size, subgrid_size):
-        for j in range(0, num_size, subgrid_size):
+    for sub_row in range(0, num_size, subgrid_size):
+        for sub_col in range(0, num_size, subgrid_size):
             subgrid_vars = []
-            for row in range(i, i + subgrid_size):
-                for col in range(j, j + subgrid_size):
+            for row in range(sub_row, sub_row + subgrid_size):
+                for col in range(sub_col, sub_col + subgrid_size):
                     subgrid_vars.append(grid[(row, col)])
             model.AddAllDifferent(subgrid_vars)
 
     # 초기 퍼즐의 주어진 숫자들을 제약으로 추가합니다.
-    for i in range(num_size):
-        for j in range(num_size):
-            if input_grid[i][j] != 0:
-                model.Add(grid[(i, j)] == input_grid[i][j])
+    for row in range(num_size):
+        for col in range(num_size):
+            if input_grid[row][col] != 0:
+                model.Add(grid[(row, col)] == input_grid[row][col])
 
     # 3. 문제 해결
     solver = cp_model.CpSolver()
@@ -1132,7 +1125,7 @@ def run_sudoku_solver_optimizer(input_data):
     error_message = None
 
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-        solved_grid = [[solver.Value(grid[(i, j)]) for j in range(num_size)] for i in range(num_size)]
+        solved_grid = [[solver.Value(grid[(row, col)]) for col in range(num_size)] for row in range(num_size)]
     else:
         error_message = "스도쿠 퍼즐의 해를 찾을 수 없습니다. 입력된 퍼즐이 유효한지 확인해주세요."
 
@@ -1170,23 +1163,23 @@ def has_unique_solution(board):
     N = len(board)
     model = cp_model.CpModel()
     grid = {}
-    for i in range(N):
-        for j in range(N):
-            grid[(i, j)] = model.NewIntVar(1, N, f'grid_{i}_{j}')
+    for row in range(N):
+        for col in range(N):
+            grid[(row, col)] = model.NewIntVar(1, N, f'grid_{row}_{col}')
 
     # 기존 제약 조건 추가
-    for i in range(N):
-        for j in range(N):
-            if board[i][j] != 0:
-                model.Add(grid[(i, j)] == board[i][j])
-    for i in range(N):
-        model.AddAllDifferent([grid[(i, j)] for j in range(N)])
-        model.AddAllDifferent([grid[(j, i)] for j in range(N)])
+    for row in range(N):
+        for col in range(N):
+            if board[row][col] != 0:
+                model.Add(grid[(row, col)] == board[row][col])
+    for row in range(N):
+        model.AddAllDifferent([grid[(row, col)] for col in range(N)])
+        model.AddAllDifferent([grid[(col, row)] for col in range(N)])
 
     subgrid_size = int(N ** 0.5)
     for row_idx in range(0, N, subgrid_size):
         for col_idx in range(0, N, subgrid_size):
-            subgrid_vars = [grid[(row_idx + i, col_idx + j)] for i in range(subgrid_size) for j in range(subgrid_size)]
+            subgrid_vars = [grid[(row_idx + row, col_idx + col)] for row in range(subgrid_size) for col in range(subgrid_size)]
             model.AddAllDifferent(subgrid_vars)
 
     solver = cp_model.CpSolver()
@@ -1210,7 +1203,6 @@ def generate_sudoku(difficulty='medium', num_size=9):
     total_cell_size = num_size*num_size
     first_row = random.sample(range(1, 10), 9)
     randomized_start_board = [first_row] + [[0] * 9 for _ in range(8)]
-    empty_board = [[0] * num_size for _ in range(num_size)]
     input_data = {
         'problem_type': 'sudoku',
         'input_grid': randomized_start_board,

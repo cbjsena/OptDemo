@@ -1,7 +1,5 @@
 import numpy as np
 from django.conf import settings
-from ortools.sat.python import cp_model
-from ortools.linear_solver import pywraplp  # OR-Tools MIP solver (실제로는 LP 솔버 사용)
 
 from common_utils.data_utils_allocation import *
 from common_utils.common_run_opt import *
@@ -99,7 +97,7 @@ def run_budget_allocation_optimizer(input_data):
             results['budget_utilization_percent'] = round(utilization_percent, 1)
         else:
             if calculated_total_allocated == 0:
-                results['budget_utilization_percent'] = 0.0
+                results['budget_utilization_percent'] = '0.0'
             else:
                 results['budget_utilization_percent'] = "N/A (Total Budget is 0)"
     else:
@@ -254,7 +252,6 @@ def run_portfolio_optimization_optimizer(num_assets, expected_returns, covarianc
         # 포트폴리오 분산을 목표로 설정 (이 부분은 pywraplp에서 직접 지원하지 않을 가능성 높음)
         # 아래 코드는 solver가 QP를 지원하고, Objective 객체가 이차항을 받을 수 있다고 가정합니다.
         # 실제로는 solver.SetQuadraticObjective(...) 와 같은 메서드가 필요합니다.
-        objective_coeffs = {}
         for i in range(num_assets):
             for j in range(num_assets):
                 # Add L_{i,j} w_i w_j to objective.
@@ -327,7 +324,7 @@ def run_portfolio_optimization_optimizer(num_assets, expected_returns, covarianc
                 'expected_return_asset': expected_returns[i]
             })
 
-        # 포트폴리오 분산 계산: w' * Sigma * w
+        # 포트폴리오 분산 계산: w_' * Sigma * w
         # np_weights = np.array(calculated_weights)
         # np_cov_matrix = np.array(covariance_matrix)
         # portfolio_variance = np.dot(np_weights.T, np.dot(np_cov_matrix, np_weights))
@@ -381,7 +378,6 @@ def run_datacenter_capacity_optimizer(input_data):
     infinity = solver.infinity()
     num_server_data = input_data.get('num_server_types')
     num_demand_data = input_data.get('num_services')
-    total_budget = global_constraints.get('total_budget')
     total_power = global_constraints.get('total_power_kva')
     total_space = global_constraints.get('total_space_sqm')
 
@@ -759,165 +755,6 @@ def run_nurse_rostering_optimizer(input_data):
             return results_data, None, processing_time
         else:
             return None, "해를 찾을 수 없었습니다. 제약 조건이 너무 엄격할 수 있습니다.", processing_time
-
-    except Exception as e:
-        return None, f"오류 발생: {str(e)}", None
-
-
-def run_nurse_roster_advanced_optimizer(input_data):
-    """
-    숙련도, 휴가, 강화된 공정성 등 고급 제약이 포함된 스케줄링 문제를 해결합니다.
-    """
-    problem_type = input_data['problem_type']
-    start_log(problem_type)
-    # TODO
-    # 1.간호사별 MAX, MIN 근무일 반영
-    # 2. 공정성 제약 확인
-
-    SHIFT_NIGHT = preset_nurse_rostering_shifts[2]
-    # --- 입력 데이터 파싱 ---
-    nurses_data = input_data['nurses_data']
-    num_nurses = len(nurses_data)
-    num_days = input_data['num_days']
-    shifts = input_data['shifts']
-
-    # 숙련도별 필요 인원
-    skill_requirements = input_data['skill_requirements']
-    all_skills = list(skill_requirements[shifts[0]].keys())  # ['상', '중', '하']
-
-    # 간호사별 휴가 요청
-    vacation_requests = input_data['vacation_requests']  # {nurse_id: [day1, day2], ...}
-
-    # 선택적으로 적용할 공정성 제약
-    enabled_fairness = input_data.get('enabled_fairness', [])
-
-    weekend_days = input_data['weekend_days']
-    num_shifts_per_day = len(shifts)
-
-    # 간호사 ID와 인덱스, 스킬 매핑
-    nurse_ids = [n['id'] for n in nurses_data]
-    nurses_by_skill = {skill: [n['id'] for n in nurses_data if n['skill'] == skill] for skill in all_skills}
-    logger.solve(
-        f"Running Nurse Rostering Advanced Optimizer. - Num nurses: {num_nurses},  Num days: {num_days}, Shifts: {shifts}")
-
-    try:
-        model = cp_model.CpModel()
-
-        # --- 1. 결정 변수 생성 ---
-        assigns = {}
-        for n_id in nurse_ids:
-            for d in range(num_days):
-                for s in range(num_shifts_per_day):
-                    varName = f"assigns_{nurses_data[n_id].get('name')}_{d + 1}_{shifts[s]}"
-                    logger.solve(f'BoolVar: {varName}')
-                    assigns[(n_id, d, s)] = model.NewBoolVar(varName)
-
-        # --- 2. 강성 제약 조건 (Hard Constraints) ---
-
-        # 제약 1: 각 간호사는 하루 최대 1개 시프트 근무
-        for n_id in nurse_ids:
-            for d in range(num_days):
-                model.AddAtMostOne(assigns[(n_id, d, s)] for s in range(num_shifts_per_day))
-
-        # 제약 2: [수정] 숙련도별 필요 인원 충족
-        for d in range(num_days):
-            for s_idx, s_name in enumerate(shifts):
-                for skill, required_count in skill_requirements[s_name].items():
-                    nurses_with_that_skill = nurses_by_skill[skill]
-                    model.Add(sum(assigns[(n_id, d, s_idx)] for n_id in nurses_with_that_skill) >= required_count)
-
-        # 제약 3: [신규] 휴가 요청 반영
-        for n_id, off_days in vacation_requests.items():
-            for d in off_days:
-                model.Add(sum(assigns[(n_id, d, s)] for s in range(num_shifts_per_day)) == 0)
-
-        # --- 3. 연성 제약 조건 (Soft Constraints) 및 목표 함수 ---
-
-        # 목표 1: [신규] 공평한 야간 근무 분배
-        if 'fair_nights' in enabled_fairness:
-            night_shift_idx = shifts.index(SHIFT_NIGHT)
-            night_shifts_worked = [sum(assigns[(n_id, d, night_shift_idx)] for d in range(num_days)) for n_id in
-                                   nurse_ids]
-            min_nights = model.NewIntVar(0, num_days, 'min_nights')
-            max_nights = model.NewIntVar(0, num_days, 'max_nights')
-            model.AddMinEquality(min_nights, night_shifts_worked)
-            model.AddMaxEquality(max_nights, night_shifts_worked)
-            night_gap = max_nights - min_nights
-        else:
-            night_gap = 0
-
-        # 목표 2: [신규] 공평한 휴무일 분배
-        if 'fair_offs' in enabled_fairness:
-            total_shifts_worked = [
-                sum(assigns[(n_id, d, s)] for d in range(num_days) for s in range(num_shifts_per_day)) for n_id in
-                nurse_ids]
-            off_days_per_nurse = [num_days - s for s in total_shifts_worked]
-            min_offs = model.NewIntVar(0, num_days, 'min_offs')
-            max_offs = model.NewIntVar(0, num_days, 'max_offs')
-            model.AddMinEquality(min_offs, off_days_per_nurse)
-            model.AddMaxEquality(max_offs, off_days_per_nurse)
-            off_gap = max_offs - min_offs
-        else:
-            off_gap = 0
-
-        # 목표 3: [기존] 공평한 주말 근무 분배
-        if 'fair_weekends' in enabled_fairness:
-            weekend_shifts_worked = [sum(assigns[(n_id, d, s)] for d in weekend_days for s in range(num_shifts_per_day))
-                                     for n_id in nurse_ids]
-            min_weekend_shifts = model.NewIntVar(0, len(weekend_days), 'min_weekend')
-            max_weekend_shifts = model.NewIntVar(0, len(weekend_days), 'max_weekend')
-            model.AddMinEquality(min_weekend_shifts, weekend_shifts_worked)
-            model.AddMaxEquality(max_weekend_shifts, weekend_shifts_worked)
-            weekend_gap = max_weekend_shifts - min_weekend_shifts
-        else:
-            weekend_gap = 0
-            weekend_shifts_worked = [0] * num_nurses  # 결과 표시를 위한 기본값
-
-        # --- 4. 목표 함수 설정 ---
-        # 각 공정성 목표의 격차(gap) 합을 최소화
-        model.Minimize(night_gap * 2 + off_gap + weekend_gap * 3)  # 야간, 주말에 가중치 부여
-
-        # --- 5. 문제 해결 ---
-        solver = cp_model.CpSolver()
-        solver.parameters.max_time_in_seconds = 30.0
-        status, processing_time = solving_log(solver, problem_type, model)
-
-        # --- 6. 결과 추출 ---
-        if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-            schedule = {}
-            for d in range(num_days):
-                schedule[d] = {}
-                for s_idx, s_name in enumerate(shifts):
-                    schedule[d][s_idx] = [nurses_data[n_id].get('name') for n_id in nurse_ids if solver.Value(assigns[(n_id, d, s_idx)]) == 1]
-
-            # 각 간호사별 통계 계산
-            total_shifts = [
-                sum(solver.Value(assigns[(n_id, d, s)]) for d in range(num_days) for s in range(num_shifts_per_day)) for
-                n_id in nurse_ids]
-            if 'fair_nights' in enabled_fairness and SHIFT_NIGHT in shifts:
-                night_shift_idx = shifts.index(SHIFT_NIGHT)
-                total_nights = [sum(solver.Value(assigns[(n_id, d, night_shift_idx)]) for d in range(num_days)) for n_id
-                                in nurse_ids]
-            else:
-                total_nights = [0] * num_nurses
-            total_weekends = [solver.Value(w) for w in
-                              weekend_shifts_worked] if 'fair_weekends' in enabled_fairness else [0] * num_nurses
-            total_offs = [num_days - ts for ts in total_shifts]
-
-            results_data = {
-                'schedule': schedule,
-                'nurse_stats': {
-                    n_id: {
-                        'total': total_shifts[i], 'nights': total_nights[i],
-                        'weekends': total_weekends[i], 'offs': total_offs[i]
-                    } for i, n_id in enumerate(nurse_ids)
-                },
-                'total_penalty': solver.ObjectiveValue()
-            }
-            # logger.info(f'results_data:{results_data}')
-            return results_data, None, processing_time
-        else:
-            return None, "해를 찾을 수 없었습니다. 제약 조건이 너무 엄격하거나, 필요 인원이 간호사 수에 비해 너무 많을 수 있습니다.", round(processing_time, 4)
 
     except Exception as e:
         return None, f"오류 발생: {str(e)}", None
