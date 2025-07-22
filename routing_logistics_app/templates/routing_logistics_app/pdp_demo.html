@@ -96,8 +96,6 @@
             <h4>1. 위치 지정 (차고지 1개, 작업 쌍 {{ submitted_num_pairs }}개)</h4>
             <div id="canvasInstructions">먼저 차고지(Depot) 위치를 클릭하세요.</div>
             <canvas id="pdpCanvasInput" width="600" height="400"></canvas>
-            <button type="button" class="btn btn-sm btn-warning mb-2" id="resetLocationsBtn">위치 초기화</button>
-
             <div id="locationsDisplay" class="location-list"><p>아직 지정된 위치가 없습니다.</p></div>
 
             <input type="hidden" name="depot_x" id="hidden_depot_x" value="{{ form_data.depot_x|default_if_none:'300' }}">
@@ -245,7 +243,6 @@
         const ctx = canvas.getContext('2d');
         const instructions = document.getElementById('canvasInstructions');
         const locationsDisplay = document.getElementById('locationsDisplay');
-        const resetBtn = document.getElementById('resetLocationsBtn');
 
         const numPairs = parseInt(document.getElementById('form_num_pairs').value);
 
@@ -406,22 +403,6 @@
 
             currentStepIndex++;
             updateUI();
-        });
-
-        resetBtn.addEventListener('click', function() {
-            depot = null;
-            jobPairs = new Array(numPairs).fill(null).map(() => ({ p: null, d: null }));
-            depotHiddenX.value = '';
-            depotHiddenY.value = '';
-            for (let i = 0; i < numPairs; i++) {
-                pairHiddenFields[i].px.value = '';
-                pairHiddenFields[i].py.value = '';
-                pairHiddenFields[i].dx.value = '';
-                pairHiddenFields[i].dy.value = '';
-            }
-            currentStepIndex = 0;
-            updateUI();
-            console.log("PDP Locations reset.");
         });
 
         loadInitialValues();

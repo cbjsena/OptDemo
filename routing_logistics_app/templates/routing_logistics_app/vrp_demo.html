@@ -88,7 +88,6 @@
             <h4>1. 위치 지정 (차고지 1개, 고객 {{ submitted_num_customers }}명, 차량 {{submitted_num_vehicles}}대)</h4>
             <p id="canvasInstructions">먼저 차고지(Depot) 위치를 클릭하세요.</p>
             <canvas id="vrpCanvasInput" width="600" height="400"></canvas>
-            <button type="button" class="btn btn-sm btn-warning mb-2" id="resetLocationsBtn">위치 초기화</button>
 
             <h5>지정된 위치:</h5>
             <div id="locationsDisplay" class="location-list">
@@ -327,7 +326,6 @@
         const ctx = canvas.getContext('2d');
         const instructions = document.getElementById('canvasInstructions');
         const locationsDisplay = document.getElementById('locationsDisplay');
-        const resetBtn = document.getElementById('resetLocationsBtn');
 
         const depotHiddenX = document.getElementById('hidden_depot_x');
         const depotHiddenY = document.getElementById('hidden_depot_y');
@@ -495,26 +493,6 @@
             }
             updateInstructionsAndDisplay();
             redrawCanvas();
-        });
-
-        resetBtn.addEventListener('click', function() {
-            depot = null;
-            customers = new Array(numCustomers).fill(null); // 고객 배열 초기화
-            depotHiddenX.value = '';
-            depotHiddenY.value = '';
-            for (let i = 0; i < numCustomers; i++) {
-                if(customerHiddenX[i]) customerHiddenX[i].value = '';
-                if(customerHiddenY[i]) customerHiddenY[i].value = '';
-                // ID는 유지하거나, 여기서 다시 설정할 수 있음
-                // if(customerHiddenId[i]) customerHiddenId[i].value = `C${i+1}`;
-            }
-            placingDepot = true;
-            currentCustomerIndex = 0;
-            selectedNode = null;
-
-            updateInstructionsAndDisplay();
-            redrawCanvas();
-            console.log("Locations reset.");
         });
 
         // 페이지 로드 시 초기값으로 캔버스 및 상태 업데이트

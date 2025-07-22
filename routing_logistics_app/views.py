@@ -14,53 +14,46 @@ def vrp_introduction_view(request):
     """
     Vehicle Routing Problem (VRP) introduction page.
     """
+    logger.info("[VRPIntro] Page requested.")
     context = {
         'active_model': 'Routing & Logistics', # 대메뉴 활성화용
         'active_submenu_category': 'vehicle_routing_problems', # 사이드바 내 VRP 관련 그룹 활성화용
         'active_submenu': 'vrp_introduction' # 현재 페이지 활성화용
     }
-    logger.debug("Rendering VRP introduction page.")
     return render(request, 'routing_logistics_app/vrp_introduction.html', context)
 
 
 def vrp_advanced(request):
+    logger.info("[VRPAdvanced] Page requested.")
     context = {
         'active_model': 'Routing & Logistics',  # 대메뉴 활성화용
         'active_submenu_category': 'vehicle_routing_problems',  # 사이드바 내 VRP 관련 그룹 활성화용
         'active_submenu': 'vrp_advanced'  # 현재 페이지 활성화용
     }
-    logger.debug("Rendering VRP introduction page.")
     return render(request, 'routing_logistics_app/vrp_advanced.html', context)
 
 def vrp_demo_view(request):
-    """
-    Vehicle Routing Problem (VRP) introduction page.
-    """
-    form_data = {}
+    """Vehicle Routing Problem (VRP) 데모 뷰"""
+    source = request.POST if request.method == 'POST' else request.GET
     model_name = 'VRP'
+
     if request.method == 'GET':
-        logger.info(f'{model_name} Demo GET request processing.')
-        submitted_num_customers = int(request.GET.get('num_customers_to_show', preset_num_customers))
-        submitted_num_vehicles = int(request.GET.get('num_vehicles_to_show', preset_num_vehicles))
-        submitted_vehicle_capa = int(request.GET.get('num_vehicle_capa_to_show', preset_vehicle_capacity))
-        submitted_num_customers = max(1, min(10, submitted_num_customers))
-        submitted_num_vehicles = max(1, min(5, submitted_num_vehicles))
-        submitted_vehicle_capa = max(50, min(100, submitted_vehicle_capa))
+        logger.info(f'[{model_name}Demo] GET request received.')
+    else:
+        logger.info(f'[{model_name}Demo] POST request received.')
+        logger.debug(f"[{model_name}Demo] Form data: {source}")
 
-        form_data['depot_x'] = request.GET.get('depot_x', preset_depot_location.get('x'))
-        form_data['depot_y'] = request.GET.get('depot_y', preset_depot_location.get('y'))
-        for i in range(len(preset_customer_locations)):
-            preset = preset_customer_locations[i % len(preset_customer_locations)]
-            for key, default_val in preset.items():
-                form_data[f'cust_{i}_{key}'] = request.GET.get(f'cust_{i}_{key}', default_val)
+    # GET/POST 공통으로 파라미터 읽기 및 form_data 구성
+    submitted_num_customers = int(source.get('num_customers_to_show', source.get('num_customers', preset_num_customers)))
+    submitted_num_vehicles = int(source.get('num_vehicles_to_show', source.get('num_vehicles', preset_num_vehicles)))
 
-    elif request.method == 'POST':
-        form_data = request.POST.copy()
-        submitted_num_customers = int(form_data.get('num_customers', preset_num_customers))
-        submitted_num_vehicles = int(form_data.get('num_vehicles', preset_num_vehicles))
-        submitted_vehicle_capa= int(form_data.get('vehicle_capa', preset_vehicle_capacity))
-        form_data['depot_x'] = form_data.get('depot_x', preset_depot_location.get('x'))
-        form_data['depot_y'] = form_data.get('depot_y', preset_depot_location.get('y'))
+    form_data = {}
+    form_data['depot_x'] = source.get('depot_x', preset_depot_location.get('x'))
+    form_data['depot_y'] = source.get('depot_y', preset_depot_location.get('y'))
+    for i in range(submitted_num_customers):
+        preset = preset_customer_locations[i % len(preset_customer_locations)]
+        for key, default_val in preset.items():
+            form_data[f'cust_{i}_{key}'] = source.get(f'cust_{i}_{key}', default_val)
 
     context = {
         'active_model': 'Routing & Logistics',
@@ -75,16 +68,13 @@ def vrp_demo_view(request):
         'vehicle_capa_options': range(50,210,10),
         'submitted_num_customers': submitted_num_customers,
         'submitted_num_vehicles': submitted_num_vehicles,
-        'submitted_vehicle_capa' : submitted_vehicle_capa,
         'plot_data': None
     }
 
     if request.method == 'POST':
-        logger.info(f'{model_name} Demo POST request processing.')
-
         try:
             # 1. 데이터 파일 새성 및 검증
-            input_data = create_vrp_json_data(form_data)
+            input_data = create_vrp_json_data(source)
 
             # 2. 파일 저장
             if settings.SAVE_DATA_FILE:
@@ -102,8 +92,9 @@ def vrp_demo_view(request):
                 context['error_message'] = error_msg_opt
             elif results_data and results_data['routes']:
                 context['opt_results'] = results_data
-                success_message = f"{model_name} 최적 경로 계산 완료! 총 거리: {results_data['total_distance']:.2f}"
+                success_message = f"[{model_name}Demo] Optimization successful. Total distance: {results_data['total_distance']:.2f}"
                 context['success_message'] = success_message
+                logger.info(success_message)
 
                 # 차트용 데이터 준비
                 plot_data = {'locations': [], 'routes': [], 'depot_index': 0}
@@ -123,28 +114,23 @@ def vrp_demo_view(request):
                     })
                 context['plot_data'] = json.dumps(plot_data)  # JSON 문자열로 전달
                 logger.debug(f"Plot data prepared: {plot_data}")
-            else:  # 결과도 없고 명시적 에러도 없는 경우 (예: 해를 못 찾았지만 오류는 아닌 상태)
-                current_error = context.get('error_message', '')
-                default_opt_error = "최적 경로를 찾지 못했거나 방문할 고객이 없습니다."
-                context['error_message'] = (
-                        current_error + " " + default_opt_error).strip() if current_error else default_opt_error
-        except ValueError as ve:
-            context['error_message'] = f"입력값 오류: {str(ve)}"
-            logger.error(f"ValueError in {context['active_submenu']}_view (POST): {ve}", exc_info=True)
+            else:
+                context['error_message'] = "최적 경로를 찾지 못했거나 방문할 고객이 없습니다."
         except Exception as e:
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"
-            logger.error(f"Unexpected error in {context['active_submenu']}_view (POST): {e}", exc_info=True)
+            logger.error(f"[{model_name}Demo] Unexpected error: {e}", exc_info=True)
 
     return render(request, 'routing_logistics_app/vrp_demo.html', context)
 
 
 def cvrp_introduction_view(request):
+    """Capacitated VRP (CVRP) 소개 페이지"""
+    logger.info("[CVRPIntro] Page requested.")
     context = {
         'active_model': 'Routing & Logistics',  # 대메뉴 활성화용
         'active_submenu_category': 'capacitated_vehicle_routing_problems',
         'active_submenu': 'cvrp_introduction'  # 현재 페이지 활성화용
     }
-    logger.debug(f"Rendering CVRP introduction page.")
     return render(request, 'routing_logistics_app/cvrp_introduction.html', context)
 
 
@@ -263,12 +249,13 @@ def cvrp_demo_view(request):
 
 
 def pdp_introduction_view(request):
+    """Pickup and Delivery Problem (PDP) 소개 페이지"""
+    logger.info("[PDPIntro] Page requested.")
     context = {
         'active_model': 'Routing & Logistics',  # 대메뉴 활성화용
         'active_submenu_category': 'pickup_delivery_problem',
         'active_submenu': 'pdp_introduction'  # 현재 페이지 활성화용
     }
-    logger.debug("Rendering PDP introduction page.")
     return render(request, 'routing_logistics_app/pdp_introduction.html', context)
 
 

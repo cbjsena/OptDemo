@@ -86,10 +86,8 @@
         <input type="hidden" name="vehicle_capacity" value="{{ submitted_vehicle_capa }}" id="form_vehicle_capa">
         <div class="form-section">
             <h4>1. 위치 지정 (차고지 1개, 고객 {{ submitted_num_customers }}명, 차량 {{submitted_num_vehicles}}대)</h4>
-            <p>최초 좌측 상단 파란색으로 초기화 됩니다. 차고지 위치를 변경하려면 아래 위치 초기화 버튼을 클릭하세요.</p>
             <p id="canvasInstructions">먼저 차고지(Depot) 위치를 클릭하세요.</p>
             <canvas id="vrpCanvasInput" width="600" height="400"></canvas>
-            <button type="button" class="btn btn-sm btn-warning mb-2" id="resetLocationsBtn">위치 초기화</button>
 
             <h5>지정된 위치:</h5>
             <div id="locationsDisplay" class="location-list">
@@ -291,7 +289,6 @@
         const ctx = canvas.getContext('2d');
         const instructions = document.getElementById('canvasInstructions');
         const locationsDisplay = document.getElementById('locationsDisplay');
-        const resetBtn = document.getElementById('resetLocationsBtn');
 
         const depotHiddenX = document.getElementById('hidden_depot_x');
         const depotHiddenY = document.getElementById('hidden_depot_y');
@@ -493,34 +490,6 @@
             }
             updateInstructionsAndDisplay();
             redrawCanvas();
-        });
-
-        resetBtn.addEventListener('click', function() {
-            // ... (VRP와 유사, customers 배열 초기화 시 demand도 고려) ...
-            depot = null;
-            customers = new Array(numCustomers).fill(null); // 고객 배열 초기화
-            depotHiddenX.value = '';
-            depotHiddenY.value = '';
-            for (let i = 0; i < numCustomers; i++) {
-                if(customerHiddenX[i]) customerHiddenX[i].value = '';
-                if(customerHiddenY[i]) customerHiddenY[i].value = '';
-                // ID와 수요량 입력 필드(보이는 것)도 초기화
-                const idDisplayField = document.getElementById(`display_cust_${i}_id`);
-                if (idDisplayField) idDisplayField.value = `C${i+1}`; // ID 표시 필드
-                const idHiddenField = document.getElementById(`hidden_cust_${i}_id`);
-                if (idHiddenField) idHiddenField.value = `C${i+1}`; // 숨겨진 ID 필드
-
-                const demandField = document.getElementById(`cust_${i}_demand`);
-                if (demandField) demandField.value = '30'; // 수요량 기본값
-                if(customerHiddenDemand[i]) customerHiddenDemand[i].value = '30'; // 숨겨진 수요량 필드
-            }
-            placingDepot = true;
-            currentCustomerIndex = 0;
-            selectedNode = null;
-
-            updateInstructionsAndDisplay();
-            redrawCanvas();
-            console.log("Locations reset.");
         });
 
         // 페이지 로드 시 초기값으로 캔버스 및 상태 업데이트
