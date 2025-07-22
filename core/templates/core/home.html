@@ -1,10 +1,111 @@
 {% extends "core/base.html" %}
+{% load static %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Welcome to OptDemo{% endblock %}
+
+{% block styles %}
+<style>
+    .hero-section {
+        background-color: #f8f9fa;
+        padding: 4rem 2rem;
+        margin-bottom: 2rem;
+        border-radius: .3rem;
+    }
+    .hero-section h1 {
+        font-weight: 300;
+    }
+    .concept-diagram {
+        max-width: 600px;
+        margin: 2rem auto;
+    }
+    .card-deck .card {
+        min-width: 280px;
+        transition: transform .2s, box-shadow .2s;
+    }
+    .card-deck .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+    }
+    .card-icon {
+        font-size: 3rem;
+        color: #007bff;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Optimization Demo Platform</h1>
-    <p>상단의 모델을 선택하여 데모를 진행하세요.</p>
+<div class="container-fluid">
+    <!-- Hero Section -->
+    <div class="hero-section text-center">
+        <h1 class="display-4">Optimization Demo Site</h1>
+        <p class="lead">수학적 최적화 기술을 활용하여 다양한 산업 현장의 복잡한 문제를 해결하는 과정을 체험해보세요.</p>
+        <p>상단의 메뉴에서 관심 있는 데모 카테고리를 선택하여 시작할 수 있습니다.</p>
+    </div>
+
+    <!-- Concept Diagram Section -->
+    <div class="row align-items-center">
+        <div class="col-lg-6">
+            <h2>최적화란 무엇일까요?</h2>
+            <p>최적화는 주어진 조건 하에서 특정 목표를 달성하기 위한 최상의 해결책을 찾는 과학적인 접근 방식입니다.</p>
+<p>복잡하고 혼란스러운 현실 세계의 문제(<strong>Real World</strong>)를 수학적 언어로 명확히 정의하고, 이를 바탕으로 모델을 구성하는 과정이 <strong>Abstraction</strong>(추상화)입니다.</p>
+<p>이렇게 만들어진 모델을 분석하고 최적화하여 해결책을 도출하고(<strong>Analyze & Optimize</strong>), 이를 다시 현실 세계에 적용합니다.</p>
+<p>적용 결과가 현실에 적합하지 않다면, 모델이나 가정을 수정하여 다시 문제를 정의하는 <strong>Refinement</strong> 단계를 거칩니다. 이러한 과정을 반복하면서 더 나은 해결책에 다가갑니다.</p>
+        </div>
+        <div class="col-lg-6">
+            <img src="{% static 'core/images/optimization_concept.png' %}" alt="Optimization Concept Diagram" class="img-fluid concept-diagram">
+        </div>
+    </div>
+
+    <hr class="my-5">
+
+    <!-- Demo Categories Section -->
+    <h2 class="text-center mb-4">Explore Demo Cases</h2>
+    <div class="card-deck">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="card-icon mb-3">🔄</div>
+                <h5 class="card-title">Matching & Assignment</h5>
+                <p class="card-text">자원과 작업을 1:1 또는 다대다로 매칭하여 전체 효율을 극대화합니다. (예: LCD 패널 매칭, 인력-프로젝트 할당)</p>
+                <a href="{% url 'matching_assignment_app:matching_assignment_introduction' %}" class="btn btn-primary">자세히 보기</a>
+            </div>
+        </div>
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="card-icon mb-3">📊</div>
+                <h5 class="card-title">Resource Allocation</h5>
+                <p class="card-text">한정된 예산이나 자원을 여러 대상에 최적으로 분배합니다. (예: 예산 분배, 데이터 센터 용량 계획)</p>
+                <a href="{% url 'resource_allocation_app:resource_allocation_introduction' %}" class="btn btn-primary">자세히 보기</a>
+            </div>
+        </div>
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="card-icon mb-3">🚚</div>
+                <h5 class="card-title">Routing & Logistics</h5>
+                <p class="card-text">여러 지점을 방문하는 차량의 경로를 최적화하여 비용과 시간을 절감합니다. (예: 차량 경로 문제 - VRP)</p>
+                <a href="{% url 'routing_logistics_app:vrp_introduction' %}" class="btn btn-primary">자세히 보기</a>
+            </div>
+        </div>
+    </div>
+     <div class="card-deck mt-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="card-icon mb-3">🏭</div>
+                <h5 class="card-title">Production & Scheduling</h5>
+                <p class="card-text">생산 공정의 작업 순서와 일정을 계획하여 생산성을 극대화합니다. (예: Flow Shop, Job Shop 스케줄링)</p>
+                <a href="{% url 'production_scheduling_app:production_scheduling_introduction' %}" class="btn btn-primary">자세히 보기</a>
+            </div>
+        </div>
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="card-icon mb-3">🧩</div>
+                <h5 class="card-title">Puzzles & Real-World Logic</h5>
+                <p class="card-text">논리적 제약이 많은 퍼즐과 현실 문제를 해결합니다. (예: 스도쿠, 스포츠 리그 일정 계획)</p>
+                <a href="{% url 'puzzles_logic_app:puzzles_logic_introduction' %}" class="btn btn-primary">자세히 보기</a>
+            </div>
+        </div>
+         <div class="card text-center" style="visibility: hidden;">
+             <!-- 카드 개수 맞추기 위한 빈 카드 -->
+         </div>
+    </div>
 </div>
 {% endblock %}
