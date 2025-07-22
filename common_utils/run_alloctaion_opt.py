@@ -30,7 +30,7 @@ def run_budget_allocation_optimizer(input_data):
     logger.debug(f"Created {num_items} decision variables for budget allocation.")
 
     # 총 예산 제약
-    constraint_total_budget = solver.Constraint(0, float(total_budget), 'total_budget_constraint')
+    constraint_total_budget = solver.Constraint(0, total_budget, 'total_budget_constraint')
     for i in range(num_items):
         constraint_total_budget.SetCoefficient(x[i], 1)
     logger.debug(f"Added total budget constraint: sum(x_i) <= {total_budget}")
@@ -39,8 +39,8 @@ def run_budget_allocation_optimizer(input_data):
     for i in range(num_items):
         item = items_data[i]
         # 입력 단계에서 float으로 변환되었음을 가정, 여기서 한 번 더 확인 및 변환
-        min_alloc = float(item.get('min_alloc', 0))
-        max_alloc = float(item.get('max_alloc', infinity))
+        min_alloc = item.get('min_alloc', 0)
+        max_alloc = item.get('max_alloc', infinity)
 
         # 변수 생성 시 이미 하한이 0으로 설정되었으므로, min_alloc을 적용하려면 변수 하한을 직접 수정하거나 제약조건 추가
         x[i].SetLb(min_alloc)  # 변수의 Lower Bound 설정
@@ -50,7 +50,7 @@ def run_budget_allocation_optimizer(input_data):
     objective = solver.Objective()
     for i in range(num_items):
         item = items_data[i]
-        return_coeff = float(item.get('return_coefficient', 0))
+        return_coeff = item.get('return_coefficient')
         objective.SetCoefficient(x[i], return_coeff)
     objective.SetMaximization()
     logger.debug("Budget allocation objective function set for maximization.")

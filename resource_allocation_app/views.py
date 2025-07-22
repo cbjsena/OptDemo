@@ -33,38 +33,41 @@ def budget_allocation_introduction_view(request):
     return render(request, 'resource_allocation_app/budget_allocation_introduction.html', context)
 
 def budget_allocation_demo_view(request):
-    form_data = {}
-    if request.method == 'GET':
-        form_data['total_budget'] = preset_total_budget
-        submitted_num_item = int(request.GET.get('num_items_to_show', preset_budget_num_item))
-        submitted_num_item = max(2, min(10, submitted_num_item))
+    # 요청 방식에 따라 데이터 소스 결정
+    source = request.POST if request.method == 'POST' else request.GET
 
-        for i in range(submitted_num_item):
-            preset = preset_budget_items[i]
-            for key, default_val in preset.items():
-                form_data[key] = default_val
+    # --- 어떤 요청이든 현재 설정값을 읽어옴 ---
+    submitted_num_items = int(source.get('num_items_to_show', source.get('num_items', preset_budget_num_item)))
+    total_budget = int(source.get('total_budget', preset_total_budget))
 
-    elif request.method == 'POST':
-        form_data = request.POST.copy()
-        submitted_num_item = int(form_data.get('num_items', preset_budget_num_item))
+    items_data = []
+    for i in range(submitted_num_items):
+        preset = preset_budget_items[i]
+        items_data.append({
+            'name': source.get(f'item_{i}_name', preset['name']),
+            'return_coefficient': source.get(f'item_{i}_return_coefficient', preset['return_coefficient']),
+            'min_alloc': source.get(f'item_{i}_min_alloc', preset['min_alloc']),
+            'max_alloc': source.get(f'item_{i}_max_alloc', preset['max_alloc']),
+        })
 
     context = {
         'active_model': 'Resource Allocation',
         'active_submenu': 'Budget Allocation Demo',
-        'num_items_options': range(1, 11),
-        'form_data': form_data,
+        'num_items_options': range(2, 11),
+        'total_budget': total_budget,
+        'items_data': items_data,
         'results': None,
         'processing_time_seconds': "N/A",
         'error_message': None,
         'success_message': None,
-        'submitted_num_items': submitted_num_item
+        'submitted_num_items': submitted_num_items
     }
 
     if request.method == 'POST':
         logger.info("Budget allocation demo POST request received.")
         try:
             # 1. 데이터 생성 및 검증
-            input_data = create_budget_allocation_json_data(form_data, submitted_num_item)
+            input_data = create_budget_allocation_json_data(source)
 
             # 2. 파일 저장
             if settings.SAVE_DATA_FILE:
@@ -73,7 +76,7 @@ def budget_allocation_demo_view(request):
                     context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
                 elif success_save_message:
                     context['success_save_message'] = success_save_message
-
+            logger.info( context.get('success_save_message', ''))
             # 3. 최적화 실행
             results, error_msg, processing_time = run_budget_allocation_optimizer(input_data)
             context['processing_time_seconds'] = processing_time
@@ -81,7 +84,7 @@ def budget_allocation_demo_view(request):
                 context['error_message'] = error_msg
             else:
                 context['results'] = results
-                context['success_message'] = f"최적 예산 분배 수립 완료! 최대 기대 수익: {results['total_maximized_return']:.2f}"
+                context['success_message'] = f"최적 예산 분배 수립 완료! 최대 기대 수익: {results['total_maximized_return']}"
                 logger.info(
                     f"Budget allocation successful. Max return: {results['total_maximized_return']}, "
                     f"Total allocated: {results['total_allocated_budget']}, "
@@ -243,67 +246,64 @@ def data_center_capacity_introduction_view(request): # Renamed to be more genera
 
 
 def data_center_capacity_demo_view(request):
-    default_num_server_types = 2
-    default_num_services = 2
-    submitted_num_server_types= default_num_server_types
-    submitted_num_services = default_num_services
-    # GET 요청 시 또는 POST 후 폼 값 유지를 위한 form_data 초기화
-    form_data = {}
+    source = request.POST if request.method == 'POST' else request.GET
 
-    # GET 요청 시 기본 폼 데이터 채우기
-    if request.method == 'GET':
-        # URL 파라미터 또는 기본값으로 항목 수 결정
-        submitted_num_server_types = int(request.GET.get('num_server_types_to_show', default_num_server_types))
-        submitted_num_services = int(request.GET.get('num_services_to_show', default_num_services))
+    submitted_num_server_types = int(
+        source.get('num_server_types_to_show', source.get('num_server_types', preset_datacenter_num_server_types)))
+    submitted_num_services = int(source.get('num_services_to_show', source.get('num_services', preset_datacenter_num_services)))
 
-        # 범위 제한
-        submitted_num_server_types = max(1, min(3, submitted_num_server_types))
-        submitted_num_services = max(1, min(3, submitted_num_services))
+    global_constraints = {
+        'total_budget': source.get('total_budget', 100000),
+        'total_power_kva': source.get('total_power_kva', 50),
+        'total_space_sqm': source.get('total_space_sqm', 10),
+    }
 
-        # 기본 글로벌 제약 조건 값 설정
-        form_data['total_budget'] = request.GET.get('total_budget', 100000)
-        form_data['total_power_kva'] = request.GET.get('total_power_kva', 50)
-        form_data['total_space_sqm'] = request.GET.get('total_space_sqm', 10)
-        # 기본 서버 유형 데이터 (ID 포함)
-        for i in range(submitted_num_server_types):
-            preset = preset_datacenter_servers[i % len(preset_datacenter_servers)]
-            for key, default_val in preset.items():
-                form_data[f'server_{i}_{key}'] = request.GET.get(f'server_{i}_{key}', default_val)
+    servers_data = []
+    for i in range(submitted_num_server_types):
+        preset = preset_datacenter_servers[i % len(preset_datacenter_servers)]
+        servers_data.append({
+            'id': source.get(f'server_{i}_id', preset.get('id')),
+            'cost': source.get(f'server_{i}_cost', preset.get('cost')),
+            'cpu_cores': source.get(f'server_{i}_cpu_cores', preset.get('cpu_cores')),
+            'ram_gb': source.get(f'server_{i}_ram_gb', preset.get('ram_gb')),
+            'storage_tb': source.get(f'server_{i}_storage_tb', preset.get('storage_tb')),
+            'power_kva': source.get(f'server_{i}_power_kva', preset.get('power_kva')),
+            'space_sqm': source.get(f'server_{i}_space_sqm', preset.get('space_sqm')),
+        })
 
-        # 기본 서비스 수요 데이터 (ID 포함)
-        for i in range(submitted_num_services):
-            preset = preset_datacenter_services[i % len(preset_datacenter_services)]
-            for key, default_val in preset.items():
-                form_data[f'service_{i}_{key}'] = request.GET.get(f'service_{i}_{key}', default_val)
-    elif request.method == 'POST':
-        form_data = request.POST.copy()  # POST 요청 시에는 제출된 데이터 사용
-        submitted_num_server_types = int(form_data.get('num_server_types', default_num_server_types))
-        submitted_num_services = int(form_data.get('num_services', default_num_services))
+    services_data = []
+    for i in range(submitted_num_services):
+        preset = preset_datacenter_services[i % len(preset_datacenter_services)]
+        services_data.append({
+            'id': source.get(f'service_{i}_id', preset.get('id')),
+            'revenue_per_unit': source.get(f'service_{i}_revenue_per_unit', preset.get('revenue_per_unit')),
+            'req_cpu_cores': source.get(f'service_{i}_req_cpu_cores', preset.get('req_cpu_cores')),
+            'req_ram_gb': source.get(f'service_{i}_req_ram_gb', preset.get('req_ram_gb')),
+            'req_storage_tb': source.get(f'service_{i}_req_storage_tb', preset.get('req_storage_tb')),
+            'max_units': source.get(f'service_{i}_max_units', preset.get('max_units')),
+        })
 
     context = {
         'active_model': 'Resource Allocation',
         'active_submenu': 'Data Center Capacity Demo',
-        'form_data': form_data, # GET 또는 POST로부터 채워진 form_data
-        'results': None,
-        'error_message': None,
-        'success_message': None,
+        'global_constraints': global_constraints,
+        'servers_data': servers_data,
+        'services_data': services_data,
+        'results': None, 'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
         'num_server_types_options': range(1, 4),
         'num_services_options': range(1, 4),
         'submitted_num_server_types': submitted_num_server_types,
         'submitted_num_services': submitted_num_services,
-        # 템플릿의 if 조건문에서는 Python 딕셔너리 객체를 기준으로 조건을 확인
-        # JavaScript에서 사용할 때는 JSON 문자열을 파싱해서 객체
         'chart_data_py': {},
-        'chart_data_json':None
+        'chart_data_json': None
     }
+
     if request.method == 'POST':
         logger.info("Data Center Capacity Demo POST processing.")
         try:
             # 1. 데이터 파일 새성 및 검증
-            input_data = create_datacenter_allocation_json_data(
-                form_data, submitted_num_server_types, submitted_num_services
-            )
+            input_data = create_datacenter_allocation_json_data(source)
 
             # 2. 파일 저장
             if settings.SAVE_DATA_FILE:
@@ -350,7 +350,6 @@ def nurse_rostering_introduction_view(request):
 
 
 def nurse_rostering_demo_view(request):
-    form_data = {}
     source = request.POST if request.method == 'POST' else request.GET
     submitted_num_nurses = int(source.get('num_nurses', preset_nurse_rostering_num_nurses))
     submitted_num_days = int(source.get('num_days', preset_nurse_rostering_days))

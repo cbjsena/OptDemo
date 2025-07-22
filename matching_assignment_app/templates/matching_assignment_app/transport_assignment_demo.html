@@ -33,51 +33,58 @@
     </div>
     <p>배송 기사와 배송 구역 간의 비용(예: 예상 소요 시간)을 입력하여, 총 비용을 최소화하는 최적의 1:1 할당을 계산합니다.</p>
 
-    <form method="GET" class="mb-3 form-inline">
-        <div class="form-group mr-2">
-            <label for="num_items_to_show" class="mr-2">기사/구역 수 (2-5):</label>
-            <select name="num_items_to_show" id="num_items_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
-                {% for i in num_items_options %}
-                    <option value="{{ i }}" {% if i == submitted_num_items %}selected{% endif %}>{{ i }} x {{ i }}</option>
-                {% endfor %}
-            </select>
+    <!-- 설정 변경을 위한 숨겨진 GET 폼 -->
+    <form method="GET" id="settingsForm" style="display: none;"></form>
+
+    <!-- 상단 컨트롤러 -->
+    <div class="card mb-4">
+        <div class="card-body bg-light">
+            <div class="form-row align-items-end">
+                <div class="form-group col-md-4">
+                    <label for="num_items_to_show" class="small font-weight-bold">기사 / 구역 수</label>
+                    <select name="num_items_to_show" id="num_items_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                        {% for i in num_items_options %}
+                            <option value="{{ i }}" {% if i == submitted_num_items %}selected{% endif %}>{{ i }} x {{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group col-md-8 text-md-right">
+                     <button type="button" class="btn btn-sm btn-success mr-2" id="randomizeBtn">Random</button>
+                     <a href="{% url 'matching_assignment_app:transport_assignment_demo' %}" class="btn btn-sm btn-warning">Default</a>
+                </div>
+            </div>
         </div>
-        (기사/구역 수를 변경하면 작업 정보가 초기화 됩니다.)
-        <noscript><button type="submit" class="btn btn-sm btn-secondary">설정 적용</button></noscript>
-    </form>
+    </div>
 
     <form method="POST" id="assignmentForm">
         {% csrf_token %}
         <input type="hidden" name="problem_type" value="transport assignment" id="problem_type">
         <input type="hidden" name="num_items" value="{{ submitted_num_items }}">
 
-        <div class="form-section">
-            <h4>1. 비용 행렬 (Cost Matrix) 입력</h4>
-            <p>각 기사가 특정 구역을 담당하는 데 드는 비용(시간)을 입력하세요.</p>
-            <div class="table-responsive">
+        <div class="card">
+            <div class="card-header"><strong>1. 비용 행렬 (Cost Matrix) 입력</strong></div>
+            <div class="card-body table-responsive">
                 <table class="table table-bordered cost-matrix-table">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width: 120px;">기사 / 구역</th>
-                            {% for j in submitted_num_items|get_range %}
-                                {% make_key1 'zone_name' j as key_name %}
-                                <th>
-                                    <input type="text" class="form-control form-control-sm" name="zone_name_{{ j }}"
-                                           value="{{form_data|get_item_simple:key_name}}"></th>
+                            <th style="width: 150px;">기사 / 구역</th>
+                            {% for zone in zones_data %}
+                                <th><input type="text" class="form-control form-control-sm"
+                                           name="zone_name_{{ forloop.counter0 }}" value="{{ zone.name }}"></th>
                             {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
-                        {% for i in submitted_num_items|get_range %}
-                            {% make_key1 'driver_name' i as key_name1 %}
+                        {% for driver in drivers_data %}
                             <tr>
-                                <th><input type="text" class="form-control form-control-sm" name="{{key_name1}}"
-                                           value="{{form_data|get_item_simple:key_name1}}"></th>
-                                {% for j in submitted_num_items|get_range %}
-                                    {% make_key2 'cost' i j as key_name2 %}
+                                <th><input type="text" class="form-control form-control-sm"
+                                           name="driver_name_{{ forloop.counter0 }}" value="{{ driver.name }}">
+                                </th>
+                                {% for zone in zones_data %}
+                                    {% get_cell_value_tag cost_matrix forloop.parentloop.counter0 forloop.counter0 as cost_val %}
                                     <td>
-                                        <input type="number" min="0" class="form-control form-control-sm" name="{{key_name2}}"
-                                               value="{{form_data|get_item_simple:key_name2}}" required>
+                                        <input type="number" min="0" class="form-control form-control-sm" name="cost_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}"
+                                               value="{{ cost_val}}" required>
                                     </td>
                                 {% endfor %}
                             </tr>
@@ -140,4 +147,76 @@
     {% endif %}
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    function submitSettingsForm() {
+        const settingsForm = document.getElementById('settingsForm');
+        settingsForm.innerHTML = '';
+
+        // 상단 컨트롤러 값 추가
+        const numItemsSelect = document.getElementById('num_items_to_show');
+        const hiddenNumItems = document.createElement('input');
+        hiddenNumItems.type = 'hidden';
+        hiddenNumItems.name = 'num_items_to_show';
+        hiddenNumItems.value = numItemsSelect.value;
+        settingsForm.appendChild(hiddenNumItems);
+
+        // 현재 비용 행렬의 모든 값 추가
+        const numItems = {{ submitted_num_items }};
+        for (let i = 0; i < numItems; i++) {
+            // 기사 이름
+            const driverInput = document.querySelector(`input[name="driver_name_${i}"]`);
+            if (driverInput) {
+                let hiddenDriver = document.createElement('input');
+                hiddenDriver.type = 'hidden';
+                hiddenDriver.name = `driver_name_${i}`;
+                hiddenDriver.value = driverInput.value;
+                settingsForm.appendChild(hiddenDriver);
+            }
+            // 구역 이름
+            const zoneInput = document.querySelector(`input[name="zone_name_${i}"]`);
+            if (zoneInput) {
+                let hiddenZone = document.createElement('input');
+                hiddenZone.type = 'hidden';
+                hiddenZone.name = `zone_name_${i}`;
+                hiddenZone.value = zoneInput.value;
+                settingsForm.appendChild(hiddenZone);
+            }
+            // 비용 값
+            for (let j = 0; j < numItems; j++) {
+                const costInput = document.querySelector(`input[name="cost_${i}_${j}"]`);
+                if (costInput) {
+                    let hiddenCost = document.createElement('input');
+                    hiddenCost.type = 'hidden';
+                    hiddenCost.name = `cost_${i}_${j}`;
+                    hiddenCost.value = costInput.value;
+                    settingsForm.appendChild(hiddenCost);
+                }
+            }
+        }
+
+        settingsForm.submit();
+    }
+
+    // Random 버튼을 위한 JavaScript 로직
+    document.addEventListener('DOMContentLoaded', function() {
+        const randomizeBtn = document.getElementById('randomizeBtn');
+        if (randomizeBtn) {
+            randomizeBtn.addEventListener('click', function() {
+                const numItems = {{ submitted_num_items }};
+                for (let i = 0; i < numItems; i++) {
+                    for (let j = 0; j < numItems; j++) {
+                        const costInput = document.querySelector(`input[name="cost_${i}_${j}"]`);
+                        if (costInput) {
+                            costInput.value = Math.floor(Math.random() * 81) + 20; // 20 ~ 100 사이의 랜덤 정수
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

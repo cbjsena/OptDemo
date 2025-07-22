@@ -83,16 +83,8 @@ class MatchingAssignmentAppTests(TestCase):
 
         post_data = {
             'problem_type': 'resource skill',
-            'num_resources': '8',
             'num_projects': '3',
-            'res_0_id': 'R1', 'res_0_name': '김개발', 'res_0_cost': '100', 'res_0_skills': 'Python,ML',
-            'res_1_id': 'R2', 'res_1_name': '이엔지', 'res_1_cost': '120', 'res_1_skills': 'Java,SQL,Cloud',
-            'res_2_id': 'R3', 'res_2_name': '박기획', 'res_2_cost': '90', 'res_2_skills': 'SQL,Tableau',
-            'res_3_id': 'R4', 'res_3_name': '최신입', 'res_3_cost': '70', 'res_3_skills': 'Python',
-            'res_4_id': 'R5', 'res_4_name': '정고급', 'res_4_cost': '150', 'res_4_skills': 'Cloud,Python,K8s',
-            'res_5_id': 'R6', 'res_5_name': '한디자', 'res_5_cost': '105', 'res_5_skills': 'UI,AWS,UX,React',
-            'res_6_id': 'R7', 'res_6_name': '백엔드', 'res_6_cost': '110', 'res_6_skills': 'Java,Spring,SQL',
-            'res_7_id': 'R8', 'res_7_name': '프론트', 'res_7_cost': '90', 'res_7_skills': 'React,JavaScript',
+            'selected_resources': ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8'],
             'proj_0_id': 'P1', 'proj_0_name': 'AI 모델 개발', 'proj_0_required_skills': 'Python,ML,SQL',
             'proj_1_id': 'P2', 'proj_1_name': '데이터베이스 마이그레이션', 'proj_1_required_skills': 'AWS,SQL,Cloud',
             'proj_2_id': 'P3', 'proj_2_name': '웹 서비스 프론트엔드', 'proj_2_required_skills': 'React,JavaScript'
@@ -116,16 +108,8 @@ class MatchingAssignmentAppTests(TestCase):
 
         post_data = {
             'problem_type': 'resource skill',
-            'num_resources': '7',
             'num_projects': '3',
-            'res_0_id': 'R1', 'res_0_name': '김개발', 'res_0_cost': '100', 'res_0_skills': 'Python,ML',
-            'res_1_id': 'R2', 'res_1_name': '이엔지', 'res_1_cost': '120', 'res_1_skills': 'Java,SQL,Cloud',
-            'res_2_id': 'R3', 'res_2_name': '박기획', 'res_2_cost': '90', 'res_2_skills': 'SQL,Tableau',
-            'res_3_id': 'R4', 'res_3_name': '최신입', 'res_3_cost': '70', 'res_3_skills': 'Python',
-            'res_4_id': 'R5', 'res_4_name': '정고급', 'res_4_cost': '150', 'res_4_skills': 'Cloud,Python,K8s',
-            'res_5_id': 'R6', 'res_5_name': '한디자', 'res_5_cost': '105', 'res_5_skills': 'UI,AWS,UX,React',
-            'res_6_id': 'R7', 'res_6_name': '백엔드', 'res_6_cost': '110', 'res_6_skills': 'Java,Spring,SQL',
-            'res_7_id': 'R8', 'res_7_name': '프론트', 'res_7_cost': '90', 'res_7_skills': 'React,JavaScript',
+            'selected_resources': ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7'],
             'proj_0_id': 'P1', 'proj_0_name': 'AI 모델 개발', 'proj_0_required_skills': 'Python,ML,SQL',
             'proj_1_id': 'P2', 'proj_1_name': '데이터베이스 마이그레이션', 'proj_1_required_skills': 'AWS,SQL,Cloud',
             'proj_2_id': 'P3', 'proj_2_name': '웹 서비스 프론트엔드', 'proj_2_required_skills': 'React,JavaScript'

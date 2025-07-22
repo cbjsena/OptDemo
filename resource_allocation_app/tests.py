@@ -44,23 +44,23 @@ class ResourceAllocationAppTests(TestCase):
             'num_items': '3',
             'total_budget': '1000',
 
+            # Item 0
+            'item_0_name': 'item_0',
+            'item_0_return_coefficient': '1.1',
+            'item_0_min_alloc': '0',
+            'item_0_max_alloc': '1000',
+
             # Item 1
-            'item_1_id': 'item_1',
-            'item_1_return_coeff': '3.1',
+            'item_1_name': 'item_1',
+            'item_1_return_coefficient': '3.1',
             'item_1_min_alloc': '0',
             'item_1_max_alloc': '200',
 
             # Item 2
-            'item_2_id': 'item_2',
-            'item_2_return_coeff': '2.1',
+            'item_2_name': 'item_2',
+            'item_2_return_coefficient': '2.1',
             'item_2_min_alloc': '0',
             'item_2_max_alloc': '300',
-
-            # Item 3
-            'item_3_id': 'item_3',
-            'item_3_return_coeff': '1.1',
-            'item_3_min_alloc': '0',
-            'item_3_max_alloc': '1000',
         }
 
         # POST 요청 시뮬레이션

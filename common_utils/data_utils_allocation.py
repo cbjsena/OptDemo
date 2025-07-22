@@ -8,18 +8,19 @@ logger = logging.getLogger(__name__)
 preset_total_budget = 1000
 preset_budget_num_item = 3
 preset_budget_items = [
-    {'item_1_id': 'item_1', 'item_1_return_coeff': '3.1', 'item_1_min_alloc': '0', 'item_1_max_alloc': '200'},
-    {'item_2_id': 'item_2', 'item_2_return_coeff': '2.1', 'item_2_min_alloc': '0', 'item_2_max_alloc': '300'},
-    {'item_3_id': 'item_3', 'item_3_return_coeff': '1.1', 'item_3_min_alloc': '0', 'item_3_max_alloc': '1000'},
-    {'item_4_id': 'item_4', 'item_4_return_coeff': '3.1', 'item_4_min_alloc': '0', 'item_4_max_alloc': '200'},
-    {'item_5_id': 'item_5', 'item_5_return_coeff': '2.1', 'item_5_min_alloc': '0', 'item_5_max_alloc': '300'},
-    {'item_6_id': 'item_6', 'item_6_return_coeff': '1.1', 'item_6_min_alloc': '0', 'item_6_max_alloc': '1000'},
-    {'item_7_id': 'item_7', 'item_7_return_coeff': '3.1', 'item_7_min_alloc': '0', 'item_7_max_alloc': '200'},
-    {'item_8_id': 'item_8', 'item_8_return_coeff': '2.1', 'item_8_min_alloc': '0', 'item_8_max_alloc': '300'},
-    {'item_9_id': 'item_9', 'item_9_return_coeff': '1.1', 'item_9_min_alloc': '0', 'item_9_max_alloc': '1000'},
-    {'item_10_id': 'item_10', 'item_10_return_coeff': '3.1', 'item_10_min_alloc': '0', 'item_10_max_alloc': '200'}
+    {'name': 'item_1', 'return_coefficient': '3.1', 'min_alloc': '0', 'max_alloc': '200'},
+    {'name': 'item_2', 'return_coefficient': '2.1', 'min_alloc': '0', 'max_alloc': '300'},
+    {'name': 'item_3', 'return_coefficient': '1.1', 'min_alloc': '0', 'max_alloc': '1000'},
+    {'name': 'item_4', 'return_coefficient': '3.1', 'min_alloc': '0', 'max_alloc': '200'},
+    {'name': 'item_5', 'return_coefficient': '2.1', 'min_alloc': '0', 'max_alloc': '300'},
+    {'name': 'item_6', 'return_coefficient': '1.1', 'min_alloc': '0', 'max_alloc': '1000'},
+    {'name': 'item_7', 'return_coefficient': '3.1', 'min_alloc': '0', 'max_alloc': '200'},
+    {'name': 'item_8', 'return_coefficient': '2.1', 'min_alloc': '0', 'max_alloc': '300'},
+    {'name': 'item_9', 'return_coefficient': '1.1', 'min_alloc': '0', 'max_alloc': '1000'},
+    {'name': 'item_10', 'return_coefficient': '3.1', 'min_alloc': '0', 'max_alloc': '200'}
 ]
-
+preset_datacenter_num_server_types = 2
+preset_datacenter_num_services = 2
 preset_datacenter_servers = [
     {'id': 'SrvA', 'cost': '500', 'cpu_cores': '48', 'ram_gb': '256', 'storage_tb': '10', 'power_kva': '0.5',
      'space_sqm': '0.2'},
@@ -80,18 +81,19 @@ preset_nurse_rostering_shift_requirements = {
 preset_nurse_rostering_enabled_fairness = ['fair_weekends', 'fair_nights', 'fair_offs']  # 'fair_weekends'
 
 
-def create_budget_allocation_json_data(form_data, num_items):
+def create_budget_allocation_json_data(form_data):
     total_budget_str = form_data.get('total_budget')
+    num_items = int(form_data.get('num_items'))
     if not total_budget_str:
         raise ValueError("총 예산이 입력되지 않았습니다.")
-    total_budget = float(total_budget_str)
+    total_budget = int(total_budget_str)
     if total_budget < 0:
         raise ValueError("총 예산은 음수가 될 수 없습니다.")
 
     items_data = []
-    for i in range(1, num_items + 1):
-        name = form_data.get(f'item_{i}_name', f'item_{i}_name')
-        return_coeff_str = form_data.get(f'item_{i}_return_coeff')
+    for i in range(num_items):
+        name = form_data.get(f'item_{i}_name')
+        return_coeff_str = form_data.get(f'item_{i}_return_coefficient')
         min_alloc_str = form_data.get(f'item_{i}_min_alloc', '0')
         max_alloc_str = form_data.get(f'item_{i}_max_alloc', str(total_budget))
         if not return_coeff_str:
@@ -126,12 +128,15 @@ def create_budget_allocation_json_data(form_data, num_items):
     return input_data
 
 
-def create_datacenter_allocation_json_data(form_data, submitted_num_server_types, submitted_num_services):
+def create_datacenter_allocation_json_data(form_data):
     global_constraints = {
         'total_budget': form_data.get('total_budget', '0'),  # 유효성 검사 함수에서 float 변환
         'total_power_kva': form_data.get('total_power_kva', '0'),
         'total_space_sqm': form_data.get('total_space_sqm', '0'),
     }
+
+    num_server_types = int(form_data.get('num_server_types', '0'))
+    num_services = int(form_data.get('num_services', '0'))
 
     # 1. 글로벌 제약 조건 유효성 검사
     required_global_keys = ['total_budget', 'total_power_kva', 'total_space_sqm']
@@ -139,15 +144,15 @@ def create_datacenter_allocation_json_data(form_data, submitted_num_server_types
         if key not in global_constraints:
             return f"글로벌 제약 조건에 필수 키 '{key}'가 없습니다."
         try:
-            val = float(global_constraints[key])
+            val = int(global_constraints[key])
             if val < 0:
                 return f"글로벌 제약 조건 '{key}'의 값({val})은 음수가 될 수 없습니다."
-            global_constraints[key] = val  # float으로 변환하여 업데이트
+            global_constraints[key] = val
         except (ValueError, TypeError):
             return f"글로벌 제약 조건 '{key}'의 값('{global_constraints[key]}')이 올바른 숫자가 아닙니다."
 
     server_data = []
-    for i in range(submitted_num_server_types):
+    for i in range(num_server_types):
         server_data.append({
             'id': form_data.get(f'server_{i}_id', f'SrvType{i + 1}'),  # 기본 ID 제공
             'cost': form_data.get(f'server_{i}_cost', '0'),
@@ -182,7 +187,7 @@ def create_datacenter_allocation_json_data(form_data, submitted_num_server_types
             return f"서버 유형 (ID: {server.get('id')})의 속성값 중 올바르지 않은 숫자 형식이 있습니다: {e}"
 
     demand_data = []
-    for i in range(submitted_num_services):
+    for i in range(num_services):
         demand_data.append({
             'id': form_data.get(f'service_{i}_id', f'Svc{i + 1}'),  # 기본 ID 제공
             'revenue_per_unit': form_data.get(f'service_{i}_revenue_per_unit', '0'),

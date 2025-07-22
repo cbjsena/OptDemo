@@ -9,6 +9,13 @@ logger = logging.getLogger(__name__)
 preset_trans_assign_items=3
 preset_trans_assign_drivers=["김기사", "이배달", "박운송", "최신속", "정안전"]
 preset_trans_assign_zones = ["강남구", "서초구", "송파구", "마포구", "영등포구"]
+preset_trans_cost_matrix = [
+    [47, 70, 30, 88, 25],
+    [42, 58, 23, 91, 65],
+    [89, 32, 92, 45, 55],
+    [38, 66, 75, 29, 81],
+    [51, 77, 48, 62, 39]
+]
 
 preset_num_resources=7
 preset_num_projects=3
@@ -72,26 +79,30 @@ def create_cf_tft_matching_json_data(num_cf_panels, num_tft_panels, panel_rows, 
     return generated_data
 
 
-def create_transport_assignment_json_data(form_data, submitted_num_items):
-    num_items = submitted_num_items
-    cost_matrix = [[0] * num_items for _ in range(num_items)]
-    driver_names = []
-    zone_names = []
+def create_transport_assignment_json_data(form_data):
+    num_items = int(form_data.get('num_items'))
 
+    drivers_data = []
     for i in range(num_items):
-        driver_names.append(form_data.get(f'driver_name_{i}', f'기사 {i + 1}'))
-        zone_names.append(form_data.get(f'zone_name_{i}', f'구역 {i + 1}'))
+        drivers_data.append(form_data.get(f'driver_name_{i}'))
+
+    zones_data = []
+    for i in range(num_items):
+        zones_data.append(form_data.get(f'zone_name_{i}'))
+
+    cost_matrix = []
+    for i in range(num_items):
+        row = []
         for j in range(num_items):
-            cost_val = form_data.get(f'cost_{i}_{j}')
-            if cost_val is None or not cost_val.isdigit():
-                raise ValueError(f"'{driver_names[i]}' -> '{zone_names[j]}' 비용이 유효한 숫자가 아닙니다.")
-            cost_matrix[i][j] = int(cost_val)
+            cost = int(form_data.get(f'cost_{i}_{j}'))
+            row.append(cost)
+        cost_matrix.append(row)
 
     input_data = {
         "timestamp": datetime.datetime.now().isoformat(),
         "problem_type": form_data.get('problem_type'),
-        "driver_names": driver_names,
-        "zone_names": zone_names,
+        "driver_names": drivers_data,
+        "zone_names": zones_data,
         "cost_matrix": cost_matrix,
         "form_parameters": {
             key: value for key, value in form_data.items() if key not in ['csrfmiddlewaretoken']
@@ -100,15 +111,19 @@ def create_transport_assignment_json_data(form_data, submitted_num_items):
     return input_data
 
 
-def create_resource_skill_matching_json_data(form_data, num_resources, num_projects):
+def create_resource_skill_matching_json_data(form_data):
     resources_data = []
+
+    num_projects = int(form_data.get('num_projects'))
+    selected_resource_ids = [sid for sid in form_data.getlist('selected_resources')]
+    num_resources = len(selected_resource_ids)
     for i in range(num_resources):
-        skills_str = form_data.get(f'res_{i}_skills', '')
+        preset = preset_resources[i]
         resources_data.append({
-            'id': form_data.get(f'res_{i}_id'),
-            'name': form_data.get(f'res_{i}_name'),
-            'cost': int(form_data.get(f'res_{i}_cost')),
-            'skills': [s.strip() for s in skills_str.split(',') if s.strip()]  # 쉼표로 구분된 문자열을 리스트로
+            'id': preset['id'],
+            'name': preset['name'],
+            'cost': int(preset['cost']),
+            'skills': [s.strip() for s in preset['skills'].split(',') if s.strip()]
         })
 
     projects_data = []
@@ -119,8 +134,7 @@ def create_resource_skill_matching_json_data(form_data, num_resources, num_proje
             'name': form_data.get(f'proj_{i}_name'),
             'required_skills': [s.strip() for s in req_skills_str.split(',') if s.strip()]
         })
-    num_resources = len(resources_data)
-    num_projects = len(projects_data)
+
     input_data = {
         "timestamp": datetime.datetime.now().isoformat(),
         "problem_type": form_data.get('problem_type'),
@@ -132,6 +146,7 @@ def create_resource_skill_matching_json_data(form_data, num_resources, num_proje
             key: value for key, value in form_data.items() if key not in ['csrfmiddlewaretoken']
         }
     }
+
     return input_data
 
 

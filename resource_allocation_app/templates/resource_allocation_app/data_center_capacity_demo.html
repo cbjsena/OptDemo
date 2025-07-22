@@ -55,26 +55,35 @@
     </div>
     <p>데이터 센터의 총 예산, 전력, 공간 제약 하에서 여러 서버 유형과 서비스 수요를 고려하여 총 이익을 최대화하는 서버 구매 및 서비스 할당 계획을 수립합니다.</p>
 
-    <form method="GET" class="mb-3 form-inline">
-        <div class="form-group mr-2">
-            <label for="num_server_types_to_show" class="mr-2">서버 유형 수 (1-3):</label>
-            <select name="num_server_types_to_show" id="num_server_types_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
-                {% for i in num_server_types_options %}
-                    <option value="{{ i }}" {% if i == submitted_num_server_types %}selected{% endif %}>{{ i }}개</option>
-                {% endfor %}
-            </select>
-            (서버 수나 서비스 수를 변경하면 작업 정보가 초기화 됩니다.)
+    <!-- [신규] 설정 변경을 위한 숨겨진 GET 폼 -->
+    <form method="GET" id="settingsForm" style="display: none;"></form>
+
+    <!-- [수정] 상단 컨트롤러 -->
+    <div class="card mb-4">
+        <div class="card-body bg-light">
+            <div class="form-row align-items-end">
+                <div class="form-group col-md-4">
+                    <label for="num_server_types_to_show" class="small font-weight-bold">서버 유형 수</label>
+                    <select name="num_server_types_to_show" id="num_server_types_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                        {% for i in num_server_types_options %}
+                            <option value="{{ i }}" {% if i == submitted_num_server_types %}selected{% endif %}>{{ i }}개</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="num_services_to_show" class="small font-weight-bold">서비스 종류 수</label>
+                    <select name="num_services_to_show" id="num_services_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                        {% for i in num_services_options %}
+                            <option value="{{ i }}" {% if i == submitted_num_services %}selected{% endif %}>{{ i }}개</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group col-md-4 text-md-right">
+                    <a href="{% url 'resource_allocation_app:data_center_capacity_demo' %}" class="btn btn-sm btn-warning">Default</a>
+                </div>
+            </div>
         </div>
-        <div class="form-group mr-2">
-            <label for="num_services_to_show" class="mr-2">서비스 종류 수 (1-3):</label>
-            <select name="num_services_to_show" id="num_services_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
-                {% for i in num_services_options %}
-                    <option value="{{ i }}" {% if i == submitted_num_services %}selected{% endif %}>{{ i }}개</option>
-                {% endfor %}
-            </select>
-        </div>
-        <noscript><button type="submit" class="btn btn-sm btn-secondary">항목 수 변경 적용</button></noscript>
-    </form>
+    </div>
 
     <form method="POST">
         {% csrf_token %}
@@ -82,119 +91,80 @@
         <input type="hidden" name="num_server_types" value="{{ submitted_num_server_types }}">
         <input type="hidden" name="num_services" value="{{ submitted_num_services }}">
 
-        <div class="form-section">
-            <h4>1. 글로벌 제약 조건</h4>
-            <div class="form-row">
-                <div class="form-group col-md-4">
-                    <label for="total_budget">총 예산 (Total Budget):</label>
-                    <input type="number" step="any" min="0" class="form-control form-control-sm" id="total_budget" name="total_budget"
-                           value="{% with key_name='total_budget' %}{{ form_data|get_item_simple:key_name|default_if_none:'100000' }}{% endwith %}" required>
-                </div>
-                <div class="form-group col-md-4">
-                    <label for="total_power_kva">총 가용 전력 (kVA):</label>
-                    <input type="number" step="any" min="0" class="form-control form-control-sm" id="total_power_kva" name="total_power_kva"
-                           value="{% with key_name='total_power_kva' %}{{ form_data|get_item_simple:key_name|default_if_none:'50' }}{% endwith %}" required>
-                </div>
-                <div class="form-group col-md-4">
-                    <label for="total_space_sqm">총 가용 공간 (sqm):</label>
-                    <input type="number" step="any" min="0" class="form-control form-control-sm" id="total_space_sqm" name="total_space_sqm"
-                           value="{% with key_name='total_space_sqm' %}{{ form_data|get_item_simple:key_name|default_if_none:'10' }}{% endwith %}" required>
+        <div class="card mb-4">
+            <div class="card-header"><strong>1. 글로벌 제약 조건</strong></div>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label for="total_budget">총 예산 (Total Budget):</label>
+                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="total_budget" name="total_budget"
+                               value="{{ global_constraints.total_budget }}" required>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="total_power_kva">총 가용 전력 (kVA):</label>
+                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="total_power_kva" name="total_power_kva"
+                               value="{{ global_constraints.total_power_kva }}" required>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="total_space_sqm">총 가용 공간 (sqm):</label>
+                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="total_space_sqm" name="total_space_sqm"
+                               value="{{ global_constraints.total_space_sqm }}" required>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="form-section">
-            <h4>2. 서버별 정보 (총 {{ submitted_num_server_types }}개)</h4>
-            {% for i in submitted_num_server_types|get_range %}
-                <div class="form-row">
-                    {% make_key 'server' i 'id' as key_name %}
-                    <div class="form-group col-md-1">
-                        <label for="{{ key_name }}">서버 ID:</label>
-                        <input type="text" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                               value="{{ form_data|get_item_simple:key_name }}">
-                    </div>
-                    {% make_key 'server' i 'cost' as key_name %}
-                    <div class="form-group col-md-1">
-                        <label for="{{ key_name }}">비용:</label>
-                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                               value="{{ form_data|get_item_simple:key_name }}">
-                    </div>
-                    {% make_key 'server' i 'cpu_cores' as key_name %}
-                    <div class="form-group col-md-1">
-                        <label for="{{ key_name }}">CPU(코어):</label>
-                        <input type="number" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                               value="{{ form_data|get_item_simple:key_name }}">
-                    </div>
-                    {% make_key 'server' i 'ram_gb' as key_name %}
-                    <div class="form-group col-md-1">
-                        <label for="{{ key_name }}">RAM(GB):</label>
-                        <input type="number" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                               value="{{ form_data|get_item_simple:key_name }}">
-                    </div>
-                    {% make_key 'server' i 'storage_tb' as key_name %}
-                    <div class="form-group col-md-2">
-                        <label for="{{ key_name }}">스토리지(TB):</label>
-                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                               value="{{ form_data|get_item_simple:key_name }}">
-                    </div>
-                    {% make_key 'server' i 'power_kva' as key_name %}
-                    <div class="form-group col-md-1">
-                        <label for="{{ key_name }}">전력(kVA):</label>
-                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                               value="{{ form_data|get_item_simple:key_name }}">
-                    </div>
-                    {% make_key 'server' i 'space_sqm' as key_name %}
-                    <div class="form-group col-md-1">
-                        <label for="{{ key_name }}">공간(sqm):</label>
-                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                               value="{{ form_data|get_item_simple:key_name }}">
-                    </div>
-                </div>
-            {% endfor %}
+        <div class="card mb-4">
+            <div class="card-header"><strong>2. 서버별 정보 (총 {{ submitted_num_server_types }}개)</strong></div>
+            <div class="card-body table-responsive">
+                <table class="table table-sm table-bordered">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>서버 ID</th><th>비용</th><th>CPU(코어)</th><th>RAM(GB)</th>
+                            <th>스토리지(TB)</th><th>전력(kVA)</th><th>공간(sqm)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for server in servers_data %}
+                        <tr>
+                            <td><input type="text" name="server_{{ forloop.counter0 }}_id" value="{{ server.id }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" name="server_{{ forloop.counter0 }}_cost" value="{{ server.cost }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" name="server_{{ forloop.counter0 }}_cpu_cores" value="{{ server.cpu_cores }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" name="server_{{ forloop.counter0 }}_ram_gb" value="{{ server.ram_gb }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" name="server_{{ forloop.counter0 }}_storage_tb" value="{{ server.storage_tb }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" name="server_{{ forloop.counter0 }}_power_kva" value="{{ server.power_kva }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" name="server_{{ forloop.counter0 }}_space_sqm" value="{{ server.space_sqm }}" class="form-control form-control-sm"></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <div class="form-section">
-            <h4>3. 서비스 수요별 정보 (총 {{ submitted_num_services }}개)</h4>
-            {% for i in submitted_num_services|get_range %}
-                <div class="form-row">
-                    {% make_key 'service' i 'id' as key_name %}
-                    <div class="form-group">
-                         <label for="{{ key_name }}">서비스 ID:</label>
-                         <input type="text" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                                value="{{ form_data|get_item_simple:key_name }}">
-                    </div>
-                    {% make_key 'service' i 'revenue_per_unit' as key_name %}
-                    <div class="form-group col-md-2">
-                        <label for="{{ key_name }}">단위당 수익:</label>
-                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                               value="{{ form_data|get_item_simple:key_name }}">
-                    </div>
-                    {% make_key 'service' i 'req_cpu_cores' as key_name %}
-                    <div class="form-group col-md-1">
-                        <label for="{{ key_name }}">요구CPU:</label>
-                        <input type="number" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                               value="{{ form_data|get_item_simple:key_name }}">
-                    </div>
-                    {% make_key 'service' i 'req_ram_gb' as key_name %}
-                    <div class="form-group col-md-1">
-                        <label for="{{ key_name }}">요구RAM:</label>
-                        <input type="number" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                               value="{{ form_data|get_item_simple:key_name }}">
-                    </div>
-                    {% make_key 'service' i 'req_storage_tb' as key_name %}
-                    <div class="form-group col-md-1">
-                        <label for="{{ key_name }}">요구 strg:</label>
-                        <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                               value="{{ form_data|get_item_simple:key_name }}">
-                    </div>
-                    {% make_key 'service' i 'max_units' as key_name %}
-                    <div class="form-group col-md-1">
-                        <label for="{{ key_name }}">최대유닛:</label>
-                        <input type="number" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                               value="{{ form_data|get_item_simple:key_name }}">
-                    </div>
-                </div>
-            {% endfor %}
+        <div class="card mb-4">
+            <div class="card-header"><strong>3. 서비스 수요별 정보 (총 {{ submitted_num_services }}개)</strong></div>
+            <div class="card-body table-responsive">
+                <table class="table table-sm table-bordered">
+                     <thead class="thead-light">
+                        <tr>
+                            <th>서비스 ID</th><th>단위당 수익</th><th>요구CPU</th>
+                            <th>요구RAM</th><th>요구스토리지</th><th>최대유닛</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for service in services_data %}
+                        <tr>
+                            <td><input type="text" name="service_{{ forloop.counter0 }}_id" value="{{ service.id }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" name="service_{{ forloop.counter0 }}_revenue_per_unit" value="{{ service.revenue_per_unit }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" name="service_{{ forloop.counter0 }}_req_cpu_cores" value="{{ service.req_cpu_cores }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" name="service_{{ forloop.counter0 }}_req_ram_gb" value="{{ service.req_ram_gb }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" name="service_{{ forloop.counter0 }}_req_storage_tb" value="{{ service.req_storage_tb }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" name="service_{{ forloop.counter0 }}_max_units" value="{{ service.max_units }}" class="form-control form-control-sm"></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">데이터 센터 용량 계획 최적화 실행</button>
@@ -220,13 +190,13 @@
     <div class="card mt-4">
         <div class="card-header"><strong>최적화 결과 요약</strong></div>
         <div class="card-body">
-            <p><strong>계산된 총 이익:</strong> {{ results.total_profit|floatformat:2 }}</p>
-            <p><strong>총 서버 구매 비용:</strong> {{ results.total_server_cost|floatformat:2 }}</p>
-            <p><strong>총 서비스 수익:</strong> {{ results.total_service_revenue|floatformat:2 }}</p>
+            <p><strong>계산된 총 이익:</strong> {{ results.total_profit }}</p>
+            <p><strong>총 서버 구매 비용:</strong> {{ results.total_server_cost }}</p>
+            <p><strong>총 서비스 수익:</strong> {{ results.total_service_revenue}}</p>
             <hr>
             <p><strong>입력된 총 예산:</strong> {{ form_data.total_budget|default_if_none:"N/A" }}</p>
-            <p><strong>사용된 총 전력:</strong> {{ results.total_power_used|floatformat:2 }} / {{ form_data.total_power_kva|default_if_none:"N/A" }} kVA</p>
-            <p><strong>사용된 총 공간:</strong> {{ results.total_space_used|floatformat:2 }} / {{ form_data.total_space_sqm|default_if_none:"N/A" }} sqm</p>
+            <p><strong>사용된 총 전력:</strong> {{ results.total_power_used }} / {{ form_data.total_power_kva|default_if_none:"N/A" }} kVA</p>
+            <p><strong>사용된 총 공간:</strong> {{ results.total_space_used }} / {{ form_data.total_space_sqm|default_if_none:"N/A" }} sqm</p>
             <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
         </div>
     </div>
@@ -273,7 +243,7 @@
                 <thead class="thead-light"><tr><th>서버 유형 ID</th><th>구매 수량</th><th>단가</th><th>유형별 총 비용</th></tr></thead>
                 <tbody>
                     {% for server in results.purchased_servers %}
-                    <tr><td>{{ server.type_id }}</td><td>{{ server.count }}</td><td>{{ server.unit_cost|floatformat:2 }}</td><td>{{ server.total_cost_for_type|floatformat:2 }}</td></tr>
+                    <tr><td>{{ server.type_id }}</td><td>{{ server.count }}</td><td>{{ server.unit_cost }}</td><td>{{ server.total_cost_for_type }}</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -292,7 +262,7 @@
                     <tr>
                         <td>{{ service.service_id }}</td>
                         <td>{{ service.total_units_provided }}</td>
-                        <td>{{ service.revenue_from_service|floatformat:2 }}</td>
+                        <td>{{ service.revenue_from_service }}</td>
                         <td>
                             {% for alloc in service.allocations %}
                                 {{ alloc.server_type_id }}: {{ alloc.units_allocated }}{% if not forloop.last %}; {% endif %}
@@ -327,6 +297,64 @@
             delete chartInstances[chartId];
         }
     }
+
+    function submitSettingsForm() {
+        const settingsForm = document.getElementById('settingsForm');
+        settingsForm.innerHTML = '';
+
+        // 상단 컨트롤러 값 추가
+        ['num_server_types_to_show', 'num_services_to_show'].forEach(id => {
+            const select = document.getElementById(id);
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = select.name;
+            hiddenInput.value = select.value;
+            settingsForm.appendChild(hiddenInput);
+        });
+
+        // 글로벌 제약 조건 값 추가
+        ['total_budget', 'total_power_kva', 'total_space_sqm'].forEach(id => {
+            const input = document.getElementById(id);
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = input.name;
+            hiddenInput.value = input.value;
+            settingsForm.appendChild(hiddenInput);
+        });
+
+        // 현재 서버 정보 추가
+        const numServers = {{ submitted_num_server_types }};
+        for (let i = 0; i < numServers; i++) {
+            ['id', 'cost', 'cpu_cores', 'ram_gb', 'storage_tb', 'power_kva', 'space_sqm'].forEach(field => {
+                const element = document.querySelector(`input[name="server_${i}_${field}"]`);
+                if (element) {
+                    let hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = `server_${i}_${field}`;
+                    hiddenInput.value = element.value;
+                    settingsForm.appendChild(hiddenInput);
+                }
+            });
+        }
+
+        // 현재 서비스 정보 추가
+        const numServices = {{ submitted_num_services }};
+        for (let i = 0; i < numServices; i++) {
+            ['id', 'revenue_per_unit', 'req_cpu_cores', 'req_ram_gb', 'req_storage_tb', 'max_units'].forEach(field => {
+                const element = document.querySelector(`input[name="service_${i}_${field}"]`);
+                if (element) {
+                    let hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = `service_${i}_${field}`;
+                    hiddenInput.value = element.value;
+                    settingsForm.appendChild(hiddenInput);
+                }
+            });
+        }
+
+        settingsForm.submit();
+    }
+
     // Chart.js 스크립트는 base.html에 이미 포함되어 있다고 가정합니다.
     // 이 스크립트는 DOM이 완전히 로드된 후에 실행되어야 합니다.
     document.addEventListener('DOMContentLoaded', function() {

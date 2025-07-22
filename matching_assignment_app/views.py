@@ -405,33 +405,40 @@ def transport_assignment_demo_view(request):
     """
         Transportation Assignment Problem 데모 뷰.
         """
-    form_data = {}
+    source = request.POST if request.method == 'POST' else request.GET
+    submitted_num_items = int(source.get('num_items_to_show', source.get('num_items', preset_trans_assign_items)))
 
-    if request.method == 'GET':
-        submitted_num_items = int(request.GET.get('num_items_to_show', preset_trans_assign_items))
-        submitted_num_items = max(2, min(5, submitted_num_items))  # 2~5개로 제한
+    drivers_data = []
+    for i in range(submitted_num_items):
+        drivers_data.append({
+            'id': i,
+            'name': source.get(f'driver_name_{i}', preset_trans_assign_drivers[i])
+        })
 
-        # GET 요청 시 랜덤 비용 행렬로 form_data 초기화
-        for i in range(submitted_num_items):
-            # URL 파라미터가 있으면 그 값을, 없으면 기본값을 사용
-            form_data[f'driver_name_{i}'] = request.GET.get(f'driver_name_{i}', preset_trans_assign_drivers[i])
-            form_data[f'zone_name_{i}'] = request.GET.get(f'zone_name_{i}', preset_trans_assign_zones[i])
-            for j in range(submitted_num_items):
-                cost_key = f'cost_{i}_{j}'
-                form_data[cost_key] = request.GET.get(cost_key, str(random.randint(20, 100)))
+    zones_data = []
+    for i in range(submitted_num_items):
+        zones_data.append({
+            'id': i,
+            'name': source.get(f'zone_name_{i}', preset_trans_assign_zones[i])
+        })
 
-    elif request.method == 'POST':
-        form_data = request.POST.copy()
-        submitted_num_items = int(form_data.get('num_items', preset_trans_assign_items))
+    cost_matrix = []
+    for i in range(submitted_num_items):
+        row = []
+        for j in range(submitted_num_items):
+            cost = source.get(f'cost_{i}_{j}', preset_trans_cost_matrix[i][j])
+            row.append(cost)
+        cost_matrix.append(row)
 
     context = {
         'active_model': 'Matching & Assignment',
-        'active_submenu_category': 'transport_assignment_problems',
         'active_submenu': 'Transport Assignment Demo',
-        'form_data': form_data,
-        'error_message': None, 'success_message': None,
+        'drivers_data': drivers_data,
+        'zones_data': zones_data,
+        'cost_matrix': cost_matrix,
+        'results': None, 'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
-        'num_items_options': range(2, 6),  # 2x2 ~ 5x5 행렬
+        'num_items_options': range(2, 6),
         'submitted_num_items': submitted_num_items
     }
 
@@ -439,7 +446,7 @@ def transport_assignment_demo_view(request):
         logger.info("Transportation Assignment Demo POST request processing.")
         try:
             # 1. 데이터 파일 새성 및 검증
-            input_data =create_transport_assignment_json_data(form_data, submitted_num_items)
+            input_data =create_transport_assignment_json_data(source)
 
             # 2. 파일 저장
             if settings.SAVE_DATA_FILE:
@@ -484,52 +491,50 @@ def resource_skill_matching_introduction_view(request):
     logger.debug("Rendering Resource-Skill Matching introduction page.")
     return render(request, 'matching_assignment_app/resource_skill_matching_introduction.html', context)
 
-
 def resource_skill_matching_demo_view(request):
     """
     Resource-Skill Matching 데모 뷰.
     """
-    form_data = {}
+    source = request.POST if request.method == 'POST' else request.GET
+    all_resources_data = preset_resources
 
-    # GET 요청 시: URL 파라미터 또는 기본값으로 항목 수 결정
-    if request.method == 'GET':
-        submitted_num_resources = int(request.GET.get('num_resources_to_show', preset_num_resources))
-        submitted_num_projects = int(request.GET.get('num_projects_to_show', preset_num_projects))
-        submitted_num_resources = max(1, min(10, submitted_num_resources))
-        submitted_num_projects = max(1, min(5, submitted_num_projects))
+    # [수정] 선택된 인력 ID 목록을 결정합니다.
+    if 'selected_resources' in source:
+        # form에서 전달된 ID는 문자열이므로 정수로 변환합니다.
+        selected_resource_ids = [sid for sid in source.getlist('selected_resources')]
+    else:
+        # GET 요청의 기본값으로 처음 5명을 선택합니다.
+        selected_resource_ids = [res['id'] for res in all_resources_data[:7]]
 
-        # 선택된 수만큼 form_data 채우기
-        for i in range(submitted_num_resources):
-            preset = preset_resources[i % len(preset_resources)]
-            for key, default_val in preset.items():
-                form_data[f'res_{i}_{key}'] = request.GET.get(f'res_{i}_{key}', default_val)
-        for i in range(submitted_num_projects):
-            preset = preset_projects[i % len(preset_resources)]
-            for key, default_val in preset.items():
-                form_data[f'proj_{i}_{key}'] = request.GET.get(f'proj_{i}_{key}', default_val)
-    elif request.method == 'POST':
-        form_data = request.POST.copy()
-        submitted_num_resources = int(form_data.get('num_resources', preset_num_resources))
-        submitted_num_projects = int(form_data.get('num_projects', preset_num_projects))
+    submitted_num_projects = int(source.get('num_projects_to_show', source.get('num_projects', preset_num_projects)))
+
+    projects_data = []
+    for i in range(submitted_num_projects):
+        preset = preset_projects[i % len(preset_projects)]
+        projects_data.append({
+            'id': source.get(f'proj_{i}_id', preset.get('id')),
+            'name': source.get(f'proj_{i}_name', preset.get('name')),
+            'required_skills': source.get(f'proj_{i}_required_skills', preset.get('required_skills')),
+        })
 
     context = {
         'active_model': 'Matching & Assignment',
-        'active_submenu_category': 'resource_skill_matching_problems',
         'active_submenu': 'Resource Skill Matching Demo',
-        'form_data': form_data,
+        'all_resources_data': all_resources_data,  # 전체 인력 목록
+        'selected_resource_ids': selected_resource_ids,  # 선택된 인력 ID 목록
+        'projects_data': projects_data,
         'results': None, 'error_message': None, 'success_message': None,
         'processing_time_seconds': "N/A",
-        'num_resources_options': range(1, 11),  # 1~10명 인력
-        'num_projects_options': range(1, 6),  # 1~5개 프로젝트
-        'submitted_num_resources': submitted_num_resources,
+        'num_projects_options': range(1, 6),
         'submitted_num_projects': submitted_num_projects,
     }
 
     if request.method == 'POST':
         logger.info("Resource-Skill Matching Demo POST request processing.")
         try:
+            logger.info(source)
             # 1. 데이터 파일 새성 및 검증
-            input_data = create_resource_skill_matching_json_data(form_data, submitted_num_resources, submitted_num_projects)
+            input_data = create_resource_skill_matching_json_data(source)
 
             # 2. 파일 저장
             if settings.SAVE_DATA_FILE:
@@ -558,6 +563,9 @@ def resource_skill_matching_demo_view(request):
             elif results_data:
                 context['results'] = results_data
                 context['success_message'] = f"최적 팀 구성 완료! 최소 총 투입 비용: {results_data.get('total_cost', 0)}"
+                selected_ids_set = set(selected_resource_ids)
+                unselected_resources = [res for res in all_resources_data if res['id'] not in selected_ids_set]
+                context['unselected_resources'] = unselected_resources
                 logger.info(f"Skill matching successful. Total cost: {results_data.get('total_cost')}")
             else:
                 context['error_message'] = "최적 할당 결과를 가져오지 못했습니다."

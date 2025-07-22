@@ -45,18 +45,27 @@
 
     <p>총 예산과 각 투자 항목의 기대 수익률, 최소/최대 투자액을 입력하여 최적의 예산 배분 결과를 확인합니다.</p>
 
-    <form method="GET" class="mb-3 form-inline">
-        <div class="form-group mr-2">
-            <label for="num_items_to_show" class="mr-2">투자 항목 수 (2-10):</label>
-            <select name="num_items_to_show" id="num_items_to_show" class="form-control form-control-sm" onchange="this.form.submit()">
-                {% for i in num_items_options %}
-                    <option value="{{ i }}" {% if i == submitted_num_items %}selected{% endif %}>{{ i }}개</option>
-                {% endfor %}
-            </select>
-            (투자 항목 수를 변경하면 작업 정보가 초기화 됩니다.)
+    <!-- [신규] 설정 변경을 위한 숨겨진 GET 폼 -->
+    <form method="GET" id="settingsForm" style="display: none;"></form>
+
+    <!-- [수정] 상단 컨트롤러 -->
+    <div class="card mb-4">
+        <div class="card-body bg-light">
+            <div class="form-row align-items-end">
+                <div class="form-group col-md-4">
+                    <label for="num_items_to_show" class="small font-weight-bold">투자 항목 수</label>
+                    <select name="num_items_to_show" id="num_items_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                        {% for i in num_items_options %}
+                            <option value="{{ i }}" {% if i == submitted_num_items %}selected{% endif %}>{{ i }}개</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group col-md-8 text-md-right">
+                     <a href="{% url 'resource_allocation_app:budget_allocation_demo' %}" class="btn btn-sm btn-warning">Default</a>
+                </div>
+            </div>
         </div>
-         <noscript><button type="submit" class="btn btn-sm btn-secondary">항목 수 변경</button></noscript>
-    </form>
+    </div>
 
     <form method="POST">
         {% csrf_token %}
@@ -64,59 +73,48 @@
         <input type="hidden" name="num_items" value="{{ submitted_num_items }}">
 
         <div class="card mb-4">
-            <div class="card-header">
-                <strong>1. 기본 정보 입력</strong>
+            <div class="card-header"><strong>1. 기본 정보 입력</strong>
             </div>
             <div class="card-body">
                 <div class="form-group row">
                     <label for="total_budget" class="col-sm-3 col-form-label">총 예산 (Total Budget):</label>
                     <div class="col-sm-9">
                         <input type="number" step="any" min="0" class="form-control" id="total_budget" name="total_budget"
-                               value="{{ form_data.total_budget|default_if_none:'1000' }}" required>
+                               value="{{ total_budget }}" required>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="card mb-4">
-            <div class="card-header">
-                <strong>2. 투자 항목별 정보 입력 (총 {{ submitted_num_items }}개)</strong>
-            </div>
+            <div class="card-header"><strong>2. 투자 항목별 정보 입력 (총 {{ submitted_num_items }}개)</strong></div>
             <div class="card-body">
-                {% for i in submitted_num_items|get_range %}
-                    <div class="form-row">
-                        {% make_key 'item' i|add:1 'id' as key_name %}
-                        <div class="form-group col-md-3">
-                            <label for="{{ key_name }}">항목 이름:</label>
-                            <input type="text" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                                   value="{{ form_data|get_item_simple:key_name|default_if_none:key_name }}">
-                        </div>
-
-                        {% make_key 'item' i|add:1 'return_coeff' as key_name %}
-                        <div class="form-group col-md-3">
-                            <label for="{{ key_name }}">기대 수익률 계수 (Return Coeff.):</label>
-                            <input type="number" step="any" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                                   value="{{ form_data|get_item_simple:key_name|default_if_none:'0.1' }}" required>
-                        </div>
-
-                        {% make_key 'item' i|add:1 'min_alloc' as key_name %}
-                        <div class="form-group col-md-3">
-                            <label for="{{ key_name }}">최소 투자액 (Min Alloc):</label>
-                            <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                                   value="{{ form_data|get_item_simple:key_name|default_if_none:'0' }}">
-                        </div>
-
-                        {% make_key 'item' i|add:1 'max_alloc' as key_name %}
-                        <div class="form-group col-md-3">
-                            <label for="{{ key_name }}">최대 투자액 (Max Alloc):</label>
-                            <input type="number" step="any" min="0" class="form-control form-control-sm" id="{{ key_name }}" name="{{ key_name }}"
-                                   value="{{ form_data|get_item_simple:key_name|default_if_none:form_data.total_budget|default_if_none:'1000' }}">
-                        </div>
-                    </div>
-                {% endfor %}
+                <table class="table table-sm table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>항목 이름</th>
+                            <th>기대 수익률</th>
+                            <th>최소 투자액</th>
+                            <th>최대 투자액</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in items_data %}
+                        <tr>
+                            <td><input type="text" name="item_{{ forloop.counter0 }}_name"
+                                       value="{{ item.name }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" step="any" name="item_{{ forloop.counter0 }}_return_coefficient"
+                                       value="{{ item.return_coefficient|floatformat:2  }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" step="any" name="item_{{ forloop.counter0 }}_min_alloc"
+                                       value="{{ item.min_alloc }}" class="form-control form-control-sm"></td>
+                            <td><input type="number" step="any" name="item_{{ forloop.counter0 }}_max_alloc"
+                                       value="{{ item.max_alloc }}" class="form-control form-control-sm"></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-
         <button type="submit" class="btn btn-primary btn-lg mt-3 mb-3">최적 예산 분배 실행</button>
     </form>
 
@@ -148,8 +146,8 @@
                 {# 여기서는 POST 후의 form_data.total_budget을 사용한다고 가정 #}
                 {{ form_data.total_budget|default_if_none:"N/A" }}
             </p>
-            <p><strong>계산된 최대 기대 수익:</strong> {{ results.total_maximized_return|floatformat:2 }}</p>
-            <p><strong>실제 할당된 총 예산:</strong> {{ results.total_allocated_budget|floatformat:2 }}
+            <p><strong>계산된 최대 기대 수익:</strong> {{ results.total_maximized_return }}</p>
+            <p><strong>실제 할당된 총 예산:</strong> {{ results.total_allocated_budget }}
                (활용률: {{ results.budget_utilization_percent }}{% if results.budget_utilization_percent != "N/A" %}%{% endif %})
             </p>
             <p><small>처리 시간: {{ processing_time_seconds }} 초</small></p>
@@ -170,11 +168,11 @@
                     {% for item in results.allocations %}
                     <tr>
                         <td>{{ item.name }}</td>
-                        <td>{{ item.return_coefficient|floatformat:3 }}</td>
-                        <td>{{ item.min_alloc|floatformat:2 }}</td>
-                        <td>{{ item.max_alloc|floatformat:2 }}</td>
-                        <td><strong>{{ item.allocated_budget|floatformat:2 }}</strong></td>
-                        <td>{{ item.expected_return|floatformat:2 }}</td>
+                        <td>{{ item.return_coefficient|floatformat:2 }}</td>
+                        <td>{{ item.min_alloc }}</td>
+                        <td>{{ item.max_alloc }}</td>
+                        <td><strong>{{ item.allocated_budget}}</strong></td>
+                        <td>{{ item.expected_return }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -191,6 +189,43 @@
 
 {% block scripts %}
 <script>
-    console.log("Budget Allocation Demo page script loaded.");
+    // [신규] 모든 입력값을 유지하며 설정을 변경하는 함수
+    function submitSettingsForm() {
+        const settingsForm = document.getElementById('settingsForm');
+        settingsForm.innerHTML = '';
+
+        // 상단 컨트롤러 값 추가
+        const numItemsSelect = document.getElementById('num_items_to_show');
+        const hiddenNumItems = document.createElement('input');
+        hiddenNumItems.type = 'hidden';
+        hiddenNumItems.name = 'num_items_to_show';
+        hiddenNumItems.value = numItemsSelect.value;
+        settingsForm.appendChild(hiddenNumItems);
+
+        // 총 예산 값 추가
+        const totalBudgetInput = document.getElementById('total_budget');
+        const hiddenTotalBudget = document.createElement('input');
+        hiddenTotalBudget.type = 'hidden';
+        hiddenTotalBudget.name = 'total_budget';
+        hiddenTotalBudget.value = totalBudgetInput.value;
+        settingsForm.appendChild(hiddenTotalBudget);
+
+        // 현재 투자 항목별 정보 추가
+        const numItems = {{ submitted_num_items }};
+        for (let i = 0; i < numItems; i++) {
+            ['name', 'return_coefficient', 'min_alloc', 'max_alloc'].forEach(field => {
+                const element = document.querySelector(`input[name="item_${i}_${field}"]`);
+                if (element) {
+                    let hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = `item_${i}_${field}`;
+                    hiddenInput.value = element.value;
+                    settingsForm.appendChild(hiddenInput);
+                }
+            });
+        }
+
+        settingsForm.submit();
+    }
 </script>
 {% endblock %}
