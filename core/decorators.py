@@ -1,6 +1,8 @@
 import logging
 from functools import wraps
-
+from ortools.sat.python import cp_model
+from ortools.linear_solver import pywraplp
+import time
 
 def log_view_activity(view_func):
     """
@@ -96,5 +98,52 @@ def log_data_creation(func):
             # 그 외 예상치 못한 오류는 ERROR 레벨로 기록
             logger.error(f"[{func_name}] An unexpected error occurred: {e}", exc_info=True)
             raise
+
+    return wrapper
+
+
+def log_solver_activity(func):
+    """
+    최적화 솔버 함수의 시작, 종료, 상태, 처리 시간을 자동으로 로깅하는 데코레이터.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # 함수가 정의된 모듈의 로거를 사용
+        logger = logging.getLogger(func.__module__)
+        func_name = func.__name__
+
+        # input_data에서 problem_type 추출 시도
+        problem_type = "Unknown Problem"
+        if args and isinstance(args[0], dict):
+            problem_type = args[0].get('problem_type', func_name)
+
+        logger.info(f"[{func_name}] Starting solver for '{problem_type}'...")
+        start_time = time.time()
+
+        try:
+            # 원래의 솔버 함수 실행
+            results, error_msg, _ = func(*args, **kwargs)  # 처리 시간은 데코레이터가 계산
+
+            end_time = time.time()
+            processing_time = round(end_time - start_time, 4)
+
+            if error_msg:
+                logger.warning(
+                    f"[{func_name}] Solver finished for '{problem_type}' with a message: {error_msg}. Time: {processing_time} sec")
+            else:
+                logger.info(
+                    f"[{func_name}] Solver finished successfully for '{problem_type}'. Time: {processing_time} sec")
+
+            return results, error_msg, processing_time
+
+        except Exception as e:
+            end_time = time.time()
+            processing_time = round(end_time - start_time, 4)
+            logger.error(
+                f"[{func_name}] An unexpected error occurred in solver for '{problem_type}': {e}. Time: {processing_time} sec",
+                exc_info=True)
+            # 뷰로 전달할 에러 메시지와 함께 예외를 다시 발생시키거나, 튜플을 반환할 수 있음
+            return None, f"솔버 실행 중 오류 발생: {str(e)}", processing_time
 
     return wrapper
