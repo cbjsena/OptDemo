@@ -4,28 +4,30 @@ import json
 
 from common_utils.run_puzzle_opt import *
 from common_utils.data_utils_puzzle import *
+from core.decorators import log_view_activity
 
 logger = logging.getLogger(__name__)
 
 
+@log_view_activity
 def main_introduction_view(request):
     context = {
         'active_model': 'Puzzles & Real-World Logic',
         'active_submenu': 'main_introduction'
     }
-    logger.debug("Rendering Main Introduction for Puzzles & Real-World Logic.")
     return render(request, 'puzzles_logic_app/puzzles_logic_introduction.html', context)
 
 
+@log_view_activity
 def diet_problem_introduction_view(request):
     context = {
         'active_model': 'Puzzles & Real-World Logic',
         'active_submenu': 'diet_problem_introduction'
     }
-    logger.debug("Rendering Diet Problem introduction page.")
     return render(request, 'puzzles_logic_app/diet_problem_introduction.html', context)
 
 
+@log_view_activity
 def diet_problem_demo_view(request):
     nutrients_list = []
     foods_list = []
@@ -144,16 +146,16 @@ def diet_problem_demo_view(request):
     return render(request, 'puzzles_logic_app/diet_problem_demo.html', context)
 
 
-# --- 2. Sports Scheduling ---
+@log_view_activity
 def sports_scheduling_introduction_view(request):
     context = {
         'active_model': 'Puzzles & Real-World Logic',
         'active_submenu': 'sports_scheduling_introduction'
     }
-    logger.debug("Rendering Sports Scheduling introduction page.")
     return render(request, 'puzzles_logic_app/sports_scheduling_introduction.html', context)
 
 
+@log_view_activity
 def sports_scheduling_demo_view(request):
     teams_list = []
 
@@ -241,19 +243,18 @@ def sports_scheduling_demo_view(request):
 
         except Exception as e:
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"
-            logger.error(f"Unexpected error in sports_scheduling_demo_view: {e}", exc_info=True)
 
     return render(request, 'puzzles_logic_app/sports_scheduling_demo.html', context)
 
 
-# --- 3. Traveling Salesman Problem (TSP) ---
+@log_view_activity
 def tsp_introduction_view(request):
     context = {
         'active_model': 'Puzzles & Real-World Logic',
         'active_submenu': 'tsp_introduction'
     }
-    logger.debug("Rendering TSP introduction page.")
     return render(request, 'puzzles_logic_app/tsp_introduction.html', context)
+
 
 def tsp_demo_view(request):
     all_city_names = [city['name'] for city in preset_tsp_all_cities]
@@ -335,7 +336,6 @@ def tsp_demo_view(request):
             except Exception as e:
                 context['error_message'] = f"처리 중 오류 발생: {str(e)}"
 
-    logger.debug("Rendering TSP demo page.")
     return render(request, 'puzzles_logic_app/tsp_demo.html', context)
 
 
@@ -358,16 +358,17 @@ def calculate_manual_tour_distance(tour_city_names, all_cities_data, distance_ma
 
     return total_distance
 
-# --- 4. Sudoku Solver ---
+
+@log_view_activity
 def sudoku_introduction_view(request):
     context = {
         'active_model': 'Puzzles & Real-World Logic',
         'active_submenu': 'sudoku_introduction'
     }
-    logger.debug("Rendering Sudoku introduction page.")
     return render(request, 'puzzles_logic_app/sudoku_introduction.html', context)
 
 
+@log_view_activity
 def sudoku_demo_view(request):
     input_grid = []
     form_data ={}
@@ -434,7 +435,6 @@ def sudoku_demo_view(request):
 
         except Exception as e:
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"
-            logger.error(f"Unexpected error in sports_scheduling_demo_view: {e}", exc_info=True)
 
     return render(request, 'puzzles_logic_app/sudoku_demo.html', context)
 

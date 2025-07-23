@@ -3,6 +3,8 @@ import logging
 import random
 import datetime
 
+from core.decorators import log_data_creation
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,6 +41,7 @@ preset_projects = [
         {'id': 'P5', 'name': 'BI 대시보드 제작', 'required_skills': 'SQL,Tableau'},
     ]
 
+
 def create_panel_data(panel_id_prefix, num_panels, rows, cols, rate):
     panels = []
     for i_panel in range(1, num_panels + 1):
@@ -60,6 +63,7 @@ def create_panel_data(panel_id_prefix, num_panels, rows, cols, rate):
     return panels
 
 
+@log_data_creation
 def create_cf_tft_matching_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defect_rate):
     generated_cf_panels = create_panel_data("CF", num_cf_panels, panel_rows, panel_cols, defect_rate)
     generated_tft_panels = create_panel_data("TFT", num_tft_panels, panel_rows, panel_cols, defect_rate)
@@ -79,6 +83,7 @@ def create_cf_tft_matching_json_data(num_cf_panels, num_tft_panels, panel_rows, 
     return generated_data
 
 
+@log_data_creation
 def create_transport_assignment_json_data(form_data):
     num_items = int(form_data.get('num_items'))
 
@@ -111,6 +116,7 @@ def create_transport_assignment_json_data(form_data):
     return input_data
 
 
+@log_data_creation
 def create_resource_skill_matching_json_data(form_data):
     resources_data = []
 

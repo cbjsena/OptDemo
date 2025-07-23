@@ -7,6 +7,8 @@ import math
 
 from django.conf import settings
 
+from core.decorators import log_data_creation
+
 logger = logging.getLogger(__name__)
 
 preset_diet_nutrient_number = 2
@@ -182,6 +184,8 @@ preset_sudoku_difficulty_options = [
 preset_sudoku_difficulty ='easy'
 preset_sudoku_size ='9'
 
+
+@log_data_creation
 def create_diet_json_data(form_data):
     logger.debug("Creating and validating Diet Problem input data from form.")
     num_foods = int(form_data.get('num_foods', 0))
@@ -227,6 +231,7 @@ def create_diet_json_data(form_data):
 
     logger.info("End Diet Problem Demo Input data processing.")
     return input_data
+
 
 
 def calculate_manual_diet(input_data, manual_intakes):
@@ -279,6 +284,7 @@ def calculate_manual_diet(input_data, manual_intakes):
     return manual_results
 
 
+@log_data_creation
 def create_sports_scheduling_json_data(form_data, num_teams, objective, schedule_type):
     # 팀 이름 리스트 생성
     teams_list = [form_data.get(f'team_{i}_name') for i in range(num_teams)]
@@ -305,6 +311,7 @@ def create_sports_scheduling_json_data(form_data, num_teams, objective, schedule
     return input_data
 
 
+@log_data_creation
 def create_tsp_json_data(selected_cities_data):
     # 선택된 도시의 전체 데이터(이름, 좌표)를 추출
     all_city_names = [city['name'] for city in preset_tsp_all_cities]
@@ -317,9 +324,10 @@ def create_tsp_json_data(selected_cities_data):
         'num_cities': num_cities
     }
 
-    return  None, input_data
+    return None, input_data
 
 
+@log_data_creation
 def create_sudoku_json_data(form_data):
     input_grid = []
     num_size = int(form_data.get('size', preset_sudoku_size))
@@ -396,6 +404,7 @@ def validate_sudoku_input(board):
 
     # 오류가 없으면 유효함
     return None
+
 
 def save_puzzle_json_data(input_data):
     problem_type = input_data.get('problem_type')

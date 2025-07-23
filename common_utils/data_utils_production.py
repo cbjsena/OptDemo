@@ -2,6 +2,8 @@ from common_utils.common_data_utils import save_json_data
 import logging
 import datetime
 
+from core.decorators import log_data_creation
+
 logger = logging.getLogger(__name__)
 
 preset_lot_sizing_num_periods = 6
@@ -96,11 +98,11 @@ preset_rcpsp_resource_data = [
     ]
 
 
+@log_data_creation
 def create_lot_sizing_json_data(form_data, num_periods):
     """
     폼 데이터로부터 Lot Sizing 문제 입력을 위한 딕셔너리를 생성하고 검증합니다.
     """
-    logger.info("Creating and validating lot sizing input data from form.")
     demands = []
     setup_costs = []
     prod_costs = []
@@ -143,11 +145,11 @@ def create_lot_sizing_json_data(form_data, num_periods):
     return input_data
 
 
+@log_data_creation
 def create_single_machine_json_data(jobs_list, objective_choice, num_jobs):
     """
     폼 데이터로부터 Single Machine 문제 입력을 위한 딕셔너리를 생성하고 검증합니다.
     """
-    logger.info("Creating and validating single machine input data from form.")
 
     for job in jobs_list:
         try:
@@ -168,6 +170,7 @@ def create_single_machine_json_data(jobs_list, objective_choice, num_jobs):
     return input_data
 
 
+@log_data_creation
 def create_flow_shop_json_data(form_data):
     num_jobs = int(form_data.get('num_jobs', 3))
     num_machines = int(form_data.get('num_machines', 3))
@@ -199,8 +202,8 @@ def create_flow_shop_json_data(form_data):
     return input_data
 
 
+@log_data_creation
 def create_job_shop_json_data(form_data):
-    logger.debug("Creating and validating job shop input data from new form.")
     num_jobs = int(form_data.get('num_jobs', 3))
     num_machines = int(form_data.get('num_machines', 3))
 
@@ -249,8 +252,8 @@ def create_job_shop_json_data(form_data):
     return input_data
 
 
+@log_data_creation
 def create_job_shop_json_data_ori(form_data):
-    logger.debug("Creating and validating job shop input data from form.")
     num_jobs = int(form_data.get('num_jobs', 3))
     num_machines = int(form_data.get('num_machines', 3))
 
@@ -283,8 +286,8 @@ def create_job_shop_json_data_ori(form_data):
     return input_data
 
 
+@log_data_creation
 def create_rcpsp_json_data(form_data):
-    logger.debug("Creating and validating RCPSP input data from form.")
     num_activities = int(form_data.get('num_activities', 3))
     num_resources = int(form_data.get('num_resources', 2))
 

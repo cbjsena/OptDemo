@@ -2,24 +2,25 @@ from django.conf import settings
 from django.shortcuts import render
 import json
 import itertools
-import random
 
+from core.decorators import log_view_activity
 from common_utils.run_production_opt import *
 from common_utils.data_utils_production import *
 
 logger = logging.getLogger(__name__)
 
 
+@log_view_activity
 def production_scheduling_introduction_view(request):
     """General introduction page for the Production & Scheduling category."""
     context = {
         'active_model': 'Production & Scheduling',
         'active_submenu': 'main_introduction'
     }
-    logger.debug("Rendering general Production & Scheduling introduction page.")
     return render(request, 'production_scheduling_app/production_scheduling_introduction.html', context)
 
 
+@log_view_activity
 def lot_sizing_introduction_view(request):
     """Lot Sizing Problem Introduction Page."""
     context = {
@@ -27,10 +28,10 @@ def lot_sizing_introduction_view(request):
         'active_submenu_category': 'lot_sizing',
         'active_submenu': 'lot_sizing_introduction'
     }
-    logger.debug("Rendering Lot Sizing introduction page.")
     return render(request, 'production_scheduling_app/lot_sizing_introduction.html', context)  # 임시 페이지
 
 
+@log_view_activity
 def lot_sizing_demo_view(request):
     """
     Lot Sizing Problem 데모 뷰.
@@ -51,14 +52,6 @@ def lot_sizing_demo_view(request):
                 'holding_cost': request.GET.get(f'holding_cost_{t}', preset['holding_cost']),
                 'capacity': request.GET.get(f'capacity_{t}', preset['capacity']),
             })
-        # periods_data.append({
-        #     'demand': request.GET.get(f'demand_{t}', str(random.randint(50, 150))),
-        #     'setup_cost': request.GET.get(f'setup_cost_{t}', str(random.randint(200, 500))),
-        #     'prod_cost': request.GET.get(f'prod_cost_{t}', str(random.randint(5, 15))),
-        #     'holding_cost': request.GET.get(f'holding_cost_{t}', str(random.randint(1, 5))),
-        #     'capacity': request.GET.get(f'capacity_{t}', str(random.randint(150, 300)))
-        # })
-
     elif request.method == 'POST':
         form_data = request.POST.copy()
         submitted_num_periods = int(form_data.get('num_periods', preset_lot_sizing_num_periods))
@@ -86,7 +79,6 @@ def lot_sizing_demo_view(request):
     }
 
     if request.method == 'POST':
-        logger.info("Lot Sizing Demo POST request processing.")
         try:
             # 1. 데이터 생성 및 검증
             input_data = create_lot_sizing_json_data(form_data, submitted_num_periods)
@@ -129,6 +121,7 @@ def lot_sizing_demo_view(request):
     return render(request, 'production_scheduling_app/lot_sizing_demo.html', context)
 
 
+@log_view_activity
 def single_machine_introduction_view(request):
     """Single Machine Scheduling Introduction Page."""
     context = {
@@ -136,10 +129,10 @@ def single_machine_introduction_view(request):
         'active_submenu_category': 'single_machine',
         'active_submenu': 'single_machine_introduction'
     }
-    logger.debug("Rendering Single Machine Scheduling introduction page.")
     return render(request, 'production_scheduling_app/single_machine_introduction.html', context)
 
 
+@log_view_activity
 def single_machine_demo_view(request):
     jobs_list = []  # 템플릿에 전달할 작업 데이터 리스트
 
@@ -186,7 +179,6 @@ def single_machine_demo_view(request):
     }
 
     if request.method == 'POST':
-        logger.info(f"Single Machine Demo POST received. Objective: {submitted_objective}")
         try:
             # 1. 데이터 파일 새성 및 검증
             input_data = create_single_machine_json_data(jobs_list, submitted_objective , submitted_num_jobs)
@@ -227,6 +219,7 @@ def single_machine_demo_view(request):
     return render(request, 'production_scheduling_app/single_machine_demo.html', context)
 
 
+@log_view_activity
 def single_machine_advanced_view(request):
     """Single Machine Scheduling Advanced Page."""
     context = {
@@ -234,10 +227,10 @@ def single_machine_advanced_view(request):
         'active_submenu_category': 'single_machine',
         'active_submenu': 'single_machine_advanced'
     }
-    logger.debug("Rendering Single Machine Scheduling advanced page.")
     return render(request, 'production_scheduling_app/single_machine_advanced.html', context)
 
 
+@log_view_activity
 def flow_shop_introduction_view(request):
     """Flow Shop Scheduling Introduction Page."""
     context = {
@@ -245,10 +238,10 @@ def flow_shop_introduction_view(request):
         'active_submenu_category': 'flow_shop',
         'active_submenu': 'flow_shop_introduction'
     }
-    logger.debug("Rendering Flow Shop Scheduling introduction page.")
     return render(request, 'production_scheduling_app/flow_shop_introduction.html', context)
 
 
+@log_view_activity
 def flow_shop_demo_view(request):
     jobs_list = []
     if request.method == 'GET':
@@ -363,6 +356,7 @@ def flow_shop_demo_view(request):
     return render(request, 'production_scheduling_app/flow_shop_demo.html', context)
 
 
+@log_view_activity
 def job_shop_introduction_view(request):
     """Job Shop Scheduling Introduction Page."""
     context = {
@@ -370,10 +364,10 @@ def job_shop_introduction_view(request):
         'active_submenu_category': 'job_shop',
         'active_submenu': 'job_shop_introduction'
     }
-    logger.debug("Rendering Job Shop Scheduling introduction page.")
     return render(request, 'production_scheduling_app/job_shop_introduction.html', context)
 
 
+@log_view_activity
 def job_shop_demo_view(request):
     jobs_list = []
 
@@ -458,6 +452,7 @@ def job_shop_demo_view(request):
     return render(request, 'production_scheduling_app/job_shop_demo.html', context)
 
 
+@log_view_activity
 def rcpsp_introduction_view(request):
     """RCPSP Introduction Page."""
     context = {
@@ -465,10 +460,10 @@ def rcpsp_introduction_view(request):
         'active_submenu_category': 'rcpsp',
         'active_submenu': 'rcpsp_introduction'
     }
-    logger.debug("Rendering RCPSP introduction page.")
     return render(request, 'production_scheduling_app/rcpsp_introduction.html', context)
 
 
+@log_view_activity
 def rcpsp_demo_view(request):
     """
     Resource-Constrained Project Scheduling Problem (RCPSP) 데모 뷰.
@@ -543,7 +538,6 @@ def rcpsp_demo_view(request):
     }
 
     if request.method == 'POST':
-        logger.info("RCPSP Demo POST request processing.")
         try:
             input_data = create_rcpsp_json_data(form_data)
 

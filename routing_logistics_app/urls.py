@@ -8,7 +8,6 @@ urlpatterns = [
     path('vrp/introduction/', views.vrp_introduction_view, name='vrp_introduction'),
     path('vrp/advanced/', views.vrp_advanced, name='vrp_advanced'),
     path('vrp/demo/', views.vrp_demo_view, name='vrp_demo'),
-    path('vrp/test/', views.vrp_test, name='vrp_test'),
 
     # Capacitated VRP (CVRP) - 예시
     path('cvrp/introduction/', views.cvrp_introduction_view, name='cvrp_introduction'),

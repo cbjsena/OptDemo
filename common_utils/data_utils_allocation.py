@@ -2,6 +2,7 @@ import logging
 import datetime
 
 from common_utils.common_data_utils import save_json_data
+from core.decorators import log_data_creation
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,7 @@ preset_nurse_rostering_shift_requirements = {
 preset_nurse_rostering_enabled_fairness = ['fair_weekends', 'fair_nights', 'fair_offs']  # 'fair_weekends'
 
 
+@log_data_creation
 def create_budget_allocation_json_data(form_data):
     total_budget_str = form_data.get('total_budget')
     num_items = int(form_data.get('num_items'))
@@ -128,6 +130,7 @@ def create_budget_allocation_json_data(form_data):
     return input_data
 
 
+@log_data_creation
 def create_datacenter_allocation_json_data(form_data):
     global_constraints = {
         'total_budget': form_data.get('total_budget', '0'),  # 유효성 검사 함수에서 float 변환
@@ -273,6 +276,7 @@ def set_datacenter_chart_data(results_data, parsed_global_constraints):
     return chart_data
 
 
+@log_data_creation
 def create_nurse_rostering_json_data(form_data):
     num_nurses = int(form_data.get('num_nurses'))
     num_days = int(form_data.get('num_days'))
@@ -305,6 +309,7 @@ def create_nurse_rostering_json_data(form_data):
     return input_data
 
 
+@log_data_creation
 def create_nurse_rostering_advanced_json_data(form_data):
     num_nurses = int(form_data.get('num_nurses'))
     num_days = int(form_data.get('num_days'))

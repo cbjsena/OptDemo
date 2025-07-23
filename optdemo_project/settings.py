@@ -13,6 +13,9 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
+if os.name == 'nt': # Windows인 경우
+    import colorama
+    colorama.init()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -118,7 +121,14 @@ WSGI_APPLICATION = 'optdemo_project.wsgi.application'
 
 DATABASE_BACKEND = os.environ.get('DATABASE_BACKEND', 'postgres')
 
-if 'test' in sys.argv:
+if 'sqlite3' in DATABASE_BACKEND:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+elif 'test' in sys.argv:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -284,39 +294,45 @@ LOGGING = {
         'level': 'DEBUG',  # 루트 로거의 레벨을 DEBUG로 설정해야 하위 핸들러들이 동작 가능
     },
     'loggers': {
-        'django': { # Django 프레임워크 로그
+        'django': {# Django 프레임워크 로그
             'handlers': ['console_info_plus', 'file_app'],
-            'level': 'INFO', # INFO 레벨 이상만 기록
+            'level': 'INFO',# INFO 레벨 이상만 기록
             'propagate': False,
         },
+        # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
         'core': {
              'handlers': ['console_info_plus'],
              'level': 'INFO',
              'propagate': False,
         },
-        'matching_assignment_app': { # 우리 앱 로거
+        'matching_assignment_app': {
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'INFO',
             'propagate': False,
         },
-        'resource_allocation_app': { # 우리 앱 로거
+        'resource_allocation_app': {
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'INFO',
             'propagate': False,
         },
-        'routing_logistics_app': { # 우리 앱 로거
+        'routing_logistics_app': {
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'INFO',
             'propagate': False,
         },
-        'production_scheduling_app': { # 우리 앱 로거
+        'production_scheduling_app': {
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'INFO',
             'propagate': False,
         },
-        'puzzles_logic_app': { # 우리 앱 로거
+        'puzzles_logic_app': {
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'INFO', # 개발 시 DEBUG, 운영 시 INFO 로 변경 가능
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'common_utils': {
+            'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
+            'level': 'DEBUG',
             'propagate': False,
         },
     },

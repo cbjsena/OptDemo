@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.conf import  settings
 
+from core.decorators import log_view_activity
 from common_utils.run_matching_opt import *
 from common_utils.data_utils_matching import *
 
@@ -10,6 +11,7 @@ import logging
 
 
 logger = logging.getLogger(__name__)
+
 
 def validate_panel_data_structure(panel_list_items, panel_type_name):
     """
@@ -51,9 +53,9 @@ def validate_panel_data_structure(panel_list_items, panel_type_name):
     return None  # 유효성 검사 통과
 
 
+@log_view_activity
 def matching_assignment_introduction_view(request):
     """General introduction page for the Matching & Assignment category."""
-    logger.info("[IntroLCD] Page requested.")
     context = {
         'active_model': 'Matching & Assignment',
         'active_submenu': 'main_introduction'
@@ -61,6 +63,7 @@ def matching_assignment_introduction_view(request):
     return render(request, 'matching_assignment_app/matching_assignment_introduction.html', context)
 
 
+@log_view_activity
 def lcd_cf_tft_introduction_view(request):
     context = {
         'active_model': 'Matching & Assignment',
@@ -68,6 +71,8 @@ def lcd_cf_tft_introduction_view(request):
     }
     return render(request, 'matching_assignment_app/lcd_cf_tft_introduction.html', context)
 
+
+@log_view_activity
 def lcd_cf_tft_data_generation_view(request):
     context = {
         'active_model': 'Matching & Assignment',
@@ -79,8 +84,6 @@ def lcd_cf_tft_data_generation_view(request):
     }
 
     if request.method == 'POST':
-        logger.info("[DataGeneration] POST request received.")
-        logger.debug(f"[DataGeneration] Form data: {request.POST}")
         try:
             num_cf = int(request.POST.get('num_cf_panels', 3))
             num_tft = int(request.POST.get('num_tft_panels', 3))
@@ -93,13 +96,10 @@ def lcd_cf_tft_data_generation_view(request):
             generated_data_json_pretty = json.dumps(generated_data, indent=4)
             context['generated_data_json_pretty'] = generated_data_json_pretty
             request.session['generated_lcd_data'] = generated_data_json_pretty
-            logger.info(f"Data generated successfully for {num_cf} CF and {num_tft} TFT panels.")
         except ValueError as e:
             context['error_message'] = "잘못된 입력입니다. 모든 숫자가 올바르게 입력되었는지 확인하세요."
-            logger.error(f"ValueError during data generation: {e}", exc_info=True)
         except Exception as e:
             context['error_message'] = f"데이터 생성 중 오류 발생: {str(e)}"
-            logger.error(f"Unexpected error during data generation: {e}", exc_info=True)
 
     return render(request, 'matching_assignment_app/lcd_cf_tft_data_generation.html', context)
 
@@ -364,8 +364,8 @@ def lcd_cf_tft_large_scale_demo_view(request):
     return render(request, 'matching_assignment_app/lcd_cf_tft_large_scale_demo.html', context)
 
 
+@log_view_activity
 def assignment_introduction_view(request):
-    logger.info("[IntroAssignmentMain] Page requested.")
     context = {
         'active_model': 'Matching & Assignment',
         'active_submenu_category': 'assignment_problems',
@@ -374,11 +374,11 @@ def assignment_introduction_view(request):
     return render(request, 'matching_assignment_app/assignment_introduction.html', context)
 
 
+@log_view_activity
 def transport_assignment_introduction_view(request):
     """
     Transportation Assignment Problem Introduction Page.
     """
-    logger.info("[IntroTransport] Page requested.")
     context = {
         'active_model': 'Matching & Assignment',
         'active_submenu_category': 'transport_assignment_problems',
@@ -387,17 +387,12 @@ def transport_assignment_introduction_view(request):
     return render(request, 'matching_assignment_app/transport_assignment_introduction.html', context)
 
 
+@log_view_activity
 def transport_assignment_demo_view(request):
     """
         Transportation Assignment Problem 데모 뷰.
         """
     source = request.POST if request.method == 'POST' else request.GET
-    if request.method == 'GET':
-        logger.info("[TransportDemo] GET request received.")
-    else:
-        logger.info("[TransportDemo] POST request received.")
-        logger.debug(f"[TransportDemo] Form data: {source}")
-
     submitted_num_items = int(source.get('num_items_to_show', source.get('num_items', preset_trans_assign_items)))
 
     drivers_data = []
@@ -456,25 +451,20 @@ def transport_assignment_demo_view(request):
             elif results_data:
                 context['results'] = results_data
                 context['success_message'] = f"최적 할당 완료! 최소 총 비용(시간): {results_data['total_cost']}"
-                logger.info(f"[TransportDemo] Assignment successful. Total cost: {results_data['total_cost']}")
             else:
                 context['error_message'] = "최적 할당 결과를 가져오지 못했습니다."
 
-        except ValueError as ve:
-            context['error_message'] = f"입력값 오류: {str(ve)}"
-            logger.error(f"[TransportDemo] ValueError in transport_assignment_demo_view: {ve}", exc_info=True)
         except Exception as e:
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"
-            logger.error(f"[TransportDemo] Unexpected error in transport_assignment_demo_view: {e}", exc_info=True)
 
     return render(request, 'matching_assignment_app/transport_assignment_demo.html', context)
 
 
+@log_view_activity
 def resource_skill_matching_introduction_view(request):
     """
     Resource-Skill Matching Problem Introduction Page.
     """
-    logger.info("[IntroSkillMatching] Page requested.")
     context = {
         'active_model': 'Matching & Assignment',
         'active_submenu_category': 'resource_skill_matching_problems',
@@ -483,17 +473,12 @@ def resource_skill_matching_introduction_view(request):
     return render(request, 'matching_assignment_app/resource_skill_matching_introduction.html', context)
 
 
+@log_view_activity
 def resource_skill_matching_demo_view(request):
     """
     Resource-Skill Matching 데모 뷰.
     """
     source = request.POST if request.method == 'POST' else request.GET
-    if request.method == 'GET':
-        logger.info("[SkillMatchingDemo] GET request received.")
-    else:
-        logger.info("[SkillMatchingDemo] POST request received.")
-        logger.debug(f"[SkillMatchingDemo] Form data: {source}")
-
     all_resources_data = preset_resources
 
     if 'selected_resources' in source:
@@ -550,15 +535,10 @@ def resource_skill_matching_demo_view(request):
                 selected_ids_set = set(selected_resource_ids)
                 unselected_resources = [res for res in all_resources_data if res['id'] not in selected_ids_set]
                 context['unselected_resources'] = unselected_resources
-                logger.info(f"[SkillMatchingDemo] Skill matching successful. Total cost: {results_data.get('total_cost')}")
             else:
                 context['error_message'] = "최적 할당 결과를 가져오지 못했습니다."
 
-        except ValueError as ve:
-            context['error_message'] = f"입력값 오류: {str(ve)}"
-            logger.error(f"[SkillMatchingDemo] ValueError in skill matching demo: {ve}", exc_info=True)
         except Exception as e:
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"
-            logger.error(f"[SkillMatchingDemo] Unexpected error in skill matching demo: {e}", exc_info=True)
 
     return render(request, 'matching_assignment_app/resource_skill_matching_demo.html', context)

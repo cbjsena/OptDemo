@@ -2,6 +2,8 @@ from common_utils.common_data_utils import save_json_data
 import logging
 import datetime
 
+from core.decorators import log_data_creation
+
 logger = logging.getLogger(__name__)
 
 preset_depot_location = {"id": "D1","x": 300.0,"y": 250.0}
@@ -26,6 +28,8 @@ preset_pair_locations = [
         {"id": "Pair5","px": 341.0,"py": 329.0, "dx": 537.0,"dy": 365.0, "demand": 20},
     ]
 
+
+@log_data_creation
 def create_vrp_json_data(form_data):
     # --- 1. 입력 데이터 파싱 및 기본 유효성 검사 ---
     num_depots=1
@@ -50,8 +54,6 @@ def create_vrp_json_data(form_data):
         raise ValueError("차량 수는 1대 이상이어야 합니다.")
 
     vehicle_capacities = create_vehicle_capacities(int(form_data.get('vehicle_capacity', preset_vehicle_capacity)), num_vehicles)
-    logger.debug(f"Depot: {parsed_depot_location}, Customers: {num_customers}, Vehicles: {num_vehicles}, Capacities: {vehicle_capacities[0]}")
-
     input_data = {
         "timestamp": datetime.datetime.now().isoformat(),
         "problem_type": form_data.get('problem_type'),
@@ -60,15 +62,12 @@ def create_vrp_json_data(form_data):
         "num_vehicles": num_vehicles,
         "num_depots":num_depots,
         "vehicle_capacities":vehicle_capacities,
-        # 추가적으로 저장하고 싶은 다른 form_data 항목들
-        # "form_parameters": {
-        #     key: value for key, value in form_data.items() if key not in ['csrfmiddlewaretoken']
-        # }
     }
 
     return input_data
 
 
+@log_data_creation
 def create_pdp_json_data(form_data):
     # --- 1. 입력 데이터 파싱 및 기본 유효성 검사 ---
     num_depots = 1
@@ -93,9 +92,6 @@ def create_pdp_json_data(form_data):
             'demand': int(form_data.get(f'pair_{i}_demand'))
         })
 
-    logger.debug(
-        f"Depot: {parsed_depot_location}, Pairs: {num_pairs}, Vehicles: {num_vehicles}, Capacities: {vehicle_capacities[0]}")
-
     input_data = {
         "timestamp": datetime.datetime.now().isoformat(),
         "problem_type": form_data.get('problem_type'),
@@ -104,12 +100,9 @@ def create_pdp_json_data(form_data):
         "num_vehicles": num_vehicles,
         "num_depots": num_depots,
         "vehicle_capacities": vehicle_capacities,
-        # 추가적으로 저장하고 싶은 다른 form_data 항목들
-        "form_parameters": {
-            key: value for key, value in form_data.items() if key not in ['csrfmiddlewaretoken']
-        }
     }
     return input_data
+
 
 def create_vehicle_capacities(vehicle_capacity, num_vehicles):
     vehicle_capacities=vehicle_capacity
@@ -123,6 +116,7 @@ def create_vehicle_capacities(vehicle_capacity, num_vehicles):
         cap = vehicle_capacities[0] if vehicle_capacities else 100  # 기본값
         vehicle_capacities = [cap] * num_vehicles
     return vehicle_capacities
+
 
 def save_vrp_json_data(input_data):
     problem_type = input_data.get('problem_type')

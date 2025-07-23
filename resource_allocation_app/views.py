@@ -5,10 +5,12 @@ import json
 from common_utils.nurseRosteringSolver import NurseRosteringSolver
 from common_utils.data_utils_allocation import *
 from common_utils.run_alloctaion_opt import *
+from core.decorators import log_view_activity
 
 logger = logging.getLogger(__name__)  # settings.py에 정의된 'resource_allocation_app' 로거 사용
 
 
+@log_view_activity
 def resource_allocation_introduction_view(request):
     """General introduction page for the Resource Allocation category."""
     context = {
@@ -16,22 +18,19 @@ def resource_allocation_introduction_view(request):
         # 이 페이지는 특정 소메뉴에 속하지 않으므로 active_submenu는 비워둠
         'active_submenu': 'main_introduction'
     }
-    logger.debug("Rendering general Resource & Allocation introduction page.")
     return render(request, 'resource_allocation_app/resource_allocation_introduction.html', context)
 
 
-def resource_allocation_view():
-    return None
-
-
+@log_view_activity
 def budget_allocation_introduction_view(request):
     context = {
         'active_model': 'Resource Allocation',
         'active_submenu': 'budget_allocation_introduction'
     }
-    logger.debug("Rendering budget allocation introduction page.")
     return render(request, 'resource_allocation_app/budget_allocation_introduction.html', context)
 
+
+@log_view_activity
 def budget_allocation_demo_view(request):
     # 요청 방식에 따라 데이터 소스 결정
     source = request.POST if request.method == 'POST' else request.GET
@@ -64,7 +63,6 @@ def budget_allocation_demo_view(request):
     }
 
     if request.method == 'POST':
-        logger.info("Budget allocation demo POST request received.")
         try:
             # 1. 데이터 생성 및 검증
             input_data = create_budget_allocation_json_data(source)
@@ -76,7 +74,7 @@ def budget_allocation_demo_view(request):
                     context['error_message'] = (context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
                 elif success_save_message:
                     context['success_save_message'] = success_save_message
-            logger.info( context.get('success_save_message', ''))
+
             # 3. 최적화 실행
             results, error_msg, processing_time = run_budget_allocation_optimizer(input_data)
             context['processing_time_seconds'] = processing_time
@@ -85,21 +83,16 @@ def budget_allocation_demo_view(request):
             else:
                 context['results'] = results
                 context['success_message'] = f"최적 예산 분배 수립 완료! 최대 기대 수익: {results['total_maximized_return']}"
-                logger.info(
-                    f"Budget allocation successful. Max return: {results['total_maximized_return']}, "
-                    f"Total allocated: {results['total_allocated_budget']}, "
-                    f"Utilization: {results['budget_utilization_percent']}%")
 
         except ValueError as ve:
             context['error_message'] = f"입력값 오류: {str(ve)}"
-            logger.error(f"ValueError in budget_allocation_demo_view: {ve}", exc_info=True)
         except Exception as e:
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"
-            logger.error(f"Unexpected error in budget_allocation_demo_view: {e}", exc_info=True)
 
     return render(request, 'resource_allocation_app/budget_allocation_demo.html', context)
 
 
+@log_view_activity
 def financial_portfolio_introduction_view(request):
     """
     Financial Portfolio Optimization introduction page.
@@ -108,10 +101,10 @@ def financial_portfolio_introduction_view(request):
         'active_model': 'Resource Allocation',
         'active_submenu': 'financial_portfolio_introduction'
     }
-    logger.debug("Rendering financial portfolio optimization introduction page.")
     return render(request, 'resource_allocation_app/financial_portfolio_introduction.html', context)
 
 
+@log_view_activity
 def financial_portfolio_demo_view(request):
     # Default values for GET request
     default_num_assets = 3
@@ -157,8 +150,6 @@ def financial_portfolio_demo_view(request):
     }
 
     if request.method == 'POST':
-        logger.info("Financial Portfolio demo POST request received.")
-
         try:
             target_return_str = current_form_data.get('target_portfolio_return')
             if not target_return_str:
@@ -193,10 +184,6 @@ def financial_portfolio_demo_view(request):
                         cov_matrix_np[i, j] = correlation_coeff * asset_stddevs[i] * asset_stddevs[j]
             covariance_matrix = cov_matrix_np.tolist()
 
-            logger.debug(
-                f'Data for portfolio optimizer: ER={expected_returns}, COV={covariance_matrix}, '
-                f'TargetRet={target_portfolio_return}')
-
             results, calc_portfolio_return, calc_portfolio_variance, error_msg, processing_time = \
                 run_portfolio_optimization_optimizer(submitted_num_assets_val, expected_returns, covariance_matrix,
                                                      target_portfolio_return)
@@ -219,20 +206,17 @@ def financial_portfolio_demo_view(request):
                     res_item['asset_name'] = current_form_data.get(f'asset_name_{i}', f'자산 {i + 1}')
 
                 context['success_message'] = "포트폴리오 최적화 계산 완료!"
-                logger.info(
-                    f"Portfolio optimization successful. ER: {calc_portfolio_return}, Var: {calc_portfolio_variance}")
             else:
                 context['error_message'] = "최적화 결과를 가져오는 데 실패했습니다 (결과 없음)."
         except ValueError as ve:
             context['error_message'] = f"입력값 오류: {str(ve)}"
-            logger.error(f"ValueError in financial_portfolio_demo_view: {ve}", exc_info=True)
         except Exception as e:
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"
-            logger.error(f"Unexpected error in financial_portfolio_demo_view: {e}", exc_info=True)
 
     return render(request, 'resource_allocation_app/financial_portfolio_demo.html', context)
 
 
+@log_view_activity
 def data_center_capacity_introduction_view(request): # Renamed to be more general for the sub-menu
     """
     Capacity Investment & Allocation (Data Center Capacity Planning) introduction page.
@@ -241,10 +225,10 @@ def data_center_capacity_introduction_view(request): # Renamed to be more genera
         'active_model': 'Resource Allocation',
         'active_submenu': 'data_center_capacity_introduction' # Key for the specific intro page
     }
-    logger.debug("Rendering data center capacity planning introduction page.")
     return render(request, 'resource_allocation_app/data_center_capacity_introduction.html', context)
 
 
+@log_view_activity
 def data_center_capacity_demo_view(request):
     source = request.POST if request.method == 'POST' else request.GET
 
@@ -300,7 +284,6 @@ def data_center_capacity_demo_view(request):
     }
 
     if request.method == 'POST':
-        logger.info("Data Center Capacity Demo POST processing.")
         try:
             # 1. 데이터 파일 새성 및 검증
             input_data = create_datacenter_allocation_json_data(source)
@@ -321,8 +304,6 @@ def data_center_capacity_demo_view(request):
             elif results_data:
                 context['results'] = results_data
                 context['success_message'] = f'데이터 센터 용량 계획 최적화 완료!'.strip()
-                logger.info(
-                    f"Data center capacity optimization successful. Total Profit: {results_data.get('total_profit')}")
 
                 # --- 차트 데이터 준비 ---
                 chart_data_py_dict  = set_datacenter_chart_data(results_data, input_data.get('global_constraints'))
@@ -332,23 +313,22 @@ def data_center_capacity_demo_view(request):
                 context['error_message'] = (context.get('error_message', '') + " 최적화 결과를 가져오지 못했습니다 (결과 없음).").strip()
         except ValueError as ve: # 파싱 및 유효성 검사 오류
             context['error_message'] = f"입력값 오류: {str(ve)}"
-            logger.error(f"ValueError in data_center_capacity_demo_view (POST): {ve}", exc_info=True)
         except Exception as e:  # 그 외 모든 예외
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"
-            logger.error(f"Unexpected error in data_center_capacity_demo_view (POST): {e}", exc_info=True)
 
     return render(request, 'resource_allocation_app/data_center_capacity_demo.html', context)
 
-# --- 3. Nurse Rostering Problem ---
+
+@log_view_activity
 def nurse_rostering_introduction_view(request):
     context = {
         'active_model': 'Resource Allocation',
         'active_submenu': 'nurse_rostering_introduction'
     }
-    logger.debug("Rendering Nurse Rostering introduction page.")
     return render(request, 'resource_allocation_app/nurse_rostering_introduction.html', context)
 
 
+@log_view_activity
 def nurse_rostering_demo_view(request):
     source = request.POST if request.method == 'POST' else request.GET
     submitted_num_nurses = int(source.get('num_nurses', preset_nurse_rostering_num_nurses))
@@ -409,13 +389,11 @@ def nurse_rostering_demo_view(request):
 
         except Exception as e:
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"
-    logger.debug("Rendering Nurse Rostering demo page.")
     return render(request, 'resource_allocation_app/nurse_rostering_demo.html', context)
 
 
+@log_view_activity
 def nurse_rostering_advanced_demo_view(request):
-    logger.info(f"Start nurse_rostering_advanced_demo_view.")
-
     # 요청 방식에 따라 데이터 소스 결정
     source = request.POST if request.method == 'POST' else request.GET
     submitted_num_nurses = int(source.get('num_nurses', preset_nurse_rostering_num_nurses))
