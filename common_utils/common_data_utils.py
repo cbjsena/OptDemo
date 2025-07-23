@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def save_json_data(generated_data, model_data_type, filename_pattern):
     """
     입력 데이터를 JSON 파일로 저장합니다.
@@ -49,6 +50,7 @@ def save_json_data(generated_data, model_data_type, filename_pattern):
     except Exception as e:
         logger.error(f"Unexpected error during data saving: {e}", exc_info=True)
         return None, f"입력 데이터 저장 중 예상치 못한 오류 발생: {e}"
+
 
 def get_save_info(filepath):
     return f"입력 데이터가 '{filepath}'으로 서버에 저장되었습니다."
