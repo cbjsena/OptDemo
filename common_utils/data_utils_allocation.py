@@ -282,6 +282,14 @@ def create_nurse_rostering_json_data(form_data):
     num_days = int(form_data.get('num_days'))
     min_shifts = int(form_data.get('min_shifts'))
     max_shifts = int(form_data.get('max_shifts'))
+    nurses_data = []
+    for i in range(num_nurses):
+        preset = preset_nurse_rostering_nurses_data[i]
+        nurses_data.append({
+            'id': i,
+            'name': form_data.get(f'nurse_{i}_name', preset['name']),
+            'skill': form_data.get(f'nurse_{i}_skill', preset['skill']),
+        })
 
     day_shift_requests = []
     for d in range(preset_nurse_rostering_days):
@@ -296,6 +304,7 @@ def create_nurse_rostering_json_data(form_data):
 
     input_data = {
         "problem_type": form_data.get('problem_type'),
+        'nurses_data': nurses_data,
         'num_nurses': num_nurses,
         'num_days': num_days,
         'shifts': preset_nurse_rostering_shifts,

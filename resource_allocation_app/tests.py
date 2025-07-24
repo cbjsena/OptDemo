@@ -150,6 +150,9 @@ class ResourceAllocationAppTests(TestCase):
         self.assertContains(response, "최적화 결과 요약")
         self.assertContains(response, "계산된 총 이익")
 
+
+class NurseRosteringTests(TestCase):
+
     def test_nurse_rostering_introduction_view_loads_successfully(self):
         """Nurse Rostering 설명 페이지가 GET 요청 시 정상적으로 로드되는지 테스트합니다."""
         url = reverse('resource_allocation_app:nurse_rostering_introduction')
@@ -204,8 +207,8 @@ class ResourceAllocationAppTests(TestCase):
         self.assertContains(response, "생성된 근무표")
         self.assertContains(response, "간호사별 근무일 수 요약")
 
-    def test_nurse_rostering_advanced_post_request_returns_solution(self):
-        """Advanced Nurse Rostering 데모가 POST 요청 시 최적 계획을 계산하는지 테스트합니다."""
+    def test_nurse_rostering_advanced_post_request_infeasible_returns(self):
+        """Advanced Nurse Rostering 데모가 POST 요청 시 해결 불능한 경우, 올바른 오류 메시지를 반환하는지 테스트"""
         url = reverse('resource_allocation_app:nurse_rostering_advanced_demo')
 
         post_data = {
@@ -230,6 +233,53 @@ class ResourceAllocationAppTests(TestCase):
             'nurse_12_name': 'NurM', 'nurse_12_skill': 'H', 'nurse_12_vacation': '',
             'nurse_13_name': 'NurN', 'nurse_13_skill': 'M', 'nurse_13_vacation': '',
             'nurse_14_name': 'NurO', 'nurse_14_skill': 'M', 'nurse_14_vacation': '',
+            # 시프트별 필요인원
+            'req_Day_H': '1', 'req_Day_M': '2', 'req_Day_L': '1',
+            'req_Aft_H': '1', 'req_Aft_M': '2', 'req_Aft_L': '1',
+            'req_Ngt_H': '1', 'req_Ngt_M': '0', 'req_Ngt_L': '1',
+            # 공정성 옵션
+            'fairness_options': ['fair_weekends', 'fair_nights', 'fair_offs']
+        }
+
+        # POST 요청 시뮬레이션
+        response = self.client.post(url, post_data)
+
+        # 결과 검증
+        self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
+        self.assertIsNone(response.context.get('results'))
+        self.assertIn('해를 찾을 수 없었습니다. ', response.context.get('error_message', ''))
+
+    def test_nurse_rostering_advanced_post_request_feasible_returns(self):
+        """Advanced Nurse Rostering 데모가 POST 요청 시 최적 계획을 계산하는지 테스트합니다."""
+        url = reverse('resource_allocation_app:nurse_rostering_advanced_demo')
+
+        post_data = {
+            'problem_type': 'nurse_rostering',
+            'num_nurses': '19',
+            'num_days': '7',
+            'min_shifts': '2',
+            'max_shifts': '7',
+            'nurse_0_name': 'Nur1', 'nurse_0_skill': 'L', 'nurse_0_vacation': '',
+            'nurse_1_name': 'Nur2', 'nurse_1_skill': 'M', 'nurse_1_vacation': '',
+            'nurse_2_name': 'Nur3', 'nurse_2_skill': 'L', 'nurse_2_vacation': '',
+            'nurse_3_name': 'Nur4', 'nurse_3_skill': 'H', 'nurse_3_vacation': '',
+            'nurse_4_name': 'Nur5', 'nurse_4_skill': 'M', 'nurse_4_vacation': '',
+            'nurse_5_name': 'Nur6', 'nurse_5_skill': 'H', 'nurse_5_vacation': '',
+            'nurse_6_name': 'Nur7', 'nurse_6_skill': 'M', 'nurse_6_vacation': '',
+            'nurse_7_name': 'Nur8', 'nurse_7_skill': 'L', 'nurse_7_vacation': '',
+            'nurse_8_name': 'Nur9', 'nurse_8_skill': 'H', 'nurse_8_vacation': '',
+            'nurse_9_name': 'Nur10', 'nurse_9_skill': 'M', 'nurse_9_vacation': '',
+            'nurse_10_name': 'Nur11', 'nurse_10_skill': 'L', 'nurse_10_vacation': '',
+            'nurse_11_name': 'Nur12', 'nurse_11_skill': 'M', 'nurse_11_vacation': '',
+            'nurse_12_name': 'Nur13', 'nurse_12_skill': 'H', 'nurse_12_vacation': '',
+            'nurse_13_name': 'Nur14', 'nurse_13_skill': 'M', 'nurse_13_vacation': '',
+            'nurse_14_name': 'Nur15', 'nurse_14_skill': 'M', 'nurse_14_vacation': '',
+            'nurse_15_name': 'Nur16', 'nurse_15_skill': 'L', 'nurse_15_vacation': '',
+            'nurse_16_name': 'Nur17', 'nurse_16_skill': 'L', 'nurse_16_vacation': '',
+            'nurse_17_name': 'Nur18', 'nurse_17_skill': 'M', 'nurse_17_vacation': '',
+            'nurse_18_name': 'Nur19', 'nurse_18_skill': 'H', 'nurse_18_vacation': '',
             # 시프트별 필요인원
             'req_Day_H': '1', 'req_Day_M': '2', 'req_Day_L': '1',
             'req_Aft_H': '1', 'req_Aft_M': '2', 'req_Aft_L': '1',

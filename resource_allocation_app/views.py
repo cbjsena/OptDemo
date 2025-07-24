@@ -1,9 +1,7 @@
 from django.shortcuts import render
-from django.conf import settings
 import json
 
-from common_utils.nurseRosteringSolver import NurseRosteringSolver
-from common_utils.data_utils_allocation import *
+from resource_allocation_app.solvers.nurseRosteringSolver import NurseRosteringSolver
 from common_utils.run_alloctaion_opt import *
 from core.decorators import log_view_activity
 
@@ -378,11 +376,11 @@ def nurse_rostering_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 최적화 실행
-            results_data, error_msg, processing_time = run_nurse_rostering_optimizer(input_data)
+            results_data, error_msg_opt, processing_time = NurseRosteringSolver(input_data)._solve()
             context['processing_time_seconds'] = processing_time
 
-            if error_msg:
-                context['error_message'] = error_msg
+            if error_msg_opt:
+                context['error_message'] = error_msg_opt
             elif results_data:
                 context['results'] = results_data
                 context['success_message'] = f"최적의 근무표를 생성했습니다! (총 페널티: {results_data['total_penalty']})"
@@ -463,8 +461,7 @@ def nurse_rostering_advanced_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            # results_data, error_msg_opt, processing_time = run_nurse_roster_advanced_optimizer(input_data)
-            results_data, error_msg_opt, processing_time = NurseRosteringSolver(input_data).solve()
+            results_data, error_msg_opt, processing_time = NurseRosteringSolver(input_data)._set_advanced_solve()
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
