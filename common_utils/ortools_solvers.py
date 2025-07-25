@@ -18,6 +18,15 @@ class BaseOrtoolsLinearSolver(BaseSolver):
     def __init__(self, input_data, solver_name):
         super().__init__(input_data)
         self.solver = pywraplp.Solver.CreateSolver(solver_name)
+        self.status_map = {
+            pywraplp.Solver.OPTIMAL: "OPTIMAL",
+            pywraplp.Solver.FEASIBLE: "FEASIBLE",
+            pywraplp.Solver.INFEASIBLE: "INFEASIBLE",
+            pywraplp.Solver.UNBOUNDED: "UNBOUNDED",
+            pywraplp.Solver.ABNORMAL: "ABNORMAL",
+            pywraplp.Solver.MODEL_INVALID: "MODEL_INVALID",
+            pywraplp.Solver.NOT_SOLVED: "NOT_SOLVED",
+        }
         if not self.solver:
             raise Exception(f"{solver_name} Solver not available.")
 
@@ -27,12 +36,17 @@ class BaseOrtoolsLinearSolver(BaseSolver):
             self._add_constraints()
             self._set_objective_function()
 
-            start_time = time.time()
             status = self.solver.Solve()
-            processing_time = time.time() - start_time
+            processing_time = self.get_time(self.solver.WallTime() / 1000.0)
             if settings.SAVE_MODEL_FILE:
                 export_ortools_solver(self.solver, f'{self.problem_type}.mps')
+            self.log_solve_resulte(self.status_map.get(status, "UNKNOWN"), processing_time)
+
             if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
+                if status == pywraplp.Solver.FEASIBLE:
+                    msg = "Feasible solution found, but it might not be optimal."
+                    logger.warning(msg)
+
                 results = self._extract_results()
                 error_msg = None
                 if status == pywraplp.Solver.FEASIBLE:
@@ -72,11 +86,15 @@ class BaseOrtoolsCpSolver(BaseSolver):
             # solver.parameters.max_time_in_seconds = 30.0 # 필요시 시간 제한 설정
             if settings.SAVE_MODEL_FILE:
                 export_cp_model(self.model, f'{self.problem_type}.mps')
-            start_time = time.time()
             status = solver.Solve(self.model)
-            processing_time = time.time() - start_time
+            processing_time = self.get_time(solver.WallTime())
+            self.log_solve_resulte(solver.StatusName(status), processing_time)
 
             if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+                if status == status == cp_model.FEASIBLE:
+                    msg = "Feasible solution found, but it might not be optimal."
+                    logger.warning(msg)
+
                 results = self._extract_results(solver)  # solver 객체를 전달
                 error_msg = None
                 return results, error_msg, processing_time

@@ -9,6 +9,8 @@ import os
 import json
 import logging
 
+from matching_assignment_app.solvers.resource_skill_solver import ResourceSkillMatchingSolver
+from matching_assignment_app.solvers.transport_assignment_solver import TransportAssignmentSolver
 
 logger = logging.getLogger(__name__)
 
@@ -144,15 +146,14 @@ def lcd_cf_tft_small_scale_demo_view(request):
                 context['input_tft_panels'] = tft_panels
                 logger.info(f"[SmallScaleDemo] Input data validated. CF:{len(cf_panels)}, TFT:{len(tft_panels)}")
 
-                matched_pairs, total_yield, error_msg, solver_time = run_matching_cf_tft_algorithm(cf_panels, tft_panels)
+                results, error_msg, solver_time = run_matching_cf_tft_algorithm(cf_panels, tft_panels)
 
                 if error_msg:
                     context['error_message'] = error_msg
                 else:
-                    context['matching_pairs'] = matched_pairs
-                    context['total_yield'] = total_yield
-                    if matched_pairs or total_yield > 0:
-                        msg = f"[SmallScaleDemo] Matching successful. Total yield: {total_yield:.0f}"
+                    context['results'] = results
+                    if results['matched_pairs'] or results['total_yield'] > 0:
+                        msg = f"[SmallScaleDemo] Matching successful. Total yield: {results['total_yield'] :.0f}"
                         context['success_message'] = msg
                         logger.info(msg)
                     elif not error_msg:  # 에러 없고 매칭 결과도 없을 때
@@ -325,11 +326,13 @@ def lcd_cf_tft_large_scale_demo_view(request):
                 logger.info(
                     f"Data for large scale matching validated. CF: {len(cf_panels)}, TFT: {len(tft_panels)}. Source: {loaded_filename}")
 
-                matched_pairs, total_yield, error_msg, solver_time = run_matching_cf_tft_algorithm(cf_panels, tft_panels)
+                results, error_msg, solver_time = run_matching_cf_tft_algorithm(cf_panels, tft_panels)
 
                 if error_msg:
                     context['error_message'] = (context.get('error_message', '') + " " + error_msg).strip()
                 else:
+                    total_yield = results['total_yield']
+                    matched_pairs = results['matched_pairs']
                     num_matches = len(matched_pairs)
                     avg_yield = total_yield / num_matches if num_matches > 0 else 0
                     processing_time_val=solver_time
@@ -443,7 +446,7 @@ def transport_assignment_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = run_matching_transport_optimizer(input_data)
+            results_data, error_msg_opt, processing_time = TransportAssignmentSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
@@ -523,7 +526,7 @@ def resource_skill_matching_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = run_skill_matching_optimizer(input_data)
+            results_data, error_msg_opt, processing_time = ResourceSkillMatchingSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:

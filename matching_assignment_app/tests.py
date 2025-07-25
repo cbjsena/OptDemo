@@ -225,7 +225,7 @@ class LcdCfTftSmallScaleDemoTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.context.get('matching_pairs'))
+        self.assertIsNotNone(response.context.get('results'))
         self.assertIn('Matching successful', response.context.get('success_message', ''))
         self.assertContains(response, "Optimal Matching Pairs")
         # context의 'submitted_json_data'가 POST로 보낸 데이터와 일치하는지 확인 (입력값 유지 기능 검증)
@@ -272,8 +272,7 @@ class LcdCfTftSmallScaleDemoTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.context.get('matching_pairs'))
-        self.assertIsNotNone(response.context.get('total_yield'))
+        self.assertIsNotNone(response.context.get('results'))
         self.assertIn('Matching successful', response.context.get('success_message', ''))
         self.assertContains(response, "Optimal Matching Pairs")
 

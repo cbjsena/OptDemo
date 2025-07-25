@@ -5,6 +5,7 @@ import json
 from common_utils.run_puzzle_opt import *
 from common_utils.data_utils_puzzle import *
 from core.decorators import log_view_activity
+from puzzles_logic_app.solvers.diet_solver import DietSolver
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +107,7 @@ def diet_problem_demo_view(request):
                         context['success_save_message'] = success_save_message
 
                 # 3. 최적화 실행
-                results_data, error_msg_opt, processing_time = run_diet_optimizer(input_data)
+                results_data, error_msg_opt, processing_time = DietSolver(input_data).solve()
                 context['processing_time_seconds'] = processing_time
 
                 if error_msg_opt:

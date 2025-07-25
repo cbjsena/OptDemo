@@ -86,7 +86,6 @@ def log_data_creation(func):
             else:
                 logger.warning(f"[{func_name}] Function executed but returned no data (None or empty).")
 
-            logger.info(f"[{func_name}] Data created successfully")
             return returned_value
 
         except ValueError as ve:

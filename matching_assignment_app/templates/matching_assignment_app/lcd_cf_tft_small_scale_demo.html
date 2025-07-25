@@ -134,7 +134,11 @@
         {% csrf_token %}
         <div class="form-group">
             <label for="test_data_json">Test Data (JSON format):</label>
-            <textarea class="form-control" id="test_data_json" name="test_data_json" rows="8" placeholder="Enter or paste test data in JSON format...">{% if submitted_json_data %}{{ submitted_json_data }}{% endif %}</textarea>
+            <textarea class="form-control" id="test_data_json" name="test_data_json" rows="8"
+                      placeholder="Enter or paste test data in JSON format...">
+                {% if submitted_json_data %}
+                    {{ submitted_json_data }}
+                {% endif %}</textarea>
             <small class="form-text text-muted">
                 Example: <code>{"cf_panels": [{"id": "CF1", "rows": 2, "cols": 2, "defect_map": [[0,1],[0,0]]}, ...], "tft_panels": [...]}</code>
             </small>
@@ -159,7 +163,7 @@
     {% endif %}
 
     {# --- 결과 표시 영역: 3단 레이아웃 --- #}
-    {% if input_cf_panels or input_tft_panels or matching_pairs %}
+    {% if input_cf_panels or input_tft_panels or results.matched_pairs %}
     <div class="results-grid-container">
         {# --- Column 1: Input CF Panels --- #}
         <div class="results-column">
@@ -227,9 +231,9 @@
 
         {# --- Column 3: Optimal Matching Pairs --- #}
         <div class="results-column">
-            <h5>Optimal Matching Pairs {% if total_yield is not None %}(Total Yield: {{ total_yield|floatformat:0 }}){% endif %}</h5>
-            {% if matching_pairs %}
-                {% for pair in matching_pairs %}
+            <h5>Optimal Matching Pairs {% if results.total_yield is not None %}(Total Yield: {{ results.total_yield|floatformat:0 }}){% endif %}</h5>
+            {% if results.matched_pairs %}
+                {% for pair in results.matched_pairs %}
                 <div class="matched-pair-display">
                     <div class="matched-pair-single-row">
                         <div class="panel-display-item">

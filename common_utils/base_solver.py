@@ -44,6 +44,15 @@ class BaseSolver:
         """
         raise NotImplementedError("'_extract_results' method must be implemented in the child class.")
 
+    def get_time(self, processing_time:float):
+        return f"{processing_time:.3f}" if processing_time is not None else "N/A"
+
+    def log_solve_resulte(self, status_name:str, processing_time:str):
+        """
+        솔버 실행 결과 상태와 실행 시간 로그 출력
+        """
+        logger.info(f"Solver finished. Status: {status_name}, Time: {processing_time} sec")
+
     def solve(self):
         """
         전체 최적화 프로세스를 실행하는 메인 메서드.
