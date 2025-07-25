@@ -104,3 +104,16 @@ def export_ortools_solver(solver: pywraplp.Solver, filename: str):
     file_path = os.path.join(mps_dir, filename)
 
     solver.WriteModelToMpsFile(file_path, True, False)
+
+def export_routing_solver(solver: pywraplp.Solver, filename: str):
+    # 현재 파일 기준 상위 폴더의 mps 디렉토리 경로 구하기
+    base_dir = os.path.dirname(os.path.abspath(__file__))  # 현재 파일 위치
+    mps_dir = os.path.abspath(os.path.join(base_dir, "..", "mps"))
+
+    # 디렉토리가 없다면 생성
+    os.makedirs(mps_dir, exist_ok=True)
+
+    # 전체 경로 설정
+    file_path = os.path.join(mps_dir, filename)
+
+    solver.WriteModelToMpsFile(file_path, True, False)

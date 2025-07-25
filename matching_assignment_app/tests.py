@@ -37,7 +37,7 @@ class MatchingAssignmentAppTests(TestCase):
         url = reverse('matching_assignment_app:transport_assignment_demo')
 
         post_data = {
-            'problem_type': 'transport assignment',
+            'problem_type': 'transport_assignment',
             'num_items': '3',
             'zone_name_0': '강남구',
             'zone_name_1': '서초구',
@@ -82,7 +82,7 @@ class MatchingAssignmentAppTests(TestCase):
         url = reverse('matching_assignment_app:resource_skill_matching_demo')
 
         post_data = {
-            'problem_type': 'resource skill',
+            'problem_type': 'resource_skill',
             'num_projects': '3',
             'selected_resources': ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8'],
             'proj_0_id': 'P1', 'proj_0_name': 'AI 모델 개발', 'proj_0_required_skills': 'Python,ML,SQL',
@@ -107,7 +107,7 @@ class MatchingAssignmentAppTests(TestCase):
         url = reverse('matching_assignment_app:resource_skill_matching_demo')
 
         post_data = {
-            'problem_type': 'resource skill',
+            'problem_type': 'resource_skill',
             'num_projects': '3',
             'selected_resources': ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7'],
             'proj_0_id': 'P1', 'proj_0_name': 'AI 모델 개발', 'proj_0_required_skills': 'Python,ML,SQL',
@@ -148,8 +148,8 @@ class MatchingAssignmentAppTests(TestCase):
         post_data = {
             'num_cf_panels': '4',
             'num_tft_panels': '4',
-            'panel_rows': '3',
-            'panel_cols': '4',
+            'num_rows': '2',
+            'num_cols': '4',
             'defect_rate': '30',
         }
 
@@ -178,15 +178,15 @@ class MatchingAssignmentAppTests(TestCase):
             generated_data = json.loads(generated_data_json)
 
             # 설정값이 올바르게 반영되었는지 확인
-            settings = generated_data.get('settings', {})
-            self.assertEqual(settings.get('num_cf_panels'), 4)
-            self.assertEqual(settings.get('num_tft_panels'), 4)
-            self.assertEqual(settings.get('panel_rows'), 3)
-            self.assertEqual(settings.get('panel_cols'), 4)
+            self.assertEqual(generated_data.get('num_cf_panels'), 4)
+            self.assertEqual(generated_data.get('num_tft_panels'), 4)
+            self.assertEqual(generated_data.get('num_rows'), 2)
+            self.assertEqual(generated_data.get('num_cols'), 4)
+            self.assertEqual(generated_data.get('defect_rate_percent'), 30)
 
             # CF 패널 데이터의 구조가 올바른지 확인
             self.assertEqual(len(generated_data.get('cf_panels', [])), 4)
-            self.assertEqual(len(generated_data['cf_panels'][0]['defect_map']), 3)  # Rows
+            self.assertEqual(len(generated_data['cf_panels'][0]['defect_map']), 2)  # Rows
             self.assertEqual(len(generated_data['cf_panels'][0]['defect_map'][0]), 4)  # Cols
 
         except json.JSONDecodeError:
@@ -225,7 +225,7 @@ class LcdCfTftSmallScaleDemoTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.context.get('matching_pairs'))
+        self.assertIsNotNone(response.context.get('results'))
         self.assertIn('Matching successful', response.context.get('success_message', ''))
         self.assertContains(response, "Optimal Matching Pairs")
         # context의 'submitted_json_data'가 POST로 보낸 데이터와 일치하는지 확인 (입력값 유지 기능 검증)
@@ -272,8 +272,7 @@ class LcdCfTftSmallScaleDemoTests(TestCase):
 
         # 결과 검증
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.context.get('matching_pairs'))
-        self.assertIsNotNone(response.context.get('total_yield'))
+        self.assertIsNotNone(response.context.get('results'))
         self.assertIn('Matching successful', response.context.get('success_message', ''))
         self.assertContains(response, "Optimal Matching Pairs")
 
@@ -298,8 +297,8 @@ class LcdCfTftLargeDemoTests(TestCase):
             'large_data_input_type': 'make_json',
             'num_cf_panels': '100',
             'num_tft_panels': '100',
-            'panel_rows': '4',
-            'panel_cols': '4',
+            'num_rows': '4',
+            'num_cols': '4',
             'defect_rate': '15',
         }
 

@@ -2,13 +2,15 @@ from django.shortcuts import render
 from django.conf import  settings
 
 from core.decorators import log_view_activity
-from common_utils.run_matching_opt import *
 from common_utils.data_utils_matching import *
 
 import os
 import json
 import logging
 
+from matching_assignment_app.solvers.lcd_cf_tft_solver import LcdMatchingSolver
+from matching_assignment_app.solvers.resource_skill_solver import ResourceSkillMatchingSolver
+from matching_assignment_app.solvers.transport_assignment_solver import TransportAssignmentSolver
 
 logger = logging.getLogger(__name__)
 
@@ -85,13 +87,8 @@ def lcd_cf_tft_data_generation_view(request):
 
     if request.method == 'POST':
         try:
-            num_cf = int(request.POST.get('num_cf_panels', 3))
-            num_tft = int(request.POST.get('num_tft_panels', 3))
-            rows = int(request.POST.get('panel_rows', 3))
-            cols = int(request.POST.get('panel_cols', 3))
-            rate = int(request.POST.get('defect_rate', 10))
-
-            generated_data = create_cf_tft_matching_json_data(num_cf, num_tft, rows, cols, rate)
+            source = request.POST
+            generated_data = create_cf_tft_matching_json_data(source)
             context['generated_data'] = generated_data
             generated_data_json_pretty = json.dumps(generated_data, indent=4)
             context['generated_data_json_pretty'] = generated_data_json_pretty
@@ -144,15 +141,14 @@ def lcd_cf_tft_small_scale_demo_view(request):
                 context['input_tft_panels'] = tft_panels
                 logger.info(f"[SmallScaleDemo] Input data validated. CF:{len(cf_panels)}, TFT:{len(tft_panels)}")
 
-                matched_pairs, total_yield, error_msg, solver_time = run_matching_cf_tft_algorithm(cf_panels, tft_panels)
+                results, error_msg, solver_time = LcdMatchingSolver(data).solve()
 
                 if error_msg:
                     context['error_message'] = error_msg
                 else:
-                    context['matching_pairs'] = matched_pairs
-                    context['total_yield'] = total_yield
-                    if matched_pairs or total_yield > 0:
-                        msg = f"[SmallScaleDemo] Matching successful. Total yield: {total_yield:.0f}"
+                    context['results'] = results
+                    if results['matched_pairs'] or results['total_yield'] > 0:
+                        msg = f"[SmallScaleDemo] Matching successful. Total yield: {results['total_yield'] :.0f}"
                         context['success_message'] = msg
                         logger.info(msg)
                     elif not error_msg:  # 에러 없고 매칭 결과도 없을 때
@@ -181,7 +177,7 @@ def lcd_cf_tft_large_scale_demo_view(request):
         'is_cloud': getattr(settings, 'USE_GCS', False),
     }
 
-    data_dir_path_str = settings.DEMO_DIR_MAP['matching_cf_tft_data']
+    data_dir_path_str = settings.DEMO_DIR_MAP['matching_lcd_cf_tft_data']
     if data_dir_path_str and os.path.isdir(data_dir_path_str):
         try:
             files = [f for f in os.listdir(data_dir_path_str) if f.endswith('.json') and f.startswith('cf')]
@@ -200,61 +196,23 @@ def lcd_cf_tft_large_scale_demo_view(request):
         cf_panels = None
         tft_panels = None
         loaded_filename = None
-
+        input_data ={}
         try:
             if input_type == 'make_json':
-                logger.info("Processing 'make_json' input type.")
-                num_cf = request.POST.get('num_cf_panels', '100')
-                num_tft = request.POST.get('num_tft_panels', '100')
-                panel_r = request.POST.get('panel_rows', '4')
-                panel_c = request.POST.get('panel_cols', '4')
-                defect_rate_str = request.POST.get('defect_rate', '10')
+                source = request.POST
+                # 1. 데이터 파일 새성 및 검증
+                input_data = create_cf_tft_matching_json_data(source)
+                cf_panels = input_data.get('cf_panels')
+                tft_panels = input_data.get('tft_panels')
 
-                # 입력값 유효성 검사 (숫자 변환 및 범위)
-                num_cf = int(num_cf)
-                num_tft = int(num_tft)
-                panel_r = int(panel_r)
-                panel_c = int(panel_c)
-                defect_rate_percent  = int(defect_rate_str)
-
-                generated_data = create_cf_tft_matching_json_data(num_cf, num_tft, panel_r, panel_c, defect_rate_percent)
-                if data_dir_path_str:
-                    # 중복 방지를 위해 시퀀스 번호 또는 타임스탬프 사용
-                    seq = 0
-                    cf_panels = generated_data.get('cf_panels')
-                    tft_panels = generated_data.get('tft_panels')
-
-                    while True:
-                        filename_pattern = f"cf{num_cf}_tft{num_tft}_row{panel_r}_col{panel_c}_rate{str(defect_rate_percent ).replace('.', 'p')}"
-                        if seq == 0:
-                            potential_filename = f"{filename_pattern}.json"
-                        else:
-                            potential_filename = f"{filename_pattern}_seq{seq}.json"
-
-                        loaded_filename = potential_filename
-
-                        filepath = os.path.join(data_dir_path_str, potential_filename)
-                        if not os.path.exists(filepath):
-                            loaded_filename = potential_filename  # 저장될 (또는 사용될) 파일명
-                            with open(filepath, 'w', encoding='utf-8') as f:
-                                json.dump(generated_data, f, indent=2)
-                            logger.info(f"Generated data saved to: {filepath}")
-                            context['success_message'] = f"데이터가 생성되어 '{loaded_filename}'으로 서버에 저장되었습니다. 이제 매칭을 실행합니다."
-                            # 파일 목록을 즉시 업데이트하기 위해 다시 로드 (선택 사항)
-                            files = [f for f in os.listdir(data_dir_path_str) if
-                                     f.endswith('.json') and f.startswith('cf')]
-                            context['available_json_files'] = [{'value': f, 'name': f} for f in
-                                                               sorted(files, reverse=True)]
-                            break
-                        seq += 1
-                        if seq > 100:  # 무한 루프 방지
-                            logger.error("Could not find a unique filename after 100 attempts for make_json.")
-                            context['error_message'] = "생성된 데이터를 저장할 고유한 파일 이름을 찾는 데 실패했습니다."
-                            return render(request, 'matching_assignment_app/lcd_cf_tft_large_scale_demo.html', context)
-                else:
-                    logger.warning("MATCH_CF_TFT_DATA_DIR not set. Generated data will not be saved.")
-                    context['info_message'] = "데이터가 생성되었지만, 서버 저장 경로가 설정되지 않아 저장되지 않았습니다. 매칭은 진행됩니다."
-
+                # 2. 파일 저장
+                if settings.SAVE_DATA_FILE:
+                    success_save_message, save_error = save_matching_assignment_json_data(input_data)
+                    if save_error:
+                        context['error_message'] = (
+                                    context.get('error_message', '') + " " + save_error).strip()  # 기존 에러에 추가
+                    elif success_save_message:
+                        context['success_save_message'] = success_save_message
 
             elif input_type == 'select_json':
                 logger.info("Processing 'select_json' input type.")
@@ -267,9 +225,9 @@ def lcd_cf_tft_large_scale_demo_view(request):
                     filepath = os.path.join(data_dir_path_str, selected_file)
                     if os.path.exists(filepath):
                         with open(filepath, 'r', encoding='utf-8') as f:
-                            data = json.load(f)
-                        cf_panels = data.get('cf_panels')
-                        tft_panels = data.get('tft_panels')
+                            input_data = json.load(f)
+                        cf_panels = input_data.get('cf_panels')
+                        tft_panels = input_data.get('tft_panels')
                         loaded_filename = selected_file
                         logger.info(f"Data loaded from selected server file: {filepath}")
                     else:
@@ -293,9 +251,9 @@ def lcd_cf_tft_large_scale_demo_view(request):
                         # fs.delete(filename) # 임시 파일 삭제
 
                         # 메모리에서 직접 읽기 (더 효율적)
-                        data = json.load(uploaded_file)
-                        cf_panels = data.get('cf_panels')
-                        tft_panels = data.get('tft_panels')
+                        input_data = json.load(uploaded_file)
+                        cf_panels = input_data.get('cf_panels')
+                        tft_panels = input_data.get('tft_panels')
                         loaded_filename = uploaded_file.name
                         logger.info(f"Data loaded from uploaded file: {uploaded_file.name}")
                     except json.JSONDecodeError:
@@ -325,11 +283,13 @@ def lcd_cf_tft_large_scale_demo_view(request):
                 logger.info(
                     f"Data for large scale matching validated. CF: {len(cf_panels)}, TFT: {len(tft_panels)}. Source: {loaded_filename}")
 
-                matched_pairs, total_yield, error_msg, solver_time = run_matching_cf_tft_algorithm(cf_panels, tft_panels)
+                results, error_msg, solver_time = LcdMatchingSolver(input_data).solve()
 
                 if error_msg:
                     context['error_message'] = (context.get('error_message', '') + " " + error_msg).strip()
                 else:
+                    total_yield = results['total_yield']
+                    matched_pairs = results['matched_pairs']
                     num_matches = len(matched_pairs)
                     avg_yield = total_yield / num_matches if num_matches > 0 else 0
                     processing_time_val=solver_time
@@ -443,11 +403,11 @@ def transport_assignment_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = run_matching_transport_optimizer(input_data)
+            results_data, error_msg_opt, processing_time = TransportAssignmentSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
-                context['error_message'] = error_msg_opt
+                context['error_message'] = (context.get('error_message', '') + " " + error_msg_opt).strip()
             elif results_data:
                 context['results'] = results_data
                 context['success_message'] = f"최적 할당 완료! 최소 총 비용(시간): {results_data['total_cost']}"
@@ -523,7 +483,7 @@ def resource_skill_matching_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = run_skill_matching_optimizer(input_data)
+            results_data, error_msg_opt, processing_time = ResourceSkillMatchingSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:

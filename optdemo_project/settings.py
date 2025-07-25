@@ -29,9 +29,9 @@ if not os.path.exists(MEDIA_ROOT):
     os.makedirs(MEDIA_ROOT)
 
 DEMO_DIR = MEDIA_ROOT/ 'demo'
-DEMO_DIR_MAP ={'matching_cf_tft_data':DEMO_DIR/'match_cf_tft_data',
-            'matching_transport assignment_data':DEMO_DIR/'matching_transport assignment_data',
-            'matching_resource skill_data':DEMO_DIR/'matching_resource skill_data',
+DEMO_DIR_MAP ={'matching_lcd_cf_tft_data':DEMO_DIR/'matching_lcd_cf_tft_data',
+            'matching_transport_assignment_data':DEMO_DIR/'matching_transport_assignment_data',
+            'matching_resource_skill_data':DEMO_DIR/'matching_resource_skill_data',
             'allocation_datacenter_data':DEMO_DIR/'allocation_datacenter_data',
             'allocation_budget_data':DEMO_DIR/'allocation_budget_data',
             'allocation_nurse_rostering_data':DEMO_DIR/'allocation_nurse_rostering_data',
@@ -308,12 +308,12 @@ LOGGING = {
         },
         'matching_assignment_app': {
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'INFO',
+            'level': 'SOLVE',
             'propagate': False,
         },
         'resource_allocation_app': {
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'SOLVE',
+            'level': 'INFO',
             'propagate': False,
         },
         'routing_logistics_app': {

@@ -12,12 +12,9 @@ def save_json_data(generated_data, model_data_type, filename_pattern):
     입력 데이터를 JSON 파일로 저장합니다.
     성공 시 저장된 파일명을, 실패 시 None을 반환합니다.
     """
-    data_dir_path_str = settings.DEMO_DIR_MAP[model_data_type]
-    if not data_dir_path_str:
-        logger.warning(f"{data_dir_path_str} not configured in settings. Input data will not be saved.")
-        return None, "서버 저장 경로가 설정되지 않아 입력 데이터를 저장할 수 없습니다."
 
     try:
+        data_dir_path_str = settings.DEMO_DIR_MAP[model_data_type]
         data_dir = str(data_dir_path_str)
         os.makedirs(data_dir, exist_ok=True)
 

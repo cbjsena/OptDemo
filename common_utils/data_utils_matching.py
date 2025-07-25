@@ -64,21 +64,26 @@ def create_panel_data(panel_id_prefix, num_panels, rows, cols, rate):
 
 
 @log_data_creation
-def create_cf_tft_matching_json_data(num_cf_panels, num_tft_panels, panel_rows, panel_cols, defect_rate):
-    generated_cf_panels = create_panel_data("CF", num_cf_panels, panel_rows, panel_cols, defect_rate)
-    generated_tft_panels = create_panel_data("TFT", num_tft_panels, panel_rows, panel_cols, defect_rate)
+def create_cf_tft_matching_json_data(source):
+    num_cf = int(source.get('num_cf_panels', 3))
+    num_tft = int(source.get('num_tft_panels', 3))
+    rows = int(source.get('num_rows', 3))
+    cols = int(source.get('num_cols', 3))
+    rate = int(source.get('defect_rate', 10))
+
+    generated_cf_panels = create_panel_data("CF", num_cf, rows, cols, rate)
+    generated_tft_panels = create_panel_data("TFT", num_tft, rows, cols, rate)
 
     generated_data = {
-        "panel_dimensions": {"rows": panel_rows, "cols": panel_cols},
+        'problem_type': 'lcd_cf_tft',
+        "num_cf_panels": num_cf,
+        "num_tft_panels": num_tft,
+        "num_rows": rows,
+        "num_cols": cols,
+        "defect_rate_percent": rate,
+        "panel_dimensions": {"rows": rows, "cols": cols},
         "cf_panels": generated_cf_panels,
         "tft_panels": generated_tft_panels,
-        "settings": {
-            "num_cf_panels": num_cf_panels,
-            "num_tft_panels": num_tft_panels,
-            "defect_rate_percent": defect_rate,
-            "panel_rows": panel_rows,
-            "panel_cols": panel_cols,
-        }
     }
     return generated_data
 
@@ -203,14 +208,20 @@ def save_matching_assignment_json_data(input_data):
     problem_type = input_data.get('problem_type')
     model_data_type = f'matching_{problem_type}_data'
     filename_pattern = ''
-    if "transport assignment" == problem_type:
+    if "transport_assignment" == problem_type:
         num_driver = len(input_data.get('driver_names'))
         num_zone = len(input_data.get('zone_names'))
         filename_pattern = f"driver{num_driver}_zone{num_zone}"
-    elif "resource skill" == problem_type:
+    elif "resource_skill" == problem_type:
         num_resources = input_data.get('num_resources')
         num_projects = input_data.get('num_projects')
         filename_pattern = f"resource{num_resources}_project{num_projects}"
-
+    elif "lcd_cf_tft" == problem_type:
+        num_cf_panels = input_data.get('num_cf_panels')
+        num_tft_panels = input_data.get('num_tft_panels')
+        num_rows = input_data.get('num_rows')
+        num_cols = input_data.get('num_cols')
+        defect_rate_percent = input_data.get('defect_rate_percent')
+        filename_pattern = f"cf{num_cf_panels}_tft{num_tft_panels}_row{num_rows}_col{num_cols}_rate{str(defect_rate_percent).replace('.', 'p')}"
     return save_json_data(input_data, model_data_type, filename_pattern)
 

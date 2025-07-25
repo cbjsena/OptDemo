@@ -38,16 +38,16 @@
         {# Panel Rows and Panel Columns (한 줄에 배치) #}
         <div class="row align-items-end mb-3">
             <div class="col-md-5">
-                <label for="panel_rows">Panel Rows (Cells, 3-5):</label>
-                <select class="form-control d-inline-block w-auto" id="panel_rows" name="panel_rows">
+                <label for="num_rows">Panel Rows (Cells, 3-5):</label>
+                <select class="form-control d-inline-block w-auto" id="num_rows" name="num_rows">
                     {% for i in cell_dimension_range %}
                         <option value="{{ i }}" {% if i == 3 %}selected{% endif %}>{{ i }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-5">
-                <label for="panel_cols">Panel Columns (Cells, 3-5):</label>
-                <select class="form-control d-inline-block w-auto" id="panel_cols" name="panel_cols">
+                <label for="num_cols">Panel Columns (Cells, 3-5):</label>
+                <select class="form-control d-inline-block w-auto" id="num_cols" name="num_cols">
                     {% for i in cell_dimension_range %}
                         <option value="{{ i }}" {% if i == 3 %}selected{% endif %}>{{ i }}</option>
                     {% endfor %}

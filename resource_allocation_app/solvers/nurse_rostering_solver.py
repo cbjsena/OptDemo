@@ -2,10 +2,12 @@ from ortools.sat.python import cp_model
 from common_utils.common_run_opt import *
 import logging
 
+from common_utils.ortools_solvers import BaseOrtoolsCpSolver
+
 logger = logging.getLogger('resource_allocation_app')
 
 
-class NurseRosteringSolver:
+class NurseRosteringSolver(BaseOrtoolsCpSolver):
     """
        간호사 스케줄링 문제를 정의하고 해결하는 클래스.
        관련된 모든 데이터와 제약 조건 설정 함수들을 포함합니다.
@@ -49,7 +51,7 @@ class NurseRosteringSolver:
         self.assigns ={}
         logger.info(f"Num nurses: {self.num_nurses}, Num days: {self.num_days}, Shifts: {self.shifts}")
 
-    def _set_variables_assign(self):
+    def _create_variables_assign(self):
         """
         특정 간호사를 특정 날짜, 특정 시프트에 배정하면 1, 아니면 0인 이진변수
         """
@@ -277,6 +279,15 @@ class NurseRosteringSolver:
         except Exception as e:
             logger.error(e)
 
+    def _create_variables(self):
+        self._create_variables_assign()
+
+    def _add_constraints(self):
+        self._set_constraints_day_work_one()
+        self._set_constraints_req_shift()
+        self._set_constraints_no_3_consecutive_shifts()
+
+
     def _set_advanced_objective_function(self):
         """목표 함수를 설정하고, 관련된 변수들을 반환합니다."""
         logger.solve("--- Setting Objective Function (Fairness) ---")
@@ -353,7 +364,7 @@ class NurseRosteringSolver:
             """
             전체 스케줄링 문제를 해결하는 메인 메서드.
             """
-            self._set_variables_assign()
+            self._create_variables_assign()
             self._set_constraints_day_work_one()
             self._set_constraints_skill_req()
             self._set_constraints_vacation_req()
@@ -429,28 +440,3 @@ class NurseRosteringSolver:
 
         return results_data
 
-    def _solve(self):
-        try:
-            """
-            전체 스케줄링 문제를 해결하는 메인 메서드.
-            """
-            self._set_variables_assign()
-            self._set_constraints_day_work_one()
-            self._set_constraints_req_shift()
-            self._set_constraints_no_3_consecutive_shifts()
-            self._set_objective_function()
-            solver = cp_model.CpSolver()
-            export_cp_model(self.model, "local_model.pb.txt")
-            # var_names, constraints = parse_pb_file("local_model.pb.txt")
-            # desc_model_by_line(3571, var_names, constraints)
-            # solver.parameters.log_search_progress = True  # 자세한 진행 출력
-            solver.parameters.max_time_in_seconds = 30.0
-            status, processing_time = solving_log(solver, self.problem_type, self.model)
-
-            if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-                results_data = self._extract_results(solver)
-                return results_data, None, processing_time
-            else:
-                return None, "해를 찾을 수 없었습니다. 제약 조건이 너무 엄격하거나, 필요 인원이 간호사 수에 비해 너무 많을 수 있습니다.", None
-        except Exception as e:
-            return None, f"오류 발생: {str(e)}", None

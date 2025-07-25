@@ -2,12 +2,14 @@ from django.conf import settings
 from django.shortcuts import render
 
 from core.decorators import log_view_activity
-from common_utils.run_routing_opt import *
 from common_utils.data_utils_routing import *
 
 import json
 import logging
 
+from routing_logistics_app.solvers.pdp_solver import PdpSolver
+from routing_logistics_app.solvers.vrp_solver import VrpSolver
+from routing_logistics_app.solvers.cvrp_solver import CvrpSolver
 logger = logging.getLogger(__name__)
 
 
@@ -82,7 +84,7 @@ def vrp_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = run_vrp_optimizer(input_data)
+            results_data, error_msg_opt, processing_time = VrpSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
@@ -193,11 +195,11 @@ def cvrp_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = run_cvrp_optimizer(input_data)
+            results_data, error_msg_opt, processing_time = CvrpSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
-
+            logger.info(f'error_msg_opt:{error_msg_opt}, processing_time:{processing_time}')
             if error_msg_opt:
-                context['error_message'] = (context.get('error_message', '') + " " + error_msg_opt).strip()
+                context['error_message'] =error_msg_opt
             elif results_data and (
                     results_data.get('routes') or results_data.get('total_distance') is not None):
                 context['opt_results'] = results_data
@@ -256,7 +258,6 @@ def pdp_demo_view(request):
     Pickup and Delivery Problem 데모 뷰.
     """
     form_data = {}
-    model_name = 'PDP'
     if request.method == 'GET':
         submitted_num_pairs = int(request.GET.get('num_pairs_to_show', preset_num_pairs))
         submitted_num_vehicles = int(request.GET.get('num_vehicles_to_show', preset_num_vehicles))
@@ -313,7 +314,7 @@ def pdp_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = run_pdp_optimizer(input_data)
+            results_data, error_msg_opt, processing_time = PdpSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:

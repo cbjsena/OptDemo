@@ -58,7 +58,7 @@
 
     <form method="POST" id="assignmentForm">
         {% csrf_token %}
-        <input type="hidden" name="problem_type" value="transport assignment" id="problem_type">
+        <input type="hidden" name="problem_type" value="transport_assignment" id="problem_type">
         <input type="hidden" name="num_items" value="{{ submitted_num_items }}">
 
         <div class="card">
