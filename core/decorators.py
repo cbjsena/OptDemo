@@ -77,14 +77,14 @@ def log_data_creation(func):
             else:
                 # 2. 그 외의 경우 (단일 값 반환)
                 result_data_for_logging = returned_value
-            # 성공 시 DEBUG 레벨로 생성된 데이터 일부를 기록 (너무 길지 않도록)
+
             if result_data_for_logging:
                 if logger.isEnabledFor(logging.DEBUG):
                     for key, value in result_data_for_logging.items():
                         logger.debug(f"[{key}]: {value}")
-                else:
-                    # 결과가 비어있거나 None이면 경고 로그를 남김
-                    logger.warning(f"[{func_name}] Function executed but returned no data (None or empty).")
+                logger.info(f"[{func_name}] Data created successfully.")
+            else:
+                logger.warning(f"[{func_name}] Function executed but returned no data (None or empty).")
 
             logger.info(f"[{func_name}] Data created successfully")
             return returned_value

@@ -65,6 +65,7 @@ if os.path.exists(local_env_path):
 SECRET_KEY=os.environ.get('SECRET_KEY', 'django-insecure-5)=z06nprnb$ua_#)c**%n01&+*0%+d33lfqnl1l0n3qolcurx')
 DEBUG=os.environ.get('DEBUG', 'False').upper()=='TRUE'
 SAVE_DATA_FILE=os.environ.get('SAVE_DATA_FILE', 'False').upper()=='TRUE'
+SAVE_MODEL_FILE=os.environ.get('SAVE_MODEL_FILE', 'False').upper()=='TRUE'
 allowed_hosts_str=os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
 
@@ -312,7 +313,7 @@ LOGGING = {
         },
         'resource_allocation_app': {
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'INFO',
+            'level': 'SOLVE',
             'propagate': False,
         },
         'routing_logistics_app': {
@@ -332,7 +333,7 @@ LOGGING = {
         },
         'common_utils': {
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': False,
         },
     },

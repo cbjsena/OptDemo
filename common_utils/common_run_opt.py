@@ -76,7 +76,7 @@ def get_solving_time_sec(solver):
 def get_time(processing_time):
     return f"{processing_time:.3f}" if processing_time is not None else "N/A"
 
-def export_model_proto(model: cp_model.CpModel, filename: str):
+def export_cp_model(model: cp_model.CpModel, filename: str):
     # 현재 파일 기준 상위 폴더의 mps 디렉토리 경로 구하기
     base_dir = os.path.dirname(os.path.abspath(__file__))  # 현재 파일 위치
     mps_dir = os.path.abspath(os.path.join(base_dir, "..", "mps"))
@@ -90,3 +90,17 @@ def export_model_proto(model: cp_model.CpModel, filename: str):
     proto = model.Proto()
     with open(file_path, "w") as f:
         f.write(text_format.MessageToString(proto))
+
+
+def export_ortools_solver(solver: pywraplp.Solver, filename: str):
+    # 현재 파일 기준 상위 폴더의 mps 디렉토리 경로 구하기
+    base_dir = os.path.dirname(os.path.abspath(__file__))  # 현재 파일 위치
+    mps_dir = os.path.abspath(os.path.join(base_dir, "..", "mps"))
+
+    # 디렉토리가 없다면 생성
+    os.makedirs(mps_dir, exist_ok=True)
+
+    # 전체 경로 설정
+    file_path = os.path.join(mps_dir, filename)
+
+    solver.WriteModelToMpsFile(file_path, True, False)

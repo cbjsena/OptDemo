@@ -20,7 +20,9 @@ def save_json_data(generated_data, model_data_type, filename_pattern):
     try:
         data_dir = str(data_dir_path_str)
         os.makedirs(data_dir, exist_ok=True)
-        filepath = os.path.join(data_dir_path_str, f"{filename_pattern}.json")
+
+        # 1. 먼저 저장할 고유한 파일 경로를 찾습니다.
+        filepath = ''
         seq = 0
         while True:
             if seq == 0:
@@ -30,19 +32,16 @@ def save_json_data(generated_data, model_data_type, filename_pattern):
 
             filepath = os.path.join(data_dir_path_str, potential_filename)
             if not os.path.exists(filepath):
-                loaded_filename = potential_filename  # 저장될 (또는 사용될) 파일명
-                with open(filepath, 'w', encoding='utf-8') as f:
-                    json.dump(generated_data, f, indent=2)
-                logger.info(f"Generated data saved to: {filepath}")
-                # 파일 목록을 즉시 업데이트하기 위해 다시 로드 (선택 사항)
-                files = [f for f in os.listdir(data_dir_path_str) if
-                         f.endswith('.json') and f.startswith('test_cf')]
-                break
+                break  # 사용할 파일 경로를 찾았으므로 루프 종료
             seq += 1
+            if seq > 100:  # 무한 루프 방지
+                raise IOError("Could not find a unique filename after 100 attempts.")
 
+        # 2. 찾은 경로에 파일을 저장합니다.
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(generated_data, f, indent=4, ensure_ascii=False)
-        logger.info(f"Input data saved to: {filepath}")
+
+        logger.info(f"Input data saved successfully to: {filepath}")
         return get_save_info(filepath), None
     except IOError as e:
         logger.error(f"Failed to save input data to {filepath}: {e}", exc_info=True)

@@ -1,9 +1,15 @@
+import numpy as np
+from django.conf import settings
 from django.shortcuts import render
 import json
 
-from resource_allocation_app.solvers.nurseRosteringSolver import NurseRosteringSolver
-from common_utils.run_alloctaion_opt import *
+
+from resource_allocation_app.solvers.budget_allocation_solver import BudgetAllocationSolver
+from resource_allocation_app.solvers.datacenter_solver import DataCenterCapacitySolver
+from resource_allocation_app.solvers.nurse_rostering_solver import *
+from common_utils.data_utils_allocation import *
 from core.decorators import log_view_activity
+from resource_allocation_app.solvers.portfolio_solver import run_portfolio_solver
 
 logger = logging.getLogger(__name__)  # settings.py에 정의된 'resource_allocation_app' 로거 사용
 
@@ -74,7 +80,7 @@ def budget_allocation_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results, error_msg, processing_time = run_budget_allocation_optimizer(input_data)
+            results, error_msg, processing_time = BudgetAllocationSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
             if error_msg:
                 context['error_message'] = error_msg
@@ -183,8 +189,8 @@ def financial_portfolio_demo_view(request):
             covariance_matrix = cov_matrix_np.tolist()
 
             results, calc_portfolio_return, calc_portfolio_variance, error_msg, processing_time = \
-                run_portfolio_optimization_optimizer(submitted_num_assets_val, expected_returns, covariance_matrix,
-                                                     target_portfolio_return)
+                run_portfolio_solver(submitted_num_assets_val, expected_returns, covariance_matrix,
+                                     target_portfolio_return)
             context['processing_time_seconds'] = processing_time
             if error_msg:
                 context['error_message'] = error_msg
@@ -295,16 +301,16 @@ def data_center_capacity_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = run_datacenter_capacity_optimizer(input_data)
+            results, error_msg_opt, processing_time = DataCenterCapacitySolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
             if error_msg_opt:
                 context['error_message'] = (context.get('error_message', '') + " " + error_msg_opt).strip()
-            elif results_data:
-                context['results'] = results_data
+            elif results:
+                context['results'] = results
                 context['success_message'] = f'데이터 센터 용량 계획 최적화 완료!'.strip()
 
                 # --- 차트 데이터 준비 ---
-                chart_data_py_dict  = set_datacenter_chart_data(results_data, input_data.get('global_constraints'))
+                chart_data_py_dict  = set_datacenter_chart_data(results, input_data.get('global_constraints'))
                 context['chart_data_py'] = chart_data_py_dict
                 context['chart_data_json'] = json.dumps(chart_data_py_dict )  # JSON 문자열로 템플릿에 전달
             else:

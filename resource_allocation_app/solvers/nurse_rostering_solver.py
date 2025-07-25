@@ -398,7 +398,7 @@ class NurseRosteringSolver:
         # 페널티 총합 + 주말 근무 격차 최소화 (주말 근무 공정성에 더 높은 가중치 부여)
         self.model.Minimize(sum(penalties) + weekend_gap * 2)
 
-    def _set_result(self, solver):
+    def _extract_results(self, solver):
         schedule = {}
         for d in self.all_days:
             schedule[d] = {}
@@ -440,7 +440,7 @@ class NurseRosteringSolver:
             self._set_constraints_no_3_consecutive_shifts()
             self._set_objective_function()
             solver = cp_model.CpSolver()
-            export_model_proto(self.model, "local_model.pb.txt")
+            export_cp_model(self.model, "local_model.pb.txt")
             # var_names, constraints = parse_pb_file("local_model.pb.txt")
             # desc_model_by_line(3571, var_names, constraints)
             # solver.parameters.log_search_progress = True  # 자세한 진행 출력
@@ -448,7 +448,7 @@ class NurseRosteringSolver:
             status, processing_time = solving_log(solver, self.problem_type, self.model)
 
             if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-                results_data = self._set_result(solver)
+                results_data = self._extract_results(solver)
                 return results_data, None, processing_time
             else:
                 return None, "해를 찾을 수 없었습니다. 제약 조건이 너무 엄격하거나, 필요 인원이 간호사 수에 비해 너무 많을 수 있습니다.", None
