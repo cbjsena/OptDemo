@@ -7,6 +7,8 @@ from django.conf import settings
 from ortools.linear_solver import pywraplp
 from ortools.sat.python import cp_model
 from ortools.constraint_solver import pywrapcp, routing_enums_pb2
+
+from core.decorators import log_solver_solve
 from .base_solver import BaseSolver
 from .common_run_opt import export_ortools_solver, export_cp_model
 
@@ -33,6 +35,7 @@ class BaseOrtoolsLinearSolver(BaseSolver):
         if not self.solver:
             raise Exception(f"{solver_name} Solver not available.")
 
+    @log_solver_solve
     def solve(self):
         try:
             self._create_variables()
@@ -54,9 +57,9 @@ class BaseOrtoolsLinearSolver(BaseSolver):
                 error_msg = None
                 if status == pywraplp.Solver.FEASIBLE:
                     logger.warning(f"Feasible solution found for {self.problem_type}.")
+
                 return results, error_msg, processing_time
             else:
-                # ... (에러 처리 로직)
                 error_msg = f"Optimal solution not found. Solver status: {status}"
                 return None, error_msg, processing_time
 
@@ -79,6 +82,7 @@ class BaseOrtoolsCpSolver(BaseSolver):
         # CP-SAT의 결과 추출은 solver 객체가 필요하므로, 인자를 받도록 재정의합니다.
         raise NotImplementedError
 
+    @log_solver_solve
     def solve(self):
         try:
             self._create_variables()
@@ -148,6 +152,7 @@ class BaseOrtoolsRoutingSolver(BaseSolver):
         # 라우팅 결과 추출은 매우 유사하므로 부모에서 일부 공통 로직을 제공할 수 있습니다.
         raise NotImplementedError
 
+    @log_solver_solve
     def solve(self):
         try:
             self._create_variables()  # VRP에서는 manager, routing 객체 생성에 해당

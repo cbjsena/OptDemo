@@ -100,22 +100,54 @@ def log_data_creation(func):
 
     return wrapper
 
-
-def log_solver_activity(func):
+def log_solver_make(func):
     """
-    최적화 솔버 함수의 시작, 종료, 상태, 처리 시간을 자동으로 로깅하는 데코레이터.
+    최적화 솔버의 모델 생성 함수들의 시작, 종료, 상태, 처리 시간을 자동으로 로깅하는 데코레이터.
     """
 
     @wraps(func)
     def wrapper(*args, **kwargs):
         # 함수가 정의된 모듈의 로거를 사용
+        instance = args[0]
         logger = logging.getLogger(func.__module__)
         func_name = func.__name__
 
         # input_data에서 problem_type 추출 시도
-        problem_type = "Unknown Problem"
-        if args and isinstance(args[0], dict):
-            problem_type = args[0].get('problem_type', func_name)
+        problem_type = getattr(instance, 'problem_type', 'Unknown')
+
+        logger.solve(f"Starting [{func_name}] in solver for '{problem_type}'...")
+        start_time = time.time()
+
+        try:
+            # 원래의 솔버 함수 실행
+            func(*args, **kwargs)  # 처리 시간은 데코레이터가 계산
+            end_time = time.time()
+            processing_time = round(end_time - start_time, 4)
+            logger.solve(f"Ended [{func_name}] in solver for '{problem_type}', Time: {processing_time} sec")
+        except Exception as e:
+            end_time = time.time()
+            processing_time = round(end_time - start_time, 4)
+            logger.error(
+                f"[{func_name}] An unexpected error occurred in solver for '{problem_type}': {e}. Time: {processing_time} sec",
+                exc_info=True)
+
+    return wrapper
+
+def log_solver_solve(func):
+    """
+    최적화 솔버 클래스의 solve 함수의 시작, 종료, 상태, 처리 시간을 자동으로 로깅하는 데코레이터.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # args[0]은 클래스 인스턴스(self)입니다.
+        # 인스턴스에서 로거와 problem_type을 가져옵니다.
+        instance = args[0]
+        logger = logging.getLogger(func.__module__)
+        func_name = func.__name__
+
+        # input_data에서 problem_type 추출 시도
+        problem_type = getattr(instance, 'problem_type', 'Unknown')
 
         logger.info(f"[{func_name}] Starting solver for '{problem_type}'...")
         start_time = time.time()

@@ -4,8 +4,12 @@ import json
 import itertools
 
 from core.decorators import log_view_activity
-from common_utils.run_production_opt import *
 from common_utils.data_utils_production import *
+from production_scheduling_app.solvers.flow_shop_solver import FlowShopSolver
+from production_scheduling_app.solvers.job_shop_solver import JobShopSolver
+from production_scheduling_app.solvers.lot_sizing_solver import LotSizingSolver
+from production_scheduling_app.solvers.rcpsp_solver import RcpspSolver
+from production_scheduling_app.solvers.single_machine_solver import SingleMachineSolver
 
 logger = logging.getLogger(__name__)
 
@@ -92,14 +96,14 @@ def lot_sizing_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = run_lot_sizing_optimizer(input_data)
+            results_data, error_msg_opt, processing_time = LotSizingSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
                 context['error_message'] = (context.get('error_message', '') + " " + error_msg_opt).strip()
             elif results_data:
                 context['results'] = results_data
-                context['success_message'] = f"최적 생산 계획 수립 완료! 최소 총 비용: {results_data['total_cost']:.2f}"
+                context['success_message'] = f"최적 생산 계획 수립 완료! 최소 총 비용: {results_data['total_cost']}"
 
                 # 차트용 데이터 준비
                 chart_data = {
@@ -191,8 +195,8 @@ def single_machine_demo_view(request):
                 elif success_save_message:
                     context['success_save_message'] = success_save_message
 
-            # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = run_single_machine_optimizer(input_data)
+            # 3. 최적화 실행 run_single_machine_optimizer
+            results_data, error_msg_opt, processing_time = SingleMachineSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
@@ -305,7 +309,7 @@ def flow_shop_demo_view(request):
                         context['success_save_message'] = success_save_message
 
                 # 3. 최적화 실행
-                results_data, error_msg_opt, processing_time = run_flow_shop_optimizer(input_data)
+                results_data, error_msg_opt, processing_time = FlowShopSolver(input_data).solve()
                 context['processing_time_seconds'] = processing_time
 
                 if error_msg_opt:
@@ -436,7 +440,7 @@ def job_shop_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = run_job_shop_optimizer(input_data)
+            results_data, error_msg_opt, processing_time = JobShopSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
             if error_msg_opt:
                 context['error_message'] = error_msg_opt
@@ -549,7 +553,7 @@ def rcpsp_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = run_rcpsp_optimizer(input_data)
+            results_data, error_msg_opt, processing_time = RcpspSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:

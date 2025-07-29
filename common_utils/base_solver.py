@@ -45,7 +45,7 @@ class BaseSolver:
         raise NotImplementedError("'_extract_results' method must be implemented in the child class.")
 
     def get_time(self, processing_time:float):
-        return f"{processing_time:.3f}" if processing_time is not None else "N/A"
+        return f"{processing_time:.2f}" if processing_time is not None else "N/A"
 
     def log_solve_resulte(self, status_name:str, processing_time:str):
         """
