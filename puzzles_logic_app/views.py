@@ -6,6 +6,7 @@ from common_utils.run_puzzle_opt import *
 from common_utils.data_utils_puzzle import *
 from core.decorators import log_view_activity
 from puzzles_logic_app.solvers.diet_solver import DietSolver
+from puzzles_logic_app.solvers.sports_scheduling_solver import SportsSolverFactory
 from puzzles_logic_app.solvers.sudoku_solver import *
 from puzzles_logic_app.solvers.tsp_solver import TspSolver
 
@@ -220,17 +221,18 @@ def sports_scheduling_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            if submitted_solver_type == settings.SOLVER_GUROBI:
-                if submitted_num_teams <= 5:
-                    results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_gurobi2(input_data)
-                else:
-                    results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_gurobi1(input_data)
-            else:
-                if submitted_num_teams <= 5:
-                    results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_ortools2(input_data)
-                else:
-                    results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_ortools1(input_data)
-                # results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_ortools1(input_data)
+            solver_instance = SportsSolverFactory(input_data)
+            results_data, error_msg_opt, processing_time = solver_instance.solve()
+            # if submitted_solver_type == settings.SOLVER_GUROBI:
+            #     if submitted_num_teams <= 5:
+            #         results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_gurobi2(input_data)
+            #     else:
+            #         results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_gurobi1(input_data)
+            # else:
+            #     if submitted_num_teams <= 5:
+            #         results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_ortools2(input_data)
+            #     else:
+            #         results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_ortools1(input_data)
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
