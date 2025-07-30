@@ -52,6 +52,8 @@ preset_sport_schedule_objective_list = [
     {'value': 'fairness', 'name': '연속 홈/원정 최소화'},
     {'value': 'distance_gap', 'name': '팀간 이동거리 차이 최소화'},
 ]
+preset_sport_schedule_objective_name_map = {item['value']: item['name'] for item in preset_sport_schedule_objective_list}
+
 preset_sport_schedule_solver_type_options_list = [
     {'value': settings.SOLVER_ORTOOLS, 'name': 'OR-Tools'},
     {'value': settings.SOLVER_GUROBI, 'name': 'Gurobi'},
@@ -285,8 +287,9 @@ def calculate_manual_diet(input_data, manual_intakes):
 
 
 @log_data_creation
-def create_sports_scheduling_json_data(form_data, num_teams, objective, schedule_type):
+def create_sports_scheduling_json_data(form_data):
     # 팀 이름 리스트 생성
+    num_teams = int(form_data.get('num_teams'))
     teams_list = [form_data.get(f'team_{i}_name') for i in range(num_teams)]
     # 선택된 팀에 해당하는 거리 행렬 슬라이싱
     selected_dist_matrix = [[0] * num_teams for _ in range(num_teams)]
@@ -303,8 +306,9 @@ def create_sports_scheduling_json_data(form_data, num_teams, objective, schedule
         'teams': teams_list,
         'num_teams': num_teams,
         'distance_matrix': selected_dist_matrix,  # 거리 행렬 추가
-        'objective_choice': objective,
-        'schedule_type': schedule_type,
+        'objective_choice': form_data.get('objective_choice'),
+        'schedule_type': form_data.get('schedule_type'),
+        'solver_type': form_data.get('solver_type'),
         'max_consecutive': int(form_data.get('max_consecutive'))
     }
 

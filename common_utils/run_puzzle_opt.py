@@ -9,9 +9,13 @@ from common_utils.data_utils_puzzle import *
 
 import logging
 
+from core.decorators import log_solver_solve
+
 logger = logging.getLogger('puzzles_logic_app')
 
+break_penalty_weight = 1000
 
+@log_solver_solve
 def run_sports_scheduling_optimizer_ortools1(input_data):
     """
     3가지 다른 목표를 지원하는 Sports Scheduling 최적화 함수.
@@ -142,7 +146,7 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
         logger.debug("Objective set to: Minimize Total Travel Distance.")
     elif objective_choice == 'fairness':
         # --- 연속 홈/원정 경기 break 변수 추가 ---
-        breaks = []
+        break_vars = []
         for t_idx in range(num_teams_original):
             for s in range(num_slots - 1):
                 is_home_s = model.NewBoolVar(f'is_home_t{t_idx}_s{s}')
@@ -163,9 +167,11 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
                 # Reification: break_var는 두 시점의 홈 여부가 같을 때 1이 됨
                 model.Add(is_home_s == is_home_s_plus_1).OnlyEnforceIf(break_var)
                 model.Add(is_home_s != is_home_s_plus_1).OnlyEnforceIf(break_var.Not())
-                breaks.append(break_var)
+                break_vars.append(break_var)
 
-        model.Minimize(sum(breaks))
+        total_breaks = sum(break_vars)
+        total_travel = sum(team_travel_vars)
+        model.Minimize(total_breaks * break_penalty_weight + total_travel)
         logger.debug("Objective set to: Minimize(sum of all break variables).")
     elif objective_choice == 'distance_gap':
         min_travel = model.NewIntVar(0, 10000000, 'min_travel')
@@ -225,13 +231,14 @@ def run_sports_scheduling_optimizer_ortools1(input_data):
                 if is_home_s == is_home_s_plus_1:
                     total_breaks_calc += 1
         results['total_breaks'] = total_breaks_calc
+        results['objective_choice'] = objective_choice
     else:
         error_msg = f"최적 스케줄을 찾지 못했습니다. (솔버 상태: {solver.StatusName(status)})"
         logger.error(f"Sports Scheduling failed: {error_msg}")
 
     return results, error_msg, processing_time
 
-
+@log_solver_solve
 def run_sports_scheduling_optimizer_ortools2(input_data):
     """
     OR-Tools CP-SAT를 사용하여 Sports Scheduling 문제를 해결합니다.
@@ -451,9 +458,8 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
 
                     break_vars.append(break_var)
             total_breaks = sum(break_vars)
-            # break 발생 횟수의 총합을 최소화
-            model.Add(total_breaks<=5)
-            model.Minimize(total_breaks)
+            total_travel = sum(team_travel_vars)
+            model.Minimize(total_breaks*break_penalty_weight + total_travel)
             logger.debug("Objective set to: Minimize total number of breaks.")
 
         elif objective_choice == 'distance_gap':
@@ -520,7 +526,7 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
                     if is_home_s == is_home_s_plus_1:
                         total_breaks_calc += 1
             results['total_breaks'] = total_breaks_calc
-
+            results['objective_choice'] = objective_choice
             if status == cp_model.FEASIBLE:
                 results['time_limit'] = f"Solver is limited {settings.ORTOOLS_TIME_LIMIT} sec. (sub-optimal solution)"
 
@@ -533,7 +539,7 @@ def run_sports_scheduling_optimizer_ortools2(input_data):
 
     return results, error_msg, processing_time
 
-
+@log_solver_solve
 def run_sports_scheduling_optimizer_gurobi1(input_data):
     """
     Gurobi를 사용하여 Sports Scheduling 문제를 해결합니다.
@@ -629,8 +635,9 @@ def run_sports_scheduling_optimizer_gurobi1(input_data):
                     # Gurobi에서는 is_home_s == is_home_s_plus_1 같은 직접 비교가 제약에 사용됨
                     # break_var = 1 if is_home_s == is_home_s_plus_1
                     model.addGenConstrIndicator(breaks[t, s], True, is_home_s - is_home_s_plus_1, GRB.EQUAL, 0.0)
-            model.setObjective(quicksum(breaks), GRB.MINIMIZE)
-
+            total_breaks = quicksum(breaks.values())
+            total_travel = quicksum(team_travel_vars)
+            model.setObjective(total_breaks * break_penalty_weight + total_travel,GRB.MINIMIZE)
         elif objective_choice == 'distance_gap':
             min_travel = model.addVar(vtype=GRB.INTEGER, name="min_travel")
             max_travel = model.addVar(vtype=GRB.INTEGER, name="max_travel")
@@ -685,6 +692,7 @@ def run_sports_scheduling_optimizer_gurobi1(input_data):
                     if is_home_s == is_home_s_plus_1:
                         total_breaks_calc += 1
             results['total_breaks'] = total_breaks_calc
+            results['objective_choice'] = objective_choice
             if model.status == GRB.TIME_LIMIT:
                 timeLimit = model.getParamInfo('TimeLimit')[2]
                 results['time_limit'] =f"Solver is limited {timeLimit} sec."
@@ -699,7 +707,7 @@ def run_sports_scheduling_optimizer_gurobi1(input_data):
 
     return results, error_msg, processing_time
 
-
+@log_solver_solve
 def run_sports_scheduling_optimizer_gurobi2(input_data):
     """
     Gurobi를 사용하여 Sports Scheduling 문제를 해결합니다.
@@ -841,7 +849,9 @@ def run_sports_scheduling_optimizer_gurobi2(input_data):
                     # breaks[t,s]는 abs_diff의 반대. breaks = 1 - abs_diff
                     model.addConstr(breaks[t, s] == 1 - abs_diff)
 
-            model.setObjective(quicksum(breaks.values()), GRB.MINIMIZE)
+            total_breaks = quicksum(breaks.values())
+            total_travel = quicksum(team_travel_vars)
+            model.setObjective(total_breaks * break_penalty_weight + total_travel, GRB.MINIMIZE)
             logger.debug("Objective set to: Minimize total number of breaks.")
 
         elif objective_choice == 'distance_gap':
@@ -902,6 +912,7 @@ def run_sports_scheduling_optimizer_gurobi2(input_data):
                     if is_home_s == is_home_s_plus_1:
                         total_breaks_calc += 1
             results['total_breaks'] = total_breaks_calc
+            results['objective_choice'] = objective_choice
             if model.status == GRB.TIME_LIMIT:
                 timeLimit = model.getParamInfo('TimeLimit')[2]
                 results['time_limit'] = f"Solver is limited {timeLimit} sec."

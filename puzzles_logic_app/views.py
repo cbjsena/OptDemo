@@ -162,29 +162,19 @@ def sports_scheduling_introduction_view(request):
 @log_view_activity
 def sports_scheduling_demo_view(request):
     teams_list = []
+    source = request.POST if request.method == 'POST' else request.GET
 
-    if request.method == 'GET':
-        submitted_num_teams = int(request.GET.get('num_teams_to_show', preset_sport_schedule_num_teams))
-        submitted_schedule_type = request.GET.get('schedule_type', preset_sport_schedule_type)
-        submitted_objective = request.GET.get('objective_choice', preset_sport_schedule_objective_choice)
-        submitted_max_consecutive = int(request.GET.get('max_consecutive', preset_sport_schedule_max_consecutive))
-        submitted_solver_type = request.GET.get('solver_type', preset_sport_schedule_solver_type_options_list)
-
-        for i in range(submitted_num_teams):
-            team_name = request.GET.get(f'team_{i}_name', preset_sport_schedule_team_list[i])
-            teams_list.append(team_name)
-
-    elif request.method == 'POST':
-        form_data = request.POST
-        submitted_num_teams = int(form_data.get('num_teams', preset_sport_schedule_num_teams))
-        submitted_schedule_type = form_data.get('schedule_type', preset_sport_schedule_type)
-        submitted_objective = form_data.get('objective_choice', preset_sport_schedule_objective_choice)
-        submitted_max_consecutive = int(form_data.get('max_consecutive', preset_sport_schedule_max_consecutive))
-        submitted_solver_type = form_data.get('solver_type', preset_sport_schedule_solver_type_options_list)
-
-        for i in range(submitted_num_teams):
-            team_name = form_data.get(f'team_{i}_name', preset_sport_schedule_team_list[i])
-            teams_list.append(team_name)
+    if request.method == 'POST':
+        submitted_num_teams = int(source.get('num_teams', preset_sport_schedule_num_teams))
+    else:
+        submitted_num_teams = int(source.get('num_teams_to_show', preset_sport_schedule_num_teams))
+    submitted_schedule_type = source.get('schedule_type', preset_sport_schedule_type)
+    submitted_objective = source.get('objective_choice', preset_sport_schedule_objective_choice)
+    submitted_max_consecutive = int(source.get('max_consecutive', preset_sport_schedule_max_consecutive))
+    submitted_solver_type = source.get('solver_type', preset_sport_schedule_solver_type_options_list)
+    for i in range(submitted_num_teams):
+        team_name = source.get(f'team_{i}_name', preset_sport_schedule_team_list[i])
+        teams_list.append(team_name)
 
     context = {
         'active_model': 'Puzzles & Real-World Logic',
@@ -209,8 +199,7 @@ def sports_scheduling_demo_view(request):
     if request.method == 'POST':
         try:
             # 1. 데이터 파일 새성 및 검증
-            input_data = create_sports_scheduling_json_data(form_data, submitted_num_teams,
-                                                            submitted_objective, submitted_schedule_type)
+            input_data = create_sports_scheduling_json_data(source)
 
             # 2. 파일 저장
             if settings.SAVE_DATA_FILE:
@@ -229,17 +218,17 @@ def sports_scheduling_demo_view(request):
             #     else:
             #         results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_gurobi1(input_data)
             # else:
-            #     if submitted_num_teams <= 5:
-            #         results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_ortools2(input_data)
-            #     else:
-            #         results_data, error_msg_opt, processing_time = run_sports_scheduling_optimizer_ortools1(input_data)
+            #     results_data, error_msg_opt, processing_time = solver_instance.solve()
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:
                 context['error_message'] = error_msg_opt
             elif results_data:
                 context['results'] = results_data
-                success_message = (f"Total distance: {results_data['total_distance']} km, "
+                objective_name = preset_sport_schedule_objective_name_map.get(results_data['objective_choice'],
+                                                        results_data['objective_choice'])
+                success_message = (f"Objective:{objective_name}, "
+                                   f"Total distance: {results_data['total_distance']} km, "
                                    f"Distance Gap: {results_data['distance_gap']} km,"
                                    f"Total Breaks: {results_data['total_breaks']} 번")
                 if 'time_limit' in results_data and results_data['time_limit'] is not None:

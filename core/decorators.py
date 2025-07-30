@@ -154,10 +154,7 @@ def log_solver_solve(func):
 
         try:
             # 원래의 솔버 함수 실행
-            results, error_msg, _ = func(*args, **kwargs)  # 처리 시간은 데코레이터가 계산
-
-            end_time = time.time()
-            processing_time = round(end_time - start_time, 4)
+            results, error_msg, processing_time = func(*args, **kwargs)  # 처리 시간은 데코레이터가 계산
 
             if error_msg:
                 logger.warning(

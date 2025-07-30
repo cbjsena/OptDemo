@@ -308,7 +308,7 @@ LOGGING = {
         },
         'matching_assignment_app': {
             'handlers': ['console_debug', 'console_info_plus', 'console_solve', 'file_app', 'file_solve'],
-            'level': 'SOLVE',
+            'level': 'INFO',
             'propagate': False,
         },
         'resource_allocation_app': {

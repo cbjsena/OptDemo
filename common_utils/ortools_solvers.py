@@ -76,6 +76,8 @@ class BaseOrtoolsCpSolver(BaseSolver):
     def __init__(self, input_data):
         super().__init__(input_data)
         self.model = cp_model.CpModel()
+        if not hasattr(self.model, 'named_constraints'):
+            self.model.named_constraints = {}
         # CP-SAT에서는 solver 객체를 solve 직전에 생성합니다.
 
     def _extract_results(self, solver):

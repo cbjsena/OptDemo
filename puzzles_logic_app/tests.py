@@ -4,8 +4,6 @@ from django.urls import reverse
 
 
 class PuzzlesLogicAppTests(TestCase):
-
-
     def test_puzzles_logic_introduction_view_loads_successfully(self):
         """Puzzles Logic 데모 케이스 설명 페이지가 정상적으로 로드되는지 테스트합니다."""
         url = reverse('puzzles_logic_app:puzzles_logic_introduction')
@@ -17,6 +15,8 @@ class PuzzlesLogicAppTests(TestCase):
         self.assertContains(response, '외판원 문제 (Traveling Salesman Problem, TSP)')
         self.assertContains(response, '스도쿠 해결사 (Sudoku Solver)')
 
+
+class DietProblemTests(TestCase):
     def test_diet_problem_introduction_view_loads_successfully(self):
         """Diet Problem 설명 페이지가 정상적으로 로드되는지 테스트합니다."""
         url = reverse('puzzles_logic_app:diet_problem_introduction')
@@ -89,6 +89,7 @@ class PuzzlesLogicAppTests(TestCase):
         self.assertContains(response, '최소 총 비용')  # 결과 페이지에 특정 텍스트가 있는지 확인
 
 
+class SportsSchedulingTests(TestCase):
     def test_sports_scheduling_introduction_view_loads_successfully(self):
         """Sports Scheduling 설명 페이지가 정상적으로 로드되는지 테스트합니다."""
         url = reverse('puzzles_logic_app:sports_scheduling_introduction')
@@ -105,36 +106,179 @@ class PuzzlesLogicAppTests(TestCase):
         self.assertTemplateUsed(response, 'puzzles_logic_app/sports_scheduling_demo.html')
         self.assertContains(response, 'Sports Scheduling Demo')
 
-    def test_sports_scheduling_demo_post_request_returns_solution(self):
-        """Sports Scheduling 데모가 POST 요청 시 최적의 시즌 대진표를 생성하는지 테스트합니다."""
-        url = reverse('puzzles_logic_app:sports_scheduling_demo')
 
-        # 1. 각 데모의 form에 맞는 POST 데이터 구성
-        post_data = {
+class SportsSchedulingDemoResultTests(TestCase):
+    def setUp(self):
+        """모든 테스트에서 공통으로 사용할 URL과 기본 POST 데이터를 설정합니다."""
+        self.url = reverse('puzzles_logic_app:sports_scheduling_demo')
+
+        # --- 4개 팀 기본 데이터 ---
+        self.base_post_data_4_teams_ortools = {
             'problem_type': 'sports_scheduling',
             'num_teams': '4',
             'schedule_type': 'double',
-            'objective_choice': 'minimize_travel',
             'max_consecutive': '3',
-            'solver_type': 'ORTOOLS',  # 로그의 값은 리스트 형태의 문자열이므로, 실제 전송되는 단일 값 'ORTOOLS'로 수정
-            'team_0_name': '한화',
-            'team_1_name': 'LG',
-            'team_2_name': '롯데',
-            'team_3_name': 'KIA',
+            'solver_type': 'ORTOOLS',
+            'team_0_name': '한화', 'team_1_name': 'LG',
+            'team_2_name': '롯데', 'team_3_name': 'KIA',
         }
+        self.base_post_data_4_teams_gurobi = self.base_post_data_4_teams_ortools.copy()
+        self.base_post_data_4_teams_gurobi['solver_type'] = 'GUROBI'
 
-        # 2. POST 요청 시뮬레이션
-        response = self.client.post(url, post_data)
+        # --- 6개 팀 기본 데이터 ---
+        self.base_post_data_6_teams_ortools = {
+            'problem_type': 'sports_scheduling',
+            'num_teams': '6',
+            'schedule_type': 'double',
+            'max_consecutive': '3',
+            'solver_type': 'ORTOOLS',
+            'team_0_name': '한화', 'team_1_name': 'LG',
+            'team_2_name': '롯데', 'team_3_name': 'KIA',
+            'team_4_name': '삼성', 'team_5_name': 'KT',
+        }
+        self.base_post_data_6_teams_gurobi = self.base_post_data_6_teams_ortools.copy()
+        self.base_post_data_6_teams_gurobi['solver_type'] = 'GUROBI'
 
-        # 3. 결과 검증
+    def test_post_4_teams_ortools_minimize_travel(self):
+        post_data = self.base_post_data_4_teams_ortools.copy()
+        post_data['objective_choice'] = 'minimize_travel'
+        response = self.client.post(self.url, post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(response.context.get('results'))
+        self.assertIn('Objective:총 이동 거리 최소화, Total distance: 2875 km', response.context.get('success_message', ''))
+
+    def test_post_4_teams_ortools_fairness(self):
+        post_data = self.base_post_data_4_teams_ortools.copy()
+        post_data['objective_choice'] = 'fairness'
+        response = self.client.post(self.url, post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(response.context.get('results'))
+        self.assertIn('Objective:연속 홈/원정 최소화', response.context.get('success_message', ''))
+        self.assertIn('Total Breaks: 2 번', response.context.get('success_message', ''))
+
+    def test_post_4_teams_ortools_distance_gap(self):
+        post_data = self.base_post_data_4_teams_ortools.copy()
+        post_data['objective_choice'] = 'distance_gap'
+        response = self.client.post(self.url, post_data)
         self.assertEqual(response.status_code, 200)
         if settings.SAVE_DATA_FILE:
             self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNotNone(response.context.get('results'))  # 결과 데이터가 있는지 확인
-        self.assertIn('Total distance', response.context.get('success_message', ''))  # 성공 메시지 확인
-        self.assertContains(response, '시즌 대진표 요약')  # 결과 페이지에 특정 텍스트가 있는지 확인
+        self.assertIn('Objective:팀간 이동거리 차이 최소화, Total distance: 3265 km, Distance Gap: 30 km', response.context.get('success_message', ''))  # 성공 메시지 확인
+        self.assertContains(response, '시즌 대진표 요약')
+
+        # --- OR-Tools 6개 팀 테스트 ---
+    def test_post_6_teams_ortools_minimize_travel(self):
+        post_data = self.base_post_data_6_teams_ortools.copy()
+        post_data['objective_choice'] = 'minimize_travel'
+        response = self.client.post(self.url, post_data)
+        self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
+        self.assertIsNotNone(response.context.get('results'))  # 결과 데이터가 있는지 확인
+        self.assertIn('Objective:총 이동 거리 최소화, Total distance: 5580 km', response.context.get('success_message', ''))  # 성공 메시지 확인
+        self.assertContains(response, '시즌 대진표 요약')
+
+    def test_post_6_teams_ortools_fairness(self):
+            post_data = self.base_post_data_6_teams_ortools.copy()
+            post_data['objective_choice'] = 'fairness'
+            response = self.client.post(self.url, post_data)
+            self.assertEqual(response.status_code, 200)
+            if settings.SAVE_DATA_FILE:
+                self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
+            self.assertIsNotNone(response.context.get('results'))  # 결과 데이터가 있는지 확인
+            self.assertIn('Objective:연속 홈/원정 최소화, Total distance: 5580 km', response.context.get('success_message', ''))
+            self.assertIn('Total Breaks: 4 번',response.context.get('success_message', ''))
+            self.assertContains(response, '시즌 대진표 요약')
+
+    def test_post_6_teams_ortools_distance_gap(self):
+            post_data = self.base_post_data_6_teams_ortools.copy()
+            post_data['objective_choice'] = 'distance_gap'
+            response = self.client.post(self.url, post_data)
+            self.assertEqual(response.status_code, 200)
+            if settings.SAVE_DATA_FILE:
+                self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
+            self.assertIsNotNone(response.context.get('results'))  # 결과 데이터가 있는지 확인
+            self.assertIn('Objective:팀간 이동거리 차이 최소화', response.context.get('success_message', ''))  # 성공 메시지 확인
+            self.assertIn('Distance Gap: 390 km', response.context.get('success_message', ''))  # 성공 메시지 확인
+            self.assertContains(response, '시즌 대진표 요약')
+
+    def test_post_4_teams_gurobi_minimize_travel(self):
+        """[4팀/Gurobi] '총 이동 거리 최소화' 목표 테스트."""
+        post_data = self.base_post_data_4_teams_gurobi.copy()
+        post_data['objective_choice'] = 'minimize_travel'
+        response = self.client.post(self.url, post_data)
+        self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
+        self.assertIsNotNone(response.context.get('results'))  # 결과 데이터가 있는지 확인
+        self.assertIn('Objective:총 이동 거리 최소화, Total distance: 2875 km, Distance Gap: 330 km,Total Breaks: 14 번', response.context.get('success_message', ''))  # 성공 메시지 확인
+        self.assertContains(response, '시즌 대진표 요약')
+
+    def test_post_4_teams_gurobi_fairness(self):
+        """[4팀/Gurobi] '공정성' 목표 테스트."""
+        post_data = self.base_post_data_4_teams_gurobi.copy()
+        post_data['objective_choice'] = 'fairness'
+        response = self.client.post(self.url, post_data)
+        self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
+        self.assertIsNotNone(response.context.get('results'))  # 결과 데이터가 있는지 확인
+        self.assertIn('Objective:연속 홈/원정 최소화', response.context.get('success_message', ''))
+        self.assertIn('Total Breaks: 2 번', response.context.get('success_message', ''))
+        self.assertContains(response, '시즌 대진표 요약')
+
+    def test_post_4_teams_gurobi_distance_gap(self):
+        """[4팀/Gurobi] '이동 거리 격차 최소화' 목표 테스트."""
+        post_data = self.base_post_data_4_teams_gurobi.copy()
+        post_data['objective_choice'] = 'distance_gap'
+        response = self.client.post(self.url, post_data)
+        self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
+        self.assertIsNotNone(response.context.get('results'))  # 결과 데이터가 있는지 확인
+        self.assertIn('Objective:팀간 이동거리 차이 최소화, Total distance: 3265 km, Distance Gap: 30 km,Total Breaks: 10 번', response.context.get('success_message', ''))  # 성공 메시지 확인
+        self.assertContains(response, '시즌 대진표 요약')
+
+    # --- [신규] Gurobi 6개 팀 테스트 ---
+    def test_post_6_teams_gurobi_minimize_travel(self):
+        """[6팀/Gurobi] '총 이동 거리 최소화' 목표 테스트."""
+        post_data = self.base_post_data_6_teams_gurobi.copy()
+        post_data['objective_choice'] = 'minimize_travel'
+        response = self.client.post(self.url, post_data)
+        self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
+        self.assertIsNotNone(response.context.get('results'))  # 결과 데이터가 있는지 확인
+        self.assertIn('Objective:총 이동 거리 최소화, Total distance: 5580 km, Distance Gap: 390 km,Total Breaks: 24 번', response.context.get('success_message', ''))  # 성공 메시지 확인
+        self.assertContains(response, '시즌 대진표 요약')
+
+    def test_post_6_teams_gurobi_fairness(self):
+        """[6팀/Gurobi] '공정성' 목표 테스트."""
+        post_data = self.base_post_data_6_teams_gurobi.copy()
+        post_data['objective_choice'] = 'fairness'
+        response = self.client.post(self.url, post_data)
+        self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
+        self.assertIsNotNone(response.context.get('results'))  # 결과 데이터가 있는지 확인
+        self.assertIn('Objective:연속 홈/원정 최소화, Total distance: 5580 km, Distance Gap: 390 km,Total Breaks: 24 번', response.context.get('success_message', ''))  # 성공 메시지 확인
+        self.assertContains(response, '시즌 대진표 요약')
+
+    def test_post_6_teams_gurobi_distance_gap(self):
+        """[6팀/Gurobi] '이동 거리 격차 최소화' 목표 테스트."""
+        post_data = self.base_post_data_6_teams_gurobi.copy()
+        post_data['objective_choice'] = 'distance_gap'
+        response = self.client.post(self.url, post_data)
+        self.assertEqual(response.status_code, 200)
+        if settings.SAVE_DATA_FILE:
+            self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
+        self.assertIsNotNone(response.context.get('results'))  # 결과 데이터가 있는지 확인
+        self.assertIn('Objective:팀간 이동거리 차이 최소화, Total distance: 5580 km, Distance Gap: 390 km,Total Breaks: 24 번', response.context.get('success_message', ''))  # 성공 메시지 확인
+        self.assertContains(response, '시즌 대진표 요약')
 
 
+class TspTests(TestCase):
     def test_tsp_introduction_view_loads_successfully(self):
         """TSP 설명 페이지가 정상적으로 로드되는지 테스트합니다."""
         url = reverse('puzzles_logic_app:tsp_introduction')
@@ -176,7 +320,7 @@ class PuzzlesLogicAppTests(TestCase):
         results = response.context.get('results', {})
         self.assertIn('서울', results.get('tour_cities', ''))
 
-
+class SudokuTests(TestCase):
     def test_sudoku_instruction_view_loads_successfully(self):
         """Sudoku 설명 페이지가 정상적으로 로드되는지 테스트합니다."""
         url = reverse('puzzles_logic_app:sudoku_introduction')
