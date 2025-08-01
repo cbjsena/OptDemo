@@ -75,6 +75,7 @@ class BaseSportsSchedulingSolver:
         self.original_team_to_idx = {name: idx for idx, name in enumerate(self.teams_original)}
         self.home_city_of_team = {idx: self.original_team_to_idx.get(self.teams[idx], -1) for idx in range(self.num_teams)}
 
+
 class BaseOrtoolsSportsSolver(BaseSportsSchedulingSolver, BaseOrtoolsCpSolver):
     """OR-Tools CP-SAT 솔버를 위한 공통 로직을 포함하는 기본 클래스."""
 
@@ -190,6 +191,7 @@ class BaseOrtoolsSportsSolver(BaseSportsSchedulingSolver, BaseOrtoolsCpSolver):
         self.model.AddMinEquality(min_travel, self.team_travel_vars)
         self.model.AddMaxEquality(max_travel, self.team_travel_vars)
         return max_travel - min_travel
+
 
 class OrtoolsSimpleSolver(BaseOrtoolsSportsSolver):
     """6개 팀 이상을 위한 간단한 OR-Tools 모델."""
@@ -465,6 +467,7 @@ class BaseGurobiSportsSolver(BaseSportsSchedulingSolver, BaseGurobiSolver):
                         self.plays[s, h, a] = self.model.addVar(vtype=GRB.BINARY, name=var_name)
 
             if self.analysis_mode:
+                logger.solve("--- Writing Plays Variables in the DB---")
                 self.model.update() # Gurobi 모델의 내부 상태를 동기화하여 'VarName' 속성 접근 오류를 방지
                 for (s, h, a), var in self.plays.items():
                     if h == a: continue
@@ -481,6 +484,7 @@ class BaseGurobiSportsSolver(BaseSportsSchedulingSolver, BaseGurobiSolver):
     def _add_one_game_per_slot_constraint(self):
         """제약: 각 팀은 각 슬롯에서 정확히 한 경기만 수행합니다."""
         try:
+            logger.solve("--- Writing One Game Per Slot Constraint in the DB ---")
             for s in range(self.num_slots):
                 for t in range(self.num_teams):
                     eq_name = f"PlayOnce_{s + 1}_{self.teams[t]}"
@@ -499,6 +503,7 @@ class BaseGurobiSportsSolver(BaseSportsSchedulingSolver, BaseGurobiSolver):
     def _add_league_format_constraint(self):
         """제약: 리그 방식(single/double)에 따른 총 경기 수를 설정합니다."""
         try:
+            logger.solve("--- Writing Single / Double Constraint in the DB ---")
             if self.schedule_type == 'single':
                 for h in range(self.num_teams):
                     for a in range(h + 1, self.num_teams):
@@ -526,6 +531,7 @@ class BaseGurobiSportsSolver(BaseSportsSchedulingSolver, BaseGurobiSolver):
     def _add_max_consecutive_games_constraint(self):
         """제약: 최대 연속 홈/원정 경기 수를 제한합니다."""
         try:
+            logger.solve("--- Writing Consecutive Constraint in the DB ---")
             for t in range(self.num_teams_original):
                 for s in range(self.num_slots - self.max_consecutive):
                     eq_name = f"Consecutive_home_{self.teams[t]}_{s + 1}"
@@ -630,6 +636,7 @@ class GurobiSimpleSolver(BaseGurobiSportsSolver):
         results['total_breaks'] = total_breaks
         results['objective_choice'] = self.objective_choice
         return results
+
 
 class GurobiComplexSolver(BaseGurobiSportsSolver):
     """5개 팀 이하를 위한 복잡한 Gurobi 모델."""

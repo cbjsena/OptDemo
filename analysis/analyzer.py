@@ -107,15 +107,26 @@ class GurobiModelAnalyzer:
     @transaction.atomic
     def update_variable_results(self, model_obj):
         """최적화가 끝난 모델 객체를 받아 모든 변수의 결과 값을 DB에 업데이트합니다."""
-        vars_to_update = []
-        all_db_vars = Variable.objects.filter(run_id=self.run_id).in_bulk()
+        try:
+            logger.solve(f"Updating results for run_id: {self.run_id}")
 
-        for var in model_obj.getVars():
-            if var.VarName in all_db_vars:
-                db_var = all_db_vars[var.VarName]
-                db_var.result_value = var.X
-                vars_to_update.append(db_var)
+            # 1. 현재 run_id에 해당하는 모든 Variable 객체를 DB에서 가져옵니다.
+            db_vars_queryset = Variable.objects.filter(run_id=self.run_id)
 
-        if vars_to_update:
-            Variable.objects.bulk_update(vars_to_update, ['result_value'])
-        logger.info(f"Updated results for {len(vars_to_update)} variables.")
+            # 2. var_name을 키로, Variable 객체를 값으로 하는 딕셔너리를 직접 만듭니다.
+            all_db_vars = {var.var_name: var for var in db_vars_queryset}
+
+            vars_to_update = []
+            for var in model_obj.getVars():
+                # 3. Gurobi 변수 이름으로 딕셔너리에서 해당 DB 객체를 찾습니다.
+                if var.VarName in all_db_vars:
+                    db_var = all_db_vars[var.VarName]
+                    db_var.result_value = var.X
+                    vars_to_update.append(db_var)
+
+            if vars_to_update:
+                Variable.objects.bulk_update(vars_to_update, ['result_value'])
+            logger.info(f"Updated results for {len(vars_to_update)} variables.")
+        except Exception as e:
+            logger.error(f"update_variable_results: {e}")
+            raise

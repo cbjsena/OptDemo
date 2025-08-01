@@ -64,14 +64,5 @@ class BaseGurobiSolver(BaseSolver):
                 return None, error_msg, processing_time
 
         except Exception as e:
-            if self.analysis_mode:
-                logger.error(f"Error during Gurobi solve: {e}")
-                if self.analysis_mode:
-                    self.analyzer.conn.rollback()
-                return None, f"솔버 실행 중 오류 발생: {e}", 0.0
-        finally:
-            if self.analysis_mode:
-                self.analyzer.conn.commit()
-                self.analyzer.cur.close()
-                self.analyzer.conn.close()
-                logger.info(f"GurobiModelAnalyzer committed and closed for run_id: {self.analyzer.run_id}")
+            logger.error(f'Error during Gurobi solve: {e}', exc_info=True)
+            return None, f"솔버 실행 중 오류 발생: {e}", 0.0
