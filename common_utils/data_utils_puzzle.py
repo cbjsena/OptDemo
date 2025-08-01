@@ -63,8 +63,12 @@ preset_sport_schedule_team_list = [
     "한화", "LG", "롯데", "KIA", "삼성",
     "KT", "SSG", "NC", "두산", "키움"
 ]
+preset_sport_schedule_team_city_set = {
+    "한화":'대전', "LG":'서울', "롯데":'부산', "KIA":'광주', "삼성":'대구',
+    "KT":'수원', "SSG":'인천', "NC":'창원', "두산":'서울', "키움":'서울'
+}
 # 각 팀의 연고지 도시 (거리 계산용, 순서는 위와 동일)
-preset_sport_schedule_cities = ['대전', '서울', '부산', '광주', '대구', '수원', '인천', '창원', '서울', '서울']
+#preset_sport_schedule_cities = ['대전', '서울', '부산', '광주', '대구', '수원', '인천', '창원', '서울', '서울']
 # 도시 간 대략적인 거리 행렬 (km) - 예시 데이터
 preset_sport_schedule_distance_matrix_km = [
     # 대전, 서울, 부산, 광주, 대구, 수원, 인천, 창원
@@ -291,6 +295,14 @@ def create_sports_scheduling_json_data(form_data):
     # 팀 이름 리스트 생성
     num_teams = int(form_data.get('num_teams'))
     teams_list = [form_data.get(f'team_{i}_name') for i in range(num_teams)]
+    city_list = []
+    for team in teams_list:
+        # 각 팀의 연고지 도시를 찾아서 city_list에 추가
+        if team in preset_sport_schedule_team_city_set:
+            city_list.append(preset_sport_schedule_team_city_set[team])
+        else:
+            raise ValueError(f"팀 '{team}'의 연고지 도시 정보가 없습니다.")
+
     # 선택된 팀에 해당하는 거리 행렬 슬라이싱
     selected_dist_matrix = [[0] * num_teams for _ in range(num_teams)]
     for i in range(num_teams):
@@ -309,7 +321,8 @@ def create_sports_scheduling_json_data(form_data):
         'objective_choice': form_data.get('objective_choice'),
         'schedule_type': form_data.get('schedule_type'),
         'solver_type': form_data.get('solver_type'),
-        'max_consecutive': int(form_data.get('max_consecutive'))
+        'max_consecutive': int(form_data.get('max_consecutive')),
+        'city_list':city_list
     }
 
     return input_data
