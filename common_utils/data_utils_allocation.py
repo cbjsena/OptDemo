@@ -81,22 +81,52 @@ preset_nurse_rostering_shift_requirements = {
 }
 preset_nurse_rostering_enabled_fairness = ['fair_weekends', 'fair_nights', 'fair_offs']  # 'fair_weekends'
 
-preset_vessels = [
+preset_0_vessels = [
     {'id': 'V01', 'type': 'A', 'current_route': 'R1'}, {'id': 'V02', 'type': 'A', 'current_route': 'R1'},
     {'id': 'V03', 'type': 'B', 'current_route': 'R2'}, {'id': 'V04', 'type': 'B', 'current_route': 'R2'},
     {'id': 'V05', 'type': 'C', 'current_route': 'R3'}, {'id': 'V06', 'type': 'C', 'current_route': 'R3'},
 ]
-preset_routes = [
+preset_0_routes = [
     {'id': 'New_A', 'required_vessels': 2, 'acceptable_types': ['A', 'B']},
     {'id': 'New_B', 'required_vessels': 3, 'acceptable_types': ['B', 'C']},
     {'id': 'New_C', 'required_vessels': 1, 'acceptable_types': ['A', 'C']},
 ]
-preset_transition_costs = {
+preset_0_transition_costs = {
     'R1': {'New_A': 100, 'New_B': 200, 'New_C': 300},
     'R2': {'New_A': 250, 'New_B': 120, 'New_C': 400},
     'R3': {'New_A': 350, 'New_B': 180, 'New_C': 90},
 }
-
+preset_vessels = [
+    {'id': 'V01', 'type': '4000', 'contract': 'Owned', 'current_route': 'AAA', 'available_week': 1, 'available_port': 'PUS', 'status': 'Active'},
+    {'id': 'V02', 'type': '4000', 'contract': 'Owned', 'current_route': 'AAA', 'available_week': 2, 'available_port': 'PUS', 'status': 'Active'},
+    {'id': 'V03', 'type': '4000', 'contract': 'Owned', 'current_route': 'AAA', 'available_week': 3, 'available_port': 'PUS', 'status': 'Active'},
+    {'id': 'V04', 'type': '4000', 'contract': 'Owned', 'current_route': 'AAA', 'available_week': 4, 'available_port': 'PUS', 'status': 'Active'},
+    {'id': 'V05', 'type': '2500', 'contract': 'Charter', 'current_route': 'BBB', 'available_week': 1, 'available_port': 'SHA', 'status': 'Phase-out'},
+    {'id': 'V06', 'type': '2500', 'contract': 'Charter', 'current_route': 'BBB', 'available_week': 2, 'available_port': 'SHA', 'status': 'Phase-out'},
+    {'id': 'V07', 'type': '1800', 'contract': 'Owned', 'current_route': 'CCC', 'available_week': 2, 'available_port': 'TYO', 'status': 'Active'},
+    {'id': 'V08', 'type': '1800', 'contract': 'Owned', 'current_route': 'CCC', 'available_week': 3, 'available_port': 'TYO', 'status': 'Active'},
+    {'id': 'V09', 'type': '1800', 'contract': 'Owned', 'current_route': 'CCC', 'available_week': 4, 'available_port': 'TYO', 'status': 'Active'},
+    {'id': 'V10', 'type': '2500', 'contract': 'Charter', 'current_route': 'DDD', 'available_week': 1, 'available_port': 'SIN', 'status': 'Active'},
+    {'id': 'V11', 'type': '2500', 'contract': 'Charter', 'current_route': 'DDD', 'available_week': 2, 'available_port': 'SIN', 'status': 'Dry Dock'},
+    {'id': 'V12', 'type': '2500', 'contract': 'Charter', 'current_route': 'DDD', 'available_week': 3, 'available_port': 'SIN', 'status': 'Active'},
+    {'id': 'V13', 'type': '2500', 'contract': 'Charter', 'current_route': 'DDD', 'available_week': 4, 'available_port': 'SIN', 'status': 'Active'},
+    {'id': 'V14', 'type': '2500', 'contract': 'Owned', 'current_route': 'EEE', 'available_week': 2, 'available_port': 'HKG', 'status': 'Active'},
+    {'id': 'V15', 'type': '2500', 'contract': 'Owned', 'current_route': 'EEE', 'available_week': 3, 'available_port': 'HKG', 'status': 'Active'},
+    {'id': 'V16', 'type': '2500', 'contract': 'Owned', 'current_route': 'EEE', 'available_week': 4, 'available_port': 'HKG', 'status': 'Active'},
+]
+preset_routes = [
+    {'id': 'AAA', 'required_vessels': 4, 'acceptable_types': ['4000'], 'phase_in_week': 1},
+    {'id': 'CCC', 'required_vessels': 3, 'acceptable_types': ['1800'], 'phase_in_week': 1},
+    {'id': 'DDD', 'required_vessels': 4, 'acceptable_types': ['2500'], 'phase_in_week': 1},
+    {'id': 'EEE', 'required_vessels': 3, 'acceptable_types': ['2500'], 'phase_in_week': 1},
+    {'id': 'FFF', 'required_vessels': 3, 'acceptable_types': ['2500'], 'phase_in_week': 4, 'phase_in_port': 'PUS'},
+]
+preset_costs = {
+    'transition': {'PUS': 10, 'SHA': 100, 'TYO': 150, 'SIN': 250, 'HKG': 120},
+    'idling': 50,
+    'opportunity': 200,
+    'transhipment': 300,
+}
 @log_data_creation
 def create_budget_allocation_json_data(form_data):
     total_budget_str = form_data.get('total_budget')

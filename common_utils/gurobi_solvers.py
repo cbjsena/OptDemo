@@ -5,6 +5,7 @@ from gurobipy import GRB
 
 from analysis.analyzer import GurobiModelAnalyzer
 from .base_solver import BaseSolver
+from .common_run_opt import export_gurobi_model
 
 logger = logging.getLogger(__name__)
 
@@ -41,18 +42,19 @@ class BaseGurobiSolver(BaseSolver):
             self._create_variables()
             self._add_constraints()
             self._set_objective_function()
+            if settings.SAVE_MODEL_FILE:
+                export_gurobi_model(self.model, f'gurobi_{self.problem_type}.mps')
 
-            # Gurobi의 해결(optimize) 메서드 호출
             self.model.optimize()
-            if self.analysis_mode and self.model.Status == GRB.OPTIMAL:
-                self.analyzer.update_variable_results(self.model)
-
             status_code = self.model.Status
             status_name = self.status_map.get(status_code, f"UNKNOWN_STATUS_{status_code}")
             processing_time = f"{self.model.Runtime:.2f}"
             self.log_solve_resulte(status_name, processing_time)
 
             if status_code in [GRB.OPTIMAL, GRB.SUBOPTIMAL, GRB.TIME_LIMIT]:
+                if self.analysis_mode:
+                    self.analyzer.update_variable_results(self.model)
+
                 results = self._extract_results()
                 error_msg = None
                 if status_code != GRB.OPTIMAL:

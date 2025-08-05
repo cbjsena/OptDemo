@@ -41,11 +41,11 @@ class BaseOrtoolsLinearSolver(BaseSolver):
             self._create_variables()
             self._add_constraints()
             self._set_objective_function()
+            if settings.SAVE_MODEL_FILE:
+                export_ortools_solver(self.solver, f'ortools_{self.problem_type}.mps')
 
             status = self.solver.Solve()
             processing_time = self.get_time(self.solver.WallTime() / 1000.0)
-            if settings.SAVE_MODEL_FILE:
-                export_ortools_solver(self.solver, f'{self.problem_type}.mps')
             self.log_solve_resulte(self.status_map.get(status, "UNKNOWN"), processing_time)
 
             if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:

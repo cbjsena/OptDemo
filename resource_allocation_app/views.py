@@ -6,7 +6,7 @@ import json
 
 from resource_allocation_app.solvers.budget_allocation_solver import BudgetAllocationSolver
 from resource_allocation_app.solvers.datacenter_solver import DataCenterCapacitySolver
-from resource_allocation_app.solvers.fleet_cascading_solver import FleetCascadingSolver
+from resource_allocation_app.solvers.fleet_cascading_solver import FleetCascadingSolver0
 from resource_allocation_app.solvers.nurse_rostering_solver import *
 from common_utils.data_utils_allocation import *
 from core.decorators import log_view_activity
@@ -484,22 +484,22 @@ def nurse_rostering_advanced_demo_view(request):
 
 
 @log_view_activity
-def fleet_cascading_introduction_view(request):
+def fleet_cascading_introduction0_view(request):
     context = {
         'active_model': 'Resource Allocation',
-        'active_submenu': 'fleet_cascading_introduction'
+        'active_submenu': 'fleet_cascading_introduction0'
     }
-    return render(request, 'resource_allocation_app/fleet_cascading_introduction.html', context)
+    return render(request, 'resource_allocation_app/fleet_cascading_introduction0.html', context)
 
 
 @log_view_activity
-def fleet_cascading_demo_view(request):
+def fleet_cascading_demo0_view(request):
     context = {
         'active_model': 'Resource Allocation',
-        'active_submenu': 'Fleet Cascading Demo',
-        'vessels': preset_vessels,
-        'routes': preset_routes,
-        'transition_costs': preset_transition_costs,
+        'active_submenu': 'fleet_cascading_demo0',
+        'vessels': preset_0_vessels,
+        'routes': preset_0_routes,
+        'transition_costs': preset_0_transition_costs,
         'results': None, 'error_message': None,
     }
 
@@ -508,12 +508,12 @@ def fleet_cascading_demo_view(request):
             # 실무에서는 form에서 데이터를 파싱해야 하지만, 여기서는 preset 데이터 사용
             input_data = {
                 'problem_type': 'fleet_cascading',
-                'vessels': preset_vessels,
-                'routes': preset_routes,
-                'transition_costs': preset_transition_costs,
+                'vessels': preset_0_vessels,
+                'routes': preset_0_routes,
+                'transition_costs': preset_0_transition_costs,
             }
 
-            solver_instance = FleetCascadingSolver(input_data)
+            solver_instance = FleetCascadingSolver0(input_data)
             results, error_msg, time = solver_instance.solve()
 
             if error_msg:
@@ -521,6 +521,50 @@ def fleet_cascading_demo_view(request):
             else:
                 context['results'] = results
                 context['success_message'] = f"최적 선단 재배치 계획을 수립했습니다! (총 예상 비용: {results['total_cost']:.0f})"
+
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {str(e)}"
+            logger.error(f"[FleetCascadingDemo] Unexpected error: {e}", exc_info=True)
+
+    return render(request, 'resource_allocation_app/fleet_cascading_demo0.html', context)
+
+
+def fleet_cascading_introduction_view(request):
+    context = {
+        'active_model': 'Resource Allocation',
+        'active_submenu': 'fleet_cascading_introduction'
+    }
+    return render(request, 'resource_allocation_app/fleet_cascading_introduction.html', context)
+
+
+def fleet_cascading_demo_view(request):
+    context = {
+        'active_model': 'Resource Allocation',
+        'active_submenu': 'Fleet Cascading Demo',
+        'vessels': preset_vessels,
+        'routes': preset_routes,
+        'transition_costs': preset_costs['transition'],
+        'results': None, 'error_message': None,
+    }
+
+    if request.method == 'POST':
+        try:
+            input_data = {
+                'problem_type': 'fleet_cascading',
+                'vessels': preset_vessels,
+                'routes': preset_routes,
+                'costs': preset_costs,
+                'planning_weeks': 10
+            }
+
+            solver_instance = FleetCascadingSolver0(input_data)
+            results, error_msg, time = solver_instance.solve()
+
+            if error_msg:
+                context['error_message'] = error_msg
+            else:
+                context['results'] = json.dumps(results)
+                context['success_message'] = f"최적 선단 재배치 계획을 수립했습니다! (총 예상 비용: {results['total_cost']:.0f}K)"
 
         except Exception as e:
             context['error_message'] = f"처리 중 오류 발생: {str(e)}"

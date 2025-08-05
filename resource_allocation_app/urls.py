@@ -21,6 +21,8 @@ urlpatterns = [
     path('nurse-rostering/demo/', views.nurse_rostering_demo_view, name='nurse_rostering_demo'),
     path('nurse-rostering/advanced-demo/', views.nurse_rostering_advanced_demo_view, name='nurse_rostering_advanced_demo'),
 
+    path('fleet-cascading/introduction0/', views.fleet_cascading_introduction0_view, name='fleet_cascading_introduction0'),
+    path('fleet-cascading/demo0/', views.fleet_cascading_demo0_view, name='fleet_cascading_demo0'),
     path('fleet-cascading/introduction/', views.fleet_cascading_introduction_view, name='fleet_cascading_introduction'),
     path('fleet-cascading/demo/', views.fleet_cascading_demo_view, name='fleet_cascading_demo'),
 
