@@ -32,6 +32,7 @@ class NurseRosteringSolver(BaseOrtoolsCpSolver):
         self.vacation_requests = input_data.get('vacation_requests', {})
         self.enabled_fairness = input_data.get('enabled_fairness', [])
         self.day_shift_requests = input_data.get('day_shift_requests', [])
+        self.advanced_model = input_data.get('advanced_model', False)
 
         # --- 파생 변수 설정 ---
         self.SHIFT_NIGHT = self.shifts[2]  # 예시: 야간 근무가 3번째 시프트라고 가정
@@ -284,9 +285,15 @@ class NurseRosteringSolver(BaseOrtoolsCpSolver):
 
     def _add_constraints(self):
         self._set_constraints_day_work_one()
-        self._set_constraints_req_shift()
-        self._set_constraints_no_3_consecutive_shifts()
-
+        if self.advanced_model:
+            self._set_constraints_skill_req()
+            self._set_constraints_vacation_req()
+            self._set_constraints_min_max_day_req()
+            self._set_constraints_no_night_followed_by_day()
+            self._set_constraints_no_3_consecutive_days()
+        else:
+            self._set_constraints_req_shift()
+            self._set_constraints_no_3_consecutive_shifts()
 
     def _set_advanced_objective_function(self):
         """목표 함수를 설정하고, 관련된 변수들을 반환합니다."""
@@ -310,9 +317,37 @@ class NurseRosteringSolver(BaseOrtoolsCpSolver):
 
         over_staffing_penalties = self._set_constraints_over_shift()
         # 목표 함수 설정
-        self.model.Minimize(night_gap * 2 + off_gap + weekend_gap * 3 + sum(over_staffing_penalties)*10)
+        self.model.Minimize(night_gap * 2 + off_gap + weekend_gap * 3 + sum(over_staffing_penalties) * 10)
 
-    def _set_advanced_result(self, solver):
+    def _set_normal_objective_function(self):
+        # 목표 1: 근무일 수가 min/max 범위에서 벗어나는 정도 최소화
+        total_shifts_worked = [sum(self.assigns[(n_id, d, s)] for d in self.all_days for s in self.all_shifts)
+                               for n_id in self.nurse_ids]
+        penalties = []
+        for n_id in self.nurse_ids:
+            under_penalty = self.model.NewIntVar(0, self.num_days, f'under_penalty_{n_id}')
+            over_penalty = self.model.NewIntVar(0, self.num_days, f'over_penalty_{n_id}')
+            self.model.Add(self.min_shifts_per_nurse - total_shifts_worked[n_id] <= under_penalty)
+            self.model.Add(total_shifts_worked[n_id] - self.max_shifts_per_nurse <= over_penalty)
+            penalties.append(under_penalty)
+            penalties.append(over_penalty)
+
+        # 주말 근무 공평 분배
+        weekend_gap = self._set_constraints_fair_weekends()
+
+        # --- 4. 목표 함수 설정 ---
+        # 페널티 총합 + 주말 근무 격차 최소화 (주말 근무 공정성에 더 높은 가중치 부여)
+        self.model.Minimize(sum(penalties) + weekend_gap * 2)
+
+    def _set_objective_function(self):
+        """목표 함수를 설정하고, 관련된 변수들을 반환합니다."""
+        logger.solve("--- Setting Objective Function (Fairness) ---")
+        if self.advanced_model:
+            self._set_advanced_objective_function()
+        else:
+            self._set_normal_objective_function()
+
+    def _extract_advanced_results(self, solver):
         schedule = {}
         for d in self.all_days:
             schedule[d] = {}
@@ -356,60 +391,9 @@ class NurseRosteringSolver(BaseOrtoolsCpSolver):
             },
             'total_penalty': solver.ObjectiveValue()
         }
-
         return results_data
 
-    def _set_advanced_solve(self):
-        try:
-            """
-            전체 스케줄링 문제를 해결하는 메인 메서드.
-            """
-            self._create_variables_assign()
-            self._set_constraints_day_work_one()
-            self._set_constraints_skill_req()
-            self._set_constraints_vacation_req()
-            self._set_constraints_min_max_day_req()
-            self._set_constraints_no_night_followed_by_day()
-            self._set_constraints_no_3_consecutive_days()
-            self._set_advanced_objective_function()
-            solver = cp_model.CpSolver()
-            # export_model_proto(self.model, "local_model.pb.txt")
-            # solver.parameters.log_search_progress = True  # 자세한 진행 출력
-            solver.parameters.max_time_in_seconds = 30.0
-            status, processing_time = solving_log(solver, self.problem_type, self.model)
-
-            if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-                results_data = self._set_advanced_result(solver)
-                return results_data, None, processing_time
-            else:
-                return None, "해를 찾을 수 없었습니다. 제약 조건이 너무 엄격하거나, 필요 인원이 간호사 수에 비해 너무 많을 수 있습니다.", None
-        except Exception as e:
-            return None, f"오류 발생: {str(e)}", None
-
-    def _set_objective_function(self):
-        """목표 함수를 설정하고, 관련된 변수들을 반환합니다."""
-        logger.solve("--- Setting Objective Function (Fairness) ---")
-
-        # 목표 1: 근무일 수가 min/max 범위에서 벗어나는 정도 최소화
-        total_shifts_worked = [sum(self.assigns[(n_id, d, s)] for d in self.all_days for s in self.all_shifts)
-                               for n_id in self.nurse_ids]
-        penalties = []
-        for n_id in self.nurse_ids:
-            under_penalty = self.model.NewIntVar(0, self.num_days, f'under_penalty_{n_id}')
-            over_penalty = self.model.NewIntVar(0, self.num_days, f'over_penalty_{n_id}')
-            self.model.Add(self.min_shifts_per_nurse - total_shifts_worked[n_id] <= under_penalty)
-            self.model.Add(total_shifts_worked[n_id] - self.max_shifts_per_nurse <= over_penalty)
-            penalties.append(under_penalty)
-            penalties.append(over_penalty)
-
-        # 주말 근무 공평 분배
-        weekend_gap = self._set_constraints_fair_weekends()
-
-        # --- 4. 목표 함수 설정 ---
-        # 페널티 총합 + 주말 근무 격차 최소화 (주말 근무 공정성에 더 높은 가중치 부여)
-        self.model.Minimize(sum(penalties) + weekend_gap * 2)
-
-    def _extract_results(self, solver):
+    def _extract_normal_results(self, solver):
         schedule = {}
         for d in self.all_days:
             schedule[d] = {}
@@ -437,6 +421,10 @@ class NurseRosteringSolver(BaseOrtoolsCpSolver):
             'weekend_work_days': total_weekends,
             'total_penalty': solver.ObjectiveValue()
         }
-
         return results_data
 
+    def _extract_results(self, solver):
+        if self.advanced_model:
+            return self._extract_advanced_results(solver)
+        else:
+            return self._extract_normal_results(solver)

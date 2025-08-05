@@ -468,7 +468,7 @@ def nurse_rostering_advanced_demo_view(request):
                     context['success_save_message'] = success_save_message
 
             # 3. 최적화 실행
-            results_data, error_msg_opt, processing_time = NurseRosteringSolver(input_data)._set_advanced_solve()
+            results_data, error_msg_opt, processing_time = NurseRosteringSolver(input_data).solve()
             context['processing_time_seconds'] = processing_time
 
             if error_msg_opt:

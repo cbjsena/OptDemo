@@ -328,7 +328,7 @@ def create_nurse_rostering_json_data(form_data):
         'max_shifts_per_nurse': max_shifts,
         'schedule_weekdays': schedule_weekdays,
         'weekend_days': weekend_days,
-        'demo_type': 'normal'
+        'advanced_model': False
     }
 
     return input_data
@@ -377,7 +377,7 @@ def create_nurse_rostering_advanced_json_data(form_data):
         'weekend_days': weekend_days,
         'min_shifts_per_nurse': int(form_data.get('min_shifts', 5)),
         'max_shifts_per_nurse': int(form_data.get('max_shifts', 8)),
-        'demo_type': 'advanced'
+        'advanced_model': True
     }
 
     return input_data
