@@ -1,0 +1,75 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Fleet Cascading - Introduction{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <h2 class="h2">선단 재배치 (Fleet Cascading)</h2>
+    <p class="lead">
+        선단 재배치(Fleet Cascading)는 해운사가 전 세계 여러 항로에 투입된 선박들을 항로 개편 계획에 따라 가장 효율적으로 재배치하는 복잡한 의사결정 문제입니다.
+    </p>
+
+    <!-- 개념도 -->
+    <figure class="text-center my-4">
+        <img src="{% static 'resource_allocation_app/images/fleet_cascading_concept.png' %}" alt="Fleet Cascading Concept" class="intro-image img-fluid" style="max-width: 600px;">
+        <figcaption class="image-caption mt-2">
+            그림 1: 선단 재배치 개념 - 기존 항로(Current Routes)에서 운영 중인 다양한 선박들을, 최소의 비용으로  선단을 재배치하는 과정을 보여줍니다.
+        </figcaption>
+    </figure>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <h3>1. 문제 설명 및 핵심 제약</h3>
+            <p>
+                글로벌 해운사는 시장 변화, 동맹(Alliance) 재편, 신규 선박 도입 등에 따라 정기적으로 항로를 개편합니다. 이때 수십, 수백 척의 선박을 동시에 재배치해야 하며, 다음과 같은 복잡한 제약 조건들을 모두 고려해야 합니다.
+            </p>
+            <div class="highlight-box">
+                <h4>핵심 제약 조건</h4>
+                <ul>
+                    <li><strong>항로별 필요 선박 수:</strong> 각 신규 항로는 정해진 수의 선박이 투입되어야만 스케줄을 유지할 수 있습니다.</li>
+                    <li><strong>선박 유형 제약:</strong> 각 항로는 특정 크기나 사양(예: 냉동 컨테이너 탑재량)을 가진 선박만 투입될 수 있습니다.</li>
+                    <li><strong>선박 가용성:</strong>  현재 운항 중인 선박은 기존 항로의 운항을 마쳐야만 새로운 항로에 투입될 수 있으며, 정기 수리(Dry Dock) 중인 선박은 배정될 수 없습니다.</li>
+                    <li><strong>화물 처리:</strong> 기존 항로에서 싣고 있던 화물을 신규 항로로 이전하거나, 특정 항구에서 환적(Transhipment)해야 하며, 이때 비용이 발생합니다.</li>
+                </ul>
+            </div>
+
+            <h3>2. 수학적 모델</h3>
+            <p>이 문제는 '어떤 선박을 어떤 항로에 배정할 것인가'를 결정하는 문제로 모델링할 수 있습니다.</p>
+            <div class="highlight-box">
+                <p><strong>- 결정 변수:</strong></p>
+                <ul><li>\(x_{ij}\): 선박 \(i\)를 신규 항로 \(j\)에 배정하면 1, 아니면 0</li></ul>
+                <p><strong>- 목적 함수 (총비용 최소화):</strong></p>
+                <div class="math-block text-center p-2 my-2 bg-white rounded">
+                    $$ \min \sum_{i} \sum_{j} C_{ij} \cdot x_{ij} $$
+                    <p class="small text-muted mb-0">(\(C_{ij}\)는 선박 \(i\)를 항로 \(j\)로 전환하는 데 드는 총비용)</p>
+                </div>
+                <p><strong>- 주요 제약 조건:</strong></p>
+                <div class="math-block text-left p-3 my-2 bg-white rounded">
+                    $$ \sum_{j} x_{ij} \le 1 \quad (\forall i: \text{모든 가용 선박은 최대 하나의 항로에만 배정}) $$
+                    $$ \sum_{i} x_{ij} = \text{Demand}_j \quad (\forall j: \text{각 항로의 필요 선박 수를 충족}) $$
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-success text-white">
+                    <h4>Fleet Cascading Demo</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Fleet Cascading Demo</strong>에서 선박, 항로, 전환 비용 데이터를 바탕으로 최적의 재배치 계획이 어떻게 수립되는지 확인할 수 있습니다.</p>
+                    <a href="{% url 'resource_allocation_app:fleet_cascading_demo' %}" class="btn btn-success mt-2">
+                        데모 페이지로 이동 &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

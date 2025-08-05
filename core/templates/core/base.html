@@ -85,7 +85,15 @@
                             <li class="nav-item nested">
                                 <a class="nav-link {% if active_submenu == 'Nurse Rostering Advanced Demo' %}active{% endif %}" href="{% url 'resource_allocation_app:nurse_rostering_advanced_demo' %}">Advanced Demo</a>
                             </li>
-
+                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">Fleet Cascading</strong></li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'fleet_cascading_introduction' %}active{% endif %}"
+                                   href="{% url 'resource_allocation_app:fleet_cascading_introduction' %}">Introduction</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'fleet_cascading_demo' %}active{% endif %}"
+                                   href="{% url 'resource_allocation_app:fleet_cascading_demo' %}">Demo</a>
+                            </li>
 <!--                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">financial Portfolio</strong></li>-->
 <!--                            <li class="nav-item nested">-->
 <!--                                <a class="nav-link {% if active_submenu == 'financial_portfolio_introduction' %}active{% endif %}"

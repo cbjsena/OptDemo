@@ -21,6 +21,9 @@ urlpatterns = [
     path('nurse-rostering/demo/', views.nurse_rostering_demo_view, name='nurse_rostering_demo'),
     path('nurse-rostering/advanced-demo/', views.nurse_rostering_advanced_demo_view, name='nurse_rostering_advanced_demo'),
 
+    path('fleet-cascading/introduction/', views.fleet_cascading_introduction_view, name='fleet_cascading_introduction'),
+    path('fleet-cascading/demo/', views.fleet_cascading_demo_view, name='fleet_cascading_demo'),
+
     # Financial Portfolio
     path('financial-portfolio/introduction/', views.financial_portfolio_introduction_view,
          name='financial_portfolio_introduction'),

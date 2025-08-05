@@ -81,6 +81,21 @@ preset_nurse_rostering_shift_requirements = {
 }
 preset_nurse_rostering_enabled_fairness = ['fair_weekends', 'fair_nights', 'fair_offs']  # 'fair_weekends'
 
+preset_vessels = [
+    {'id': 'V01', 'type': 'A', 'current_route': 'R1'}, {'id': 'V02', 'type': 'A', 'current_route': 'R1'},
+    {'id': 'V03', 'type': 'B', 'current_route': 'R2'}, {'id': 'V04', 'type': 'B', 'current_route': 'R2'},
+    {'id': 'V05', 'type': 'C', 'current_route': 'R3'}, {'id': 'V06', 'type': 'C', 'current_route': 'R3'},
+]
+preset_routes = [
+    {'id': 'New_A', 'required_vessels': 2, 'acceptable_types': ['A', 'B']},
+    {'id': 'New_B', 'required_vessels': 3, 'acceptable_types': ['B', 'C']},
+    {'id': 'New_C', 'required_vessels': 1, 'acceptable_types': ['A', 'C']},
+]
+preset_transition_costs = {
+    'R1': {'New_A': 100, 'New_B': 200, 'New_C': 300},
+    'R2': {'New_A': 250, 'New_B': 120, 'New_C': 400},
+    'R3': {'New_A': 350, 'New_B': 180, 'New_C': 90},
+}
 
 @log_data_creation
 def create_budget_allocation_json_data(form_data):
@@ -312,7 +327,8 @@ def create_nurse_rostering_json_data(form_data):
         'min_shifts_per_nurse': min_shifts,
         'max_shifts_per_nurse': max_shifts,
         'schedule_weekdays': schedule_weekdays,
-        'weekend_days': weekend_days
+        'weekend_days': weekend_days,
+        'demo_type': 'normal'
     }
 
     return input_data
@@ -361,6 +377,7 @@ def create_nurse_rostering_advanced_json_data(form_data):
         'weekend_days': weekend_days,
         'min_shifts_per_nurse': int(form_data.get('min_shifts', 5)),
         'max_shifts_per_nurse': int(form_data.get('max_shifts', 8)),
+        'demo_type': 'advanced'
     }
 
     return input_data

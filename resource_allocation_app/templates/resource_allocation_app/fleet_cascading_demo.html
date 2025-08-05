@@ -1,0 +1,105 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Fleet Cascading Demo{% endblock %}
+
+{% block styles %}
+<style>
+    .data-table { font-size: 0.9rem; }
+    .results-card { margin-top: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h2">선단 재배치 (Fleet Cascading) 데모</h1>
+    <p>주어진 선박과 신규 항로 정보, 그리고 항로 간 전환 비용을 바탕으로 총비용을 최소화하는 최적의 선박 재배치 계획을 수립합니다.</p>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="row">
+            <!-- 입력 데이터 섹션 -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header"><strong>1. 운영 선박 현황</strong></div>
+                    <div class="table-responsive">
+                        <table class="table table-sm data-table mb-0">
+                            <thead class="thead-light"><tr><th>선박 ID</th><th>유형</th><th>현재 항로</th></tr></thead>
+                            <tbody>
+                            {% for vessel in vessels %}
+                                <tr><td>{{ vessel.id }}</td><td>{{ vessel.type }}</td><td>{{ vessel.current_route }}</td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header"><strong>2. 신규 항로 요구사항</strong></div>
+                    <div class="table-responsive">
+                        <table class="table table-sm data-table mb-0">
+                            <thead class="thead-light"><tr><th>항로 ID</th><th>필요 척수</th><th>투입 가능 유형</th></tr></thead>
+                            <tbody>
+                            {% for route in routes %}
+                                <tr><td>{{ route.id }}</td><td>{{ route.required_vessels }}</td><td>{{ route.acceptable_types|join:", " }}</td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header"><strong>3. 항로 전환 비용</strong></div>
+                     <div class="table-responsive">
+                        <table class="table table-sm data-table mb-0">
+                            <thead class="thead-light"><tr><th>출발</th><th>도착</th><th>비용</th></tr></thead>
+                            <tbody>
+                            {% for from_route, to_routes in transition_costs.items %}
+                                {% for to_route, cost in to_routes.items %}
+                                <tr><td>{{ from_route }}</td><td>{{ to_route }}</td><td>{{ cost }}</td></tr>
+                                {% endfor %}
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg mt-4">최적 재배치 계획 실행</button>
+    </form>
+
+    <!-- 결과 표시 영역 -->
+    {% if error_message or success_message %}
+    <hr class="my-4">
+    <h3 class="mt-4">Optimization Result</h3>
+    {% endif %}
+    {% if error_message %}<div class="alert alert-danger">{{ error_message }}</div>{% endif %}
+    {% if success_message %}<div class="alert alert-success">{{ success_message }}</div>{% endif %}
+
+    {% if results %}
+    <div class="card results-card">
+        <div class="card-header"><strong>최적 재배치 결과</strong></div>
+        <div class="card-body">
+            <div class="row">
+                {% for assignment in results.assignments %}
+                <div class="col-md-4">
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white"><strong>{{ assignment.route_id }}</strong></div>
+                        <ul class="list-group list-group-flush">
+                            {% for vessel_id in assignment.assigned_vessels %}
+                            <li class="list-group-item">{{ vessel_id }}</li>
+                            {% empty %}
+                            <li class="list-group-item text-muted">배정된 선박 없음</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
