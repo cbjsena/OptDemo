@@ -249,7 +249,7 @@ class NurseRosteringTests(TestCase):
         if settings.SAVE_DATA_FILE:
             self.assertIn("json'으로 서버에 저장되었습니다.", response.context.get('success_save_message', ''))
         self.assertIsNone(response.context.get('results'))
-        self.assertIn('해를 찾을 수 없었습니다. ', response.context.get('error_message', ''))
+        self.assertIn('Optimal solution not found. Solver status: INFEASIBLE', response.context.get('error_message', ''))
 
     def test_nurse_rostering_advanced_post_request_feasible_returns(self):
         """Advanced Nurse Rostering 데모가 POST 요청 시 최적 계획을 계산하는지 테스트합니다."""
