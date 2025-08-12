@@ -315,6 +315,7 @@ def create_sports_scheduling_json_data(form_data):
 
     input_data = {
         'problem_type': 'sports_scheduling',
+        'run_id': f"sports-{form_data.get('objective_choice')[:3]}-{form_data.get('schedule_type')[:3]}-{num_teams}Teams-{form_data.get('solver_type')[:2]}-{form_data.get('max_consecutive')}con",
         'teams': teams_list,
         'num_teams': num_teams,
         'distance_matrix': selected_dist_matrix,  # 거리 행렬 추가
@@ -436,7 +437,9 @@ def save_puzzle_json_data(input_data):
         num_teams = input_data.get('num_teams')
         objective_choice = input_data.get('objective_choice')
         schedule_type = input_data.get('schedule_type')
-        filename_pattern = f"{objective_choice}_{schedule_type}_team{num_teams}"
+        solver = input_data.get('solver_type', 'ORTOOLS')
+        filename_pattern = f"{solver}_{objective_choice}_{schedule_type}_team{num_teams}_con{input_data.get('max_consecutive')}"
+        logger.info(filename_pattern)
     elif "nurse_rostering" == problem_type:
         num_foods = input_data.get('num_foods')
         num_nutrients = input_data.get('num_nutrients')

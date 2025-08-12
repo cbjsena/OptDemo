@@ -163,7 +163,7 @@ def sports_scheduling_introduction_view(request):
 def sports_scheduling_demo_view(request):
     teams_list = []
     source = request.POST if request.method == 'POST' else request.GET
-
+    logger.info(source)
     if request.method == 'POST':
         submitted_num_teams = int(source.get('num_teams', preset_sport_schedule_num_teams))
     else:

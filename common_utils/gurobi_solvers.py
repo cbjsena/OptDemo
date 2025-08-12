@@ -3,7 +3,7 @@ import gurobipy as gp
 from django.conf import settings
 from gurobipy import GRB
 
-from analysis.analyzer import SportsSchedulingGurobiAnalyzer
+from analysis.sport_schedule_analyzer import GurobiModelAnalyzer
 from .base_solver import BaseSolver
 from .common_run_opt import export_gurobi_model
 
@@ -31,7 +31,7 @@ class BaseGurobiSolver(BaseSolver):
         self.analysis_mode =False
         if settings.SAVE_MODEL_DB:
             self.analysis_mode = True
-            self.analyzer = SportsSchedulingGurobiAnalyzer()
+            self.analyzer = GurobiModelAnalyzer()
 
     def _extract_results(self):
         # Gurobi의 결과 추출은 self.model의 상태를 확인하므로, 인자가 필요 없습니다.
