@@ -171,7 +171,7 @@ def sports_scheduling_demo_view(request):
     submitted_schedule_type = source.get('schedule_type', preset_sport_schedule_type)
     submitted_objective = source.get('objective_choice', preset_sport_schedule_objective_choice)
     submitted_max_consecutive = int(source.get('max_consecutive', preset_sport_schedule_max_consecutive))
-    submitted_solver_type = source.get('solver_type', preset_sport_schedule_solver_type_options_list)
+    submitted_solver_type = source.get('solver_type', preset_sport_schedule_solver_type)
     for i in range(submitted_num_teams):
         team_name = source.get(f'team_{i}_name', preset_sport_schedule_team_list[i])
         teams_list.append(team_name)

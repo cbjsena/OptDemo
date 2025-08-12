@@ -40,9 +40,10 @@ preset_diet_foods_data = [
     {'name': '올리브 오일(10g)', 'cost': '100', 'min_intake': '0', 'max_intake': '5',
      'nutrients': ['90', '0', '10', '0', '0']},
 ]
-preset_sport_schedule_max_consecutive=3
-preset_sport_schedule_objective_choice='minimize_travel'
-preset_sport_schedule_type='double'
+preset_sport_schedule_max_consecutive = 3
+preset_sport_schedule_objective_choice = 'minimize_travel'
+preset_sport_schedule_type = 'double'
+preset_sport_schedule_solver_type = settings.SOLVER_ORTOOLS
 preset_sport_schedule_type_options_list = [
     {'value': 'single', 'name': '싱글 라운드 로빈 (팀당 1경기)'},
     {'value': 'double', 'name': '더블 라운드 로빈 (팀당 2경기)'},

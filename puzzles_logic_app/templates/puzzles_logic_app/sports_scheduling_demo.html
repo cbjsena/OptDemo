@@ -55,7 +55,7 @@
         </div>
         <div class="form-group mr-2">
             <label for="schedule_type_get" class="mr-2">리그 방식:</label>
-            <select id="schedule_type_get" class="form-control form-control-sm" onchange="submitSettingsForm()">
+            <select id="schedule_type_get" name="schedule_type" class="form-control form-control-sm" onchange="submitSettingsForm()">
                 {% for stype in schedule_type_options %}
                     <option value="{{ stype.value }}" {% if stype.value == submitted_schedule_type %}selected{% endif %}>{{ stype.name }}</option>
                 {% endfor %}
@@ -63,7 +63,7 @@
         </div>
         <div class="form-group mr-2">
             <label for="objective_choice_get" class="mr-2">최적화 목표:</label>
-            <select id="objective_choice_get" class="form-control form-control-sm" onchange="submitSettingsForm()">
+            <select id="objective_choice_get" name="objective_choice" class="form-control form-control-sm" onchange="submitSettingsForm()">
                 {% for obj in objective_options %}
                     <option value="{{ obj.value }}" {% if obj.value == submitted_objective %}selected{% endif %}>{{ obj.name }}</option>
                 {% endfor %}
@@ -71,7 +71,7 @@
         </div>
         <div class="form-group mr-2">
             <label for="max_consecutive_get" class="mr-2">최대 연속 홈/원정:</label>
-            <select id="max_consecutive_get" class="form-control form-control-sm" onchange="submitSettingsForm()">
+            <select id="max_consecutive_get" name="max_consecutive" class="form-control form-control-sm" onchange="submitSettingsForm()">
                 {% for i in max_consecutive_options %}
                     <option value="{{ i }}" {% if i == submitted_max_consecutive %}selected{% endif %}>{{ i }} 경기</option>
                 {% endfor %}
@@ -79,7 +79,7 @@
         </div>
         <div class="form-group mr-2">
             <label for="solver_type_get" class="mr-2">Solver:</label>
-            <select id="solver_type_get" class="form-control form-control-sm" onchange="submitSettingsForm()">
+            <select id="solver_type_get" name="solver_type" class="form-control form-control-sm" onchange="submitSettingsForm()">
                 {% for stype in solver_type_options %}
                     <option value="{{ stype.value }}" {% if stype.value == submitted_solver_type %}selected{% endif %}>{{ stype.name }} </option>
                 {% endfor %}
@@ -278,41 +278,24 @@
         const settingsForm = document.getElementById('settingsForm');
         settingsForm.innerHTML = '';
 
-        // 1. 드롭다운 메뉴의 현재 값들을 숨겨진 필드로 추가
-        const numTeamsSelect = document.getElementById('num_teams_to_show');
-        const hiddenNumTeams = document.createElement('input');
-        hiddenNumTeams.type = 'hidden';
-        hiddenNumTeams.name = 'num_teams_to_show';
-        hiddenNumTeams.value = numTeamsSelect.value;
-        settingsForm.appendChild(hiddenNumTeams);
+        // 1. 모든 드롭다운 메뉴의 현재 값들을 숨겨진 필드로 추가
+        const idsToSubmit = [
+            'num_teams_to_show',
+            'schedule_type_get',
+            'objective_choice_get',
+            'max_consecutive_get',
+            'solver_type_get'
+        ];
 
-        const scheduleTypeSelect = document.getElementById('schedule_type_get')
-        const hiddenScheduleType = document.createElement('input');
-        hiddenScheduleType.type = 'hidden';
-        hiddenScheduleType.name = 'schedule_type';
-        hiddenScheduleType.value = scheduleTypeSelect.value;
-        settingsForm.appendChild(hiddenScheduleType);
-
-        const objectiveChoiceSelect = document.getElementById('objective_choice_get');
-        const hiddenObjective = document.createElement('input');
-        hiddenObjective.type = 'hidden';
-        hiddenObjective.name = 'objective_choice';
-        hiddenObjective.value = objectiveChoiceSelect.value;
-        settingsForm.appendChild(hiddenObjective);
-
-        const maxConsecutiveSelect = document.getElementById('max_consecutive_get');
-        const hiddenMaxConsecutive = document.createElement('input');
-        hiddenMaxConsecutive.type = 'hidden';
-        hiddenMaxConsecutive.name = 'max_consecutive';
-        hiddenMaxConsecutive.value = maxConsecutiveSelect.value;
-        settingsForm.appendChild(hiddenMaxConsecutive);
-
-        const solverTypeSelect = document.getElementById('solver_type_get');
-        const hiddenSolverType = document.createElement('input');
-        hiddenSolverType.type = 'hidden';
-        hiddenSolverType.name = 'solver_type';
-        hiddenSolverType.value = solverTypeSelect.value;
-        settingsForm.appendChild(hiddenSolverType);
+        idsToSubmit.forEach(id => {
+            const select = document.getElementById(id);
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            // '..._get' 접미사를 제거하여 view가 인식하는 이름으로 변경
+            hiddenInput.name = select.name.replace('_get', '');
+            hiddenInput.value = select.value;
+            settingsForm.appendChild(hiddenInput);
+        });
 
         // 2. 현재 테이블의 모든 입력 값을 숨겨진 필드로 추가
         const numTeamsInTable = {{ submitted_num_teams }};
