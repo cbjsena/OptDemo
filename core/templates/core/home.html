@@ -103,9 +103,14 @@
                 <a href="{% url 'puzzles_logic_app:puzzles_logic_introduction' %}" class="btn btn-primary">자세히 보기</a>
             </div>
         </div>
-         <div class="card text-center" style="visibility: hidden;">
-             <!-- 카드 개수 맞추기 위한 빈 카드 -->
-         </div>
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="card-icon mb-3">📦</div>
+                <h5 class="card-title">Complex Optimization</h5>
+                <p class="card-text">현실 물류의 고난도 제약을 다룹니다. (예: 3차원 팔렛타이징, 적재 안정성 고려)</p>
+                <a href="{% url 'complex_app:complex_app_introduction' %}" class="btn btn-primary">자세히 보기</a>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

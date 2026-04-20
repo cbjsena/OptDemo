@@ -1,0 +1,30 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Complex Optimization - Introduction{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Complex Optimization</h1>
+    </div>
+
+    <p>
+        Complex Optimization 카테고리는 현실 물류/운영 문제처럼 다층 제약이 동시에 작동하는 문제를 다룹니다.
+        첫 번째 데모로 <strong>3차원 팔렛타이징 최적화</strong>를 제공합니다.
+    </p>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h4>3D Palletizing Optimization</h4>
+            <p>팔렛의 크기/중량 한도와 박스의 수량/회전 가능 여부를 고려해 적재율을 높이는 배치안을 계산합니다.</p>
+            <a href="{% url 'complex_app:palletizing_introduction' %}" class="btn btn-primary">문제 소개 보기</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,38 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}3D Palletizing - Introduction{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h2 class="h2">3D Palletizing Optimization</h2>
+    </div>
+
+    <p class="lead">
+        3차원 팔렛타이징은 팔렛 내부에서 박스의 위치와 방향을 결정해 적재율과 작업 효율을 높이는 문제입니다.
+    </p>
+
+    <h4>이 데모에서 다루는 제약</h4>
+    <ul>
+        <li>팔렛 경계(길이/폭/높이) 내 배치</li>
+        <li>박스 간 3차원 겹침 금지</li>
+        <li>팔렛 최대 중량 준수</li>
+        <li>박스별 회전 가능 여부 반영</li>
+    </ul>
+
+    <h4>주요 출력</h4>
+    <ul>
+        <li>적재된 박스/미적재 박스 수</li>
+        <li>적재율(부피 기준)</li>
+        <li>각 박스의 배치 좌표 (x, y, z) 및 방향</li>
+    </ul>
+
+    <a href="{% url 'complex_app:palletizing_demo' %}" class="btn btn-success">데모 실행하기</a>
+</div>
+{% endblock %}
+

@@ -84,6 +84,7 @@ INSTALLED_APPS = [
     'routing_logistics_app',
     'production_scheduling_app',
     'puzzles_logic_app',
+    'complex_app',
     'storages',
     'analysis',
 ]

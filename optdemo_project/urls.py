@@ -27,6 +27,7 @@ urlpatterns = [
     path('routing-logistics/', include('routing_logistics_app.urls')),
     path('production-scheduling/', include('production_scheduling_app.urls')),
     path('puzzles-logic/', include('puzzles_logic_app.urls')),
+    path('complex/', include('complex_app.urls')),
 ]
 
 urlpatterns += static(settings.STATIC_ROOT, document_root=settings.STATIC_ROOT)

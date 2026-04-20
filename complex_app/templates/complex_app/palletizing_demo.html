@@ -1,0 +1,217 @@
+{% extends "core/base.html" %}
+
+{% block title %}3D Palletizing Demo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">3D Palletizing Demo</h1>
+    </div>
+
+    <form method="GET" id="settingsForm" style="display:none;"></form>
+
+    <div class="card mb-3">
+        <div class="card-body bg-light">
+            <div class="form-row align-items-end">
+                <div class="form-group col-md-3">
+                    <label for="num_types_to_show" class="small font-weight-bold">박스 타입 수</label>
+                    <select id="num_types_to_show" name="num_types_to_show" class="form-control form-control-sm" onchange="submitSettingsForm()">
+                        {% for n in num_type_options %}
+                        <option value="{{ n }}" {% if n == submitted_num_types %}selected{% endif %}>{{ n }}개</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" id="form_num_types" name="num_types" value="{{ submitted_num_types }}">
+
+        <div class="card mb-3">
+            <div class="card-header"><strong>팔렛 설정</strong></div>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <label>길이 L</label>
+                        <input type="number" step="0.1" min="0" class="form-control" name="pallet_l" value="{{ pallet_data.l }}" required>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label>폭 W</label>
+                        <input type="number" step="0.1" min="0" class="form-control" name="pallet_w" value="{{ pallet_data.w }}" required>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label>높이 H</label>
+                        <input type="number" step="0.1" min="0" class="form-control" name="pallet_h" value="{{ pallet_data.h }}" required>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label>최대 중량</label>
+                        <input type="number" step="0.1" min="0" class="form-control" name="pallet_max_weight" value="{{ pallet_data.max_weight }}" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header"><strong>박스 타입</strong></div>
+            <div class="card-body table-responsive">
+                <table class="table table-sm table-bordered mb-0">
+                    <thead class="thead-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>L</th>
+                        <th>W</th>
+                        <th>H</th>
+                        <th>중량</th>
+                        <th>수량</th>
+                        <th>회전 허용</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for box in box_types_data %}
+                    <tr>
+                        <td><input class="form-control form-control-sm" name="box_{{ forloop.counter0 }}_id" value="{{ box.id }}" required></td>
+                        <td><input type="number" min="0" step="0.1" class="form-control form-control-sm" name="box_{{ forloop.counter0 }}_l" value="{{ box.l }}" required></td>
+                        <td><input type="number" min="0" step="0.1" class="form-control form-control-sm" name="box_{{ forloop.counter0 }}_w" value="{{ box.w }}" required></td>
+                        <td><input type="number" min="0" step="0.1" class="form-control form-control-sm" name="box_{{ forloop.counter0 }}_h" value="{{ box.h }}" required></td>
+                        <td><input type="number" min="0" step="0.1" class="form-control form-control-sm" name="box_{{ forloop.counter0 }}_weight" value="{{ box.weight }}" required></td>
+                        <td><input type="number" min="1" step="1" class="form-control form-control-sm" name="box_{{ forloop.counter0 }}_qty" value="{{ box.qty }}" required></td>
+                        <td class="text-center">
+                            <input type="checkbox" name="box_{{ forloop.counter0 }}_rotatable" {% if box.rotatable == 'on' or box.rotatable %}checked{% endif %}>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary mb-3">최적화 실행</button>
+    </form>
+
+    {% if error_message %}
+    <div class="alert alert-danger"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+    <div class="alert alert-success">{{ success_message }}</div>
+    {% endif %}
+
+    {% if results %}
+    <div class="card mt-3">
+        <div class="card-header"><strong>요약</strong></div>
+        <div class="card-body">
+            <p class="mb-1">적재 박스: {{ results.summary.placed_units }} / {{ results.summary.total_units }}</p>
+            <p class="mb-1">미적재 박스: {{ results.summary.unplaced_units }}</p>
+            <p class="mb-1">적재율: {{ results.summary.utilization_percent }}%</p>
+            <p class="mb-0">총 중량: {{ results.summary.total_weight }} / {{ results.summary.max_weight }}</p>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header"><strong>배치 결과</strong></div>
+        <div class="card-body table-responsive">
+            <table class="table table-sm table-hover">
+                <thead class="thead-light">
+                <tr>
+                    <th>Unit ID</th>
+                    <th>Type</th>
+                    <th>x</th>
+                    <th>y</th>
+                    <th>z</th>
+                    <th>l</th>
+                    <th>w</th>
+                    <th>h</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in results.placements %}
+                <tr>
+                    <td>{{ row.unit_id }}</td>
+                    <td>{{ row.type_id }}</td>
+                    <td>{{ row.x }}</td>
+                    <td>{{ row.y }}</td>
+                    <td>{{ row.z }}</td>
+                    <td>{{ row.l }}</td>
+                    <td>{{ row.w }}</td>
+                    <td>{{ row.h }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted">적재된 박스가 없습니다.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if results.unplaced %}
+    <div class="card mt-3 mb-4">
+        <div class="card-header"><strong>미적재 목록</strong></div>
+        <div class="card-body table-responsive">
+            <table class="table table-sm mb-0">
+                <thead class="thead-light">
+                <tr>
+                    <th>Unit ID</th>
+                    <th>Reason</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in results.unplaced %}
+                <tr>
+                    <td>{{ row.unit_id }}</td>
+                    <td>{{ row.reason }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function submitSettingsForm() {
+    const form = document.getElementById('settingsForm');
+    form.innerHTML = '';
+
+    const numTypes = document.getElementById('num_types_to_show').value;
+    const numInput = document.createElement('input');
+    numInput.type = 'hidden';
+    numInput.name = 'num_types_to_show';
+    numInput.value = numTypes;
+    form.appendChild(numInput);
+
+    ['pallet_l', 'pallet_w', 'pallet_h', 'pallet_max_weight'].forEach(name => {
+        const source = document.querySelector(`[name="${name}"]`);
+        if (source) {
+            const el = document.createElement('input');
+            el.type = 'hidden';
+            el.name = name;
+            el.value = source.value;
+            form.appendChild(el);
+        }
+    });
+
+    const currentTypes = parseInt(document.getElementById('form_num_types').value || '0', 10);
+    for (let i = 0; i < currentTypes; i++) {
+        ['id', 'l', 'w', 'h', 'weight', 'qty', 'rotatable'].forEach(field => {
+            const selector = `[name="box_${i}_${field}"]`;
+            const source = document.querySelector(selector);
+            if (!source) return;
+
+            const el = document.createElement('input');
+            el.type = 'hidden';
+            el.name = `box_${i}_${field}`;
+            el.value = source.type === 'checkbox' ? (source.checked ? 'on' : '') : source.value;
+            form.appendChild(el);
+        });
+    }
+
+    form.submit();
+}
+</script>
+{% endblock %}
+
