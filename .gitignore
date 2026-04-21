@@ -42,7 +42,7 @@ db.sqlite3-journal
 logs/
 # 미디어 파일 (사용자 업로드 파일)
 media/
-
+mps/
 # 정적 파일 (collectstatic으로 수집된 파일)
 staticfiles/
 static_root/

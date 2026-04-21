@@ -1,12 +1,11 @@
 from django.urls import path
 
-from . import views
+from .views import palletizing_introduction_view, palletizing_demo_view, complex_app_introduction_view
 
 app_name = 'complex_app'
 
 urlpatterns = [
-    path('', views.complex_app_introduction_view, name='complex_app_introduction'),
-    path('palletizing/introduction/', views.palletizing_introduction_view, name='palletizing_introduction'),
-    path('palletizing/demo/', views.palletizing_demo_view, name='palletizing_demo'),
+    path('', complex_app_introduction_view, name='complex_app_introduction'),
+    path('palletizing/introduction/', palletizing_introduction_view, name='palletizing_introduction'),
+    path('palletizing/demo/', palletizing_demo_view, name='palletizing_demo'),
 ]
-

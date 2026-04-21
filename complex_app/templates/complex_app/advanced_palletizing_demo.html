@@ -1,11 +1,11 @@
 {% extends "core/base.html" %}
 
-{% block title %}3D Palletizing Demo{% endblock %}
+{% block title %}Advanced Palletizing Demo{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">3D Palletizing Demo</h1>
+        <h1 class="h2">Advanced Palletizing Demo</h1>
     </div>
 
     <form method="GET" id="settingsForm" style="display:none;"></form>
@@ -22,13 +22,6 @@
                     </select>
                 </div>
                 <div class="form-group col-md-3">
-                    <label for="solver_method" class="small font-weight-bold">최적화 방법</label>
-                    <select id="solver_method" name="solver_method" class="form-control form-control-sm" onchange="onSolverMethodChange()">
-                        <option value="heuristic" {% if solver_method == 'heuristic' %}selected{% endif %}>휴리스틱</option>
-                        <option value="optimization" {% if solver_method == 'optimization' %}selected{% endif %}>수리최적화</option>
-                    </select>
-                </div>
-                <div class="form-group col-md-3" id="objective_group" {% if solver_method == 'heuristic' %}style="display:none;"{% endif %}>
                     <label for="objective_function" class="small font-weight-bold">목적 함수</label>
                     <select id="objective_function" name="objective_function" class="form-control form-control-sm" onchange="submitSettingsForm()">
                         <option value="utilization" {% if objective_function == 'utilization' %}selected{% endif %}>적재율 최대화</option>
@@ -43,8 +36,6 @@
     <form method="POST">
         {% csrf_token %}
         <input type="hidden" id="form_num_types" name="num_types" value="{{ submitted_num_types }}">
-        <input type="hidden" name="solver_method" value="{{ solver_method }}">
-        <input type="hidden" name="objective_function" value="{{ objective_function }}">
 
         <div class="card mb-3">
             <div class="card-header"><strong>팔렛 설정</strong></div>
@@ -212,10 +203,10 @@
 var placements = {{ results.placements|safe }};
 var palletData = {l: {{ pallet_data.l }}, w: {{ pallet_data.w }}, h: {{ pallet_data.h }}};
 
+// 3D 시각화 코드
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xf0f0f0);
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / 400, 0.1, 2000);
-const renderer = new THREE.WebGLRenderer({antialias: true});
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / 400, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
 renderer.setSize(800, 400);
 document.getElementById('3d-container').appendChild(renderer.domElement);
 
@@ -223,70 +214,24 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 
-// 팔렛 wireframe (corner 기준: 0,0,0 ~ l,w,h)
+// 팔렛 추가
 const palletGeometry = new THREE.BoxGeometry(palletData.l, palletData.w, palletData.h);
-const palletEdges = new THREE.EdgesGeometry(palletGeometry);
-const palletLine = new THREE.LineSegments(palletEdges, new THREE.LineBasicMaterial({color: 0x8B4513, linewidth: 2}));
-palletLine.position.set(palletData.l / 2, palletData.w / 2, palletData.h / 2);
-scene.add(palletLine);
+const palletMaterial = new THREE.MeshBasicMaterial({color: 0x8B4513, transparent: true, opacity: 0.3, wireframe: true});
+const pallet = new THREE.Mesh(palletGeometry, palletMaterial);
+scene.add(pallet);
 
-// 바닥면 (빗금 텍스처)
-(function() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 128;
-    canvas.height = 128;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#f5e6d3';
-    ctx.fillRect(0, 0, 128, 128);
-    ctx.strokeStyle = '#8B4513';
-    ctx.lineWidth = 2;
-    const step = 12;
-    for (let i = -128; i < 256; i += step) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i + 128, 128);
-        ctx.stroke();
-    }
-    const floorTexture = new THREE.CanvasTexture(canvas);
-    floorTexture.wrapS = THREE.RepeatWrapping;
-    floorTexture.wrapT = THREE.RepeatWrapping;
-    floorTexture.repeat.set(palletData.l / 40, palletData.w / 40);
-    const floorGeo = new THREE.PlaneGeometry(palletData.l, palletData.w);
-    const floorMat = new THREE.MeshBasicMaterial({map: floorTexture, side: THREE.DoubleSide});
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.position.set(palletData.l / 2, palletData.w / 2, 0);
-    scene.add(floor);
-})();
-
-// 타입별 고정 색상
-const typeColors = {};
-const colorPalette = [0x4285F4, 0xEA4335, 0x34A853, 0xFBBC05, 0x9C27B0,
-                       0x00BCD4, 0xFF5722, 0x795548, 0x607D8B, 0xE91E63];
-let colorIdx = 0;
-
+// 박스 추가
 placements.forEach(function(placement) {
-    if (!(placement.type_id in typeColors)) {
-        typeColors[placement.type_id] = colorPalette[colorIdx % colorPalette.length];
-        colorIdx++;
-    }
-    const color = typeColors[placement.type_id];
     const boxGeometry = new THREE.BoxGeometry(placement.l, placement.w, placement.h);
-    const boxMaterial = new THREE.MeshBasicMaterial({color: color, transparent: true, opacity: 0.85});
+    const boxMaterial = new THREE.MeshBasicMaterial({color: Math.random() * 0xffffff});
     const box = new THREE.Mesh(boxGeometry, boxMaterial);
     box.position.set(placement.x + placement.l / 2, placement.y + placement.w / 2, placement.z + placement.h / 2);
     scene.add(box);
-
-    // 박스 외곽선
-    const edges = new THREE.EdgesGeometry(boxGeometry);
-    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color: 0x000000}));
-    line.position.copy(box.position);
-    scene.add(line);
 });
 
-const cx = palletData.l / 2, cy = palletData.w / 2, cz = palletData.h / 2;
-camera.position.set(cx + palletData.l, cy - palletData.w, cz + palletData.h);
-camera.lookAt(cx, cy, cz);
-controls.target.set(cx, cy, cz);
+// 카메라 위치
+camera.position.set(palletData.l / 2, -palletData.w, palletData.h * 1.5);
+camera.lookAt(palletData.l / 2, palletData.w / 2, palletData.h / 2);
 
 function animate() {
     requestAnimationFrame(animate);
@@ -297,18 +242,6 @@ animate();
 </script>
 {% endif %}
 <script>
-function onSolverMethodChange() {
-    const method = document.getElementById('solver_method').value;
-    const objGroup = document.getElementById('objective_group');
-    if (method === 'heuristic') {
-        objGroup.style.display = 'none';
-        document.getElementById('objective_function').value = 'utilization';
-    } else {
-        objGroup.style.display = '';
-    }
-    submitSettingsForm();
-}
-
 function submitSettingsForm() {
     const form = document.getElementById('settingsForm');
     form.innerHTML = '';
@@ -319,13 +252,6 @@ function submitSettingsForm() {
     numInput.name = 'num_types_to_show';
     numInput.value = numTypes;
     form.appendChild(numInput);
-
-    const solverMethod = document.getElementById('solver_method').value;
-    const smInput = document.createElement('input');
-    smInput.type = 'hidden';
-    smInput.name = 'solver_method';
-    smInput.value = solverMethod;
-    form.appendChild(smInput);
 
     const objFunc = document.getElementById('objective_function').value;
     const objInput = document.createElement('input');

@@ -92,9 +92,12 @@ class BaseOrtoolsCpSolver(BaseSolver):
             self._set_objective_function()
 
             solver = cp_model.CpSolver()
-            # solver.parameters.max_time_in_seconds = 30.0 # 필요시 시간 제한 설정
-            if settings.SAVE_MODEL_FILE:
-                export_cp_model(self.model, f'{self.problem_type}.mps')
+            if hasattr(self, 'max_time_in_seconds') and self.max_time_in_seconds:
+                solver.parameters.max_time_in_seconds = self.max_time_in_seconds
+            if hasattr(self, 'relative_gap_limit') and self.relative_gap_limit:
+                solver.parameters.relative_gap_limit = self.relative_gap_limit
+            # if settings.SAVE_MODEL_FILE:
+            #     export_cp_model(self.model, f'{self.problem_type}.mps')
             status = solver.Solve(self.model)
             processing_time = self.get_time(solver.WallTime())
             self.log_solve_resulte(solver.StatusName(status), processing_time)
