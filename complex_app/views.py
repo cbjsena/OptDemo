@@ -38,6 +38,33 @@ def palletizing_introduction_view(request):
     return render(request, 'complex_app/palletizing_introduction.html', context)
 
 
+@log_view_activity
+def lsnd_introduction_view(request):
+    context = {
+        'active_model': 'Complex Optimization',
+        'active_submenu': 'lsnd_introduction',
+    }
+    return render(request, 'complex_app/lsnd_introduction.html', context)
+
+
+@log_view_activity
+def lsnd_advanced_model_view(request):
+    context = {
+        'active_model': 'Complex Optimization',
+        'active_submenu': 'lsnd_advanced_model',
+    }
+    return render(request, 'complex_app/lsnd_advanced_model.html', context)
+
+
+@log_view_activity
+def lsnd_benchmark_data_view(request):
+    context = {
+        'active_model': 'Complex Optimization',
+        'active_submenu': 'lsnd_benchmark_data',
+    }
+    return render(request, 'complex_app/lsnd_benchmark_data.html', context)
+
+
 def _parse_positive_float(source, key, label):
     value = float(source.get(key, 0))
     if value <= 0:

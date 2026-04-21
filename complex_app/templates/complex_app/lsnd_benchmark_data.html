@@ -1,0 +1,609 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}LINER-LIB 벤치마크 데이터 세트{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+<style>
+.data-table {
+    font-size: 0.9em;
+}
+.instance-card {
+    margin-bottom: 2rem;
+}
+.data-structure-card {
+    background-color: #f8f9fa;
+    border-left: 4px solid #007bff;
+}
+.file-format-card {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+}
+.usage-card {
+    background-color: #d1ecf1;
+    border-left: 4px solid #17a2b8;
+}
+.code-example {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875em;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">LINER-LIB 벤치마크 데이터 세트</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="https://github.com/blof/LINERLIB/tree/master/data" target="_blank" class="btn btn-primary">
+                <i class="fas fa-external-link-alt"></i> GitHub 데이터
+            </a>
+        </div>
+    </div>
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'complex_app:complex_app_introduction' %}">Complex Optimization</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'complex_app:lsnd_introduction' %}">LSND 소개</a></li>
+            <li class="breadcrumb-item active">LINER-LIB 데이터</li>
+        </ol>
+    </nav>
+
+    <div class="alert alert-info" role="alert">
+        <strong><i class="fas fa-info-circle"></i> 데이터 출처:</strong>
+        이 페이지는 Brouer et al. (2014)이 발표한 LINER-LIB 2012 벤치마크 데이터 세트를 기반으로 작성되었습니다.
+        모든 데이터는 <a href="https://github.com/blof/LINERLIB/tree/master/data" target="_blank" class="alert-link">GitHub 저장소</a>에서 공개적으로 이용 가능합니다.
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+
+            <h2>1. 데이터 세트 개요</h2>
+            <p>
+                <strong>LINER-LIB 2012</strong>는 정기선 해운 네트워크 설계(LSND) 문제를 위한 표준 벤치마크 데이터 세트로,
+                실제 글로벌 컨테이너 해운 데이터를 기반으로 구성되었습니다.
+                7개의 서로 다른 규모와 특성을 가진 인스턴스를 제공하여 다양한 알고리즘과 접근법의 성능을 비교할 수 있습니다.
+            </p>
+
+            <h3>전체 인스턴스 요약</h3>
+            <div class="table-responsive">
+                <table class="table table-striped data-table">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>인스턴스</th>
+                            <th>항구 수</th>
+                            <th>O-D 쌍</th>
+                            <th>선박 클래스</th>
+                            <th>지역</th>
+                            <th>특성</th>
+                            <th>난이도</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Baltic</strong></td>
+                            <td>12</td>
+                            <td>22</td>
+                            <td>2</td>
+                            <td>발트해</td>
+                            <td>소규모 피더</td>
+                            <td><span class="badge badge-success">쉬움</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>WAF</strong></td>
+                            <td>19</td>
+                            <td>38</td>
+                            <td>2</td>
+                            <td>서아프리카</td>
+                            <td>허브-스포크</td>
+                            <td><span class="badge badge-success">쉬움</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mediterranean</strong></td>
+                            <td>39</td>
+                            <td>365</td>
+                            <td>3</td>
+                            <td>지중해</td>
+                            <td>중간 규모</td>
+                            <td><span class="badge badge-warning">중간</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pacific</strong></td>
+                            <td>45</td>
+                            <td>722</td>
+                            <td>4</td>
+                            <td>태평양</td>
+                            <td>대륙간 횡단</td>
+                            <td><span class="badge badge-warning">중간</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Europe-Asia</strong></td>
+                            <td>111</td>
+                            <td>4,000</td>
+                            <td>6</td>
+                            <td>아시아-유럽</td>
+                            <td>주요 무역로</td>
+                            <td><span class="badge badge-danger">어려움</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>World Small</strong></td>
+                            <td>47</td>
+                            <td>1,764</td>
+                            <td>6</td>
+                            <td>글로벌</td>
+                            <td>축소 글로벌</td>
+                            <td><span class="badge badge-warning">중간</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>World Large</strong></td>
+                            <td>197</td>
+                            <td>9,630</td>
+                            <td>6</td>
+                            <td>글로벌</td>
+                            <td>실제 규모</td>
+                            <td><span class="badge badge-danger">매우 어려움</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>2. 개별 인스턴스 상세 정보</h2>
+
+            <!-- Baltic Instance -->
+            <div class="card instance-card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fas fa-ship"></i> Baltic (발트해)</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>기본 정보</h6>
+                            <ul>
+                                <li><strong>항구 수:</strong> 12개</li>
+                                <li><strong>O-D 쌍:</strong> 22개</li>
+                                <li><strong>선박 클래스:</strong> 2개</li>
+                                <li><strong>지역:</strong> 발트해 (북유럽)</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>특징</h6>
+                            <ul>
+                                <li>소규모 피더 네트워크</li>
+                                <li>상대적으로 단순한 구조</li>
+                                <li>알고리즘 검증용</li>
+                                <li>빠른 계산 가능</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p><strong>주요 항구:</strong> 함부르크, 코펜하겐, 스톡홀름, 헬싱키, 리가, 그단스크 등</p>
+                </div>
+            </div>
+
+            <!-- WAF Instance -->
+            <div class="card instance-card">
+                <div class="card-header bg-success text-white">
+                    <h4><i class="fas fa-anchor"></i> WAF (서아프리카)</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>기본 정보</h6>
+                            <ul>
+                                <li><strong>항구 수:</strong> 19개</li>
+                                <li><strong>O-D 쌍:</strong> 38개</li>
+                                <li><strong>선박 클래스:</strong> 2개</li>
+                                <li><strong>지역:</strong> 서아프리카 연안</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>특징</h6>
+                            <ul>
+                                <li>전형적인 허브-스포크 구조</li>
+                                <li>지역적 피더 네트워크</li>
+                                <li>중간 허브 항구 존재</li>
+                                <li>환적 최적화 중요</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p><strong>주요 항구:</strong> 라고스, 아비장, 아크라, 두알라, 앤트워프 (허브) 등</p>
+                </div>
+            </div>
+
+            <!-- Mediterranean Instance -->
+            <div class="card instance-card">
+                <div class="card-header bg-info text-white">
+                    <h4><i class="fas fa-water"></i> Mediterranean (지중해)</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>기본 정보</h6>
+                            <ul>
+                                <li><strong>항구 수:</strong> 39개</li>
+                                <li><strong>O-D 쌍:</strong> 365개</li>
+                                <li><strong>선박 클래스:</strong> 3개</li>
+                                <li><strong>지역:</strong> 지중해 일대</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>특징</h6>
+                            <ul>
+                                <li>중간 규모 네트워크</li>
+                                <li>다양한 항구 크기</li>
+                                <li>복잡한 수요 패턴</li>
+                                <li>수에즈 운하 고려</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p><strong>주요 항구:</strong> 바르셀로나, 제노바, 라스페지아, 피레우스, 이스탄불, 알렉산드리아 등</p>
+                </div>
+            </div>
+
+            <!-- Pacific Instance -->
+            <div class="card instance-card">
+                <div class="card-header bg-warning text-dark">
+                    <h4><i class="fas fa-globe-asia"></i> Pacific (태평양)</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>기본 정보</h6>
+                            <ul>
+                                <li><strong>항구 수:</strong> 45개</li>
+                                <li><strong>O-D 쌍:</strong> 722개</li>
+                                <li><strong>선박 클래스:</strong> 4개</li>
+                                <li><strong>지역:</strong> 태평양 연안</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>특징</h6>
+                            <ul>
+                                <li>대륙간 횡단 항로</li>
+                                <li>장거리 운항</li>
+                                <li>높은 연료 비용</li>
+                                <li>파나마 운하 통과</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p><strong>주요 항구:</strong> 로스앤젤레스, 롱비치, 시애틀, 밴쿠버, 도쿄, 요코하마, 고베, 홍콩, 싱가포르 등</p>
+                </div>
+            </div>
+
+            <!-- Europe-Asia Instance -->
+            <div class="card instance-card">
+                <div class="card-header bg-danger text-white">
+                    <h4><i class="fas fa-route"></i> Europe-Asia (유럽-아시아)</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>기본 정보</h6>
+                            <ul>
+                                <li><strong>항구 수:</strong> 111개</li>
+                                <li><strong>O-D 쌍:</strong> 4,000개</li>
+                                <li><strong>선박 클래스:</strong> 6개</li>
+                                <li><strong>지역:</strong> 아시아-유럽</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>특징</h6>
+                            <ul>
+                                <li>세계 최대 무역로</li>
+                                <li>매우 복잡한 네트워크</li>
+                                <li>대형 컨테이너선 운영</li>
+                                <li>수에즈 운하 핵심 경로</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p><strong>주요 항구:</strong> 상하이, 닝보, 선전, 부산, 싱가포르, 콜롬보, 로테르담, 함부르크, 펠릭스토우 등</p>
+                </div>
+            </div>
+
+            <!-- World Small Instance -->
+            <div class="card instance-card">
+                <div class="card-header bg-secondary text-white">
+                    <h4><i class="fas fa-globe"></i> World Small (글로벌 축소)</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>기본 정보</h6>
+                            <ul>
+                                <li><strong>항구 수:</strong> 47개</li>
+                                <li><strong>O-D 쌍:</strong> 1,764개</li>
+                                <li><strong>선박 클래스:</strong> 6개</li>
+                                <li><strong>지역:</strong> 글로벌</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>특징</h6>
+                            <ul>
+                                <li>글로벌 네트워크 축소판</li>
+                                <li>주요 허브 항구 중심</li>
+                                <li>중간 복잡도</li>
+                                <li>알고리즘 테스트 적합</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p><strong>주요 항구:</strong> 주요 대륙별 허브 항구들의 선별된 조합</p>
+                </div>
+            </div>
+
+            <!-- World Large Instance -->
+            <div class="card instance-card">
+                <div class="card-header bg-dark text-white">
+                    <h4><i class="fas fa-globe-americas"></i> World Large (글로벌 전체)</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>기본 정보</h6>
+                            <ul>
+                                <li><strong>항구 수:</strong> 197개</li>
+                                <li><strong>O-D 쌍:</strong> 9,630개</li>
+                                <li><strong>선박 클래스:</strong> 6개</li>
+                                <li><strong>지역:</strong> 전 세계</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>특징</h6>
+                            <ul>
+                                <li>실제 규모의 글로벌 네트워크</li>
+                                <li>최고 난이도</li>
+                                <li>대규모 최적화 문제</li>
+                                <li>현실적인 벤치마크</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p><strong>특징:</strong> 전 세계 주요 컨테이너 항구를 망라한 실제 규모의 네트워크로, 현실적인 LSND 문제를 대표합니다.</p>
+                </div>
+            </div>
+
+            <h2>3. 데이터 구조 및 파일 형식</h2>
+
+            <div class="card data-structure-card mb-4">
+                <div class="card-body">
+                    <h5><i class="fas fa-database"></i> 데이터 구성 요소</h5>
+                    <p>모든 데이터는 CSV 형식으로 제공되며, 다음과 같은 파일들로 구성됩니다:</p>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>📍 지리적 데이터</h6>
+                            <ul>
+                                <li><code>ports.csv</code> - 모든 항구 정보 (통합)</li>
+                                <li><code>dist_dense.csv</code> - 항구간 거리 (밀집형)</li>
+                                <li><code>dist_sparse.csv</code> - 항구간 거리 (희소형)</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>🚢 운영 데이터</h6>
+                            <ul>
+                                <li><code>fleet_data.csv</code> - 선박 클래스 정보</li>
+                                <li><code>fleet_{instance}.csv</code> - 인스턴스별 선단</li>
+                                <li><code>Demand_{instance}.csv</code> - 인스턴스별 수요</li>
+                                <li><code>rots.json</code> - 경로 정보 (JSON)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <h6>📋 인스턴스별 데이터 파일</h6>
+                        <ul class="list-inline">
+                            <li class="list-inline-item"><span class="badge badge-primary">Baltic</span></li>
+                            <li class="list-inline-item"><span class="badge badge-primary">WAF</span></li>
+                            <li class="list-inline-item"><span class="badge badge-primary">Mediterranean</span></li>
+                            <li class="list-inline-item"><span class="badge badge-primary">Pacific</span></li>
+                            <li class="list-inline-item"><span class="badge badge-primary">EuropeAsia</span></li>
+                            <li class="list-inline-item"><span class="badge badge-primary">WorldSmall</span></li>
+                            <li class="list-inline-item"><span class="badge badge-primary">WorldLarge</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card file-format-card mb-4">
+                <div class="card-body">
+                    <h5><i class="fas fa-file-alt"></i> 파일 형식 예시</h5>
+
+                    <h6>ports.csv</h6>
+                    <div class="code-example">
+UNLocode,name,Country,Cabotage_Region,D_Region,Longitude,Latitude,Draft,CostPerFULL,CostPerFULLTrnsf,PortCallCostFixed,PortCallCostPerFFE
+GBABD,Aberdeen,United Kingdom,United Kingdom,UK,-2.0937,57.125,9.5,289.00,137.00,34632.00,10.00
+CIABJ,Abidjan,Ivory Coast,Ivory Coast,West Africa,-4.03,5.32,9.5,170.00,309.00,2238.00,16.00
+...
+                    </div>
+
+                    <h6>Demand_Baltic.csv</h6>
+                    <div class="code-example">
+Origin,Destination,FFEPerWeek,Revenue_1,TransitTime
+FIRAU,DEBRV,77,1120,16
+DEBRV,DKAAR,456,790,13
+DEBRV,NOSVG,65,1050,14
+...
+                    </div>
+
+                    <h6>fleet_Baltic.csv</h6>
+                    <div class="code-example">
+Vessel class,Quantity
+Feeder_450,4
+Feeder_800,2
+                    </div>
+
+                    <h6>fleet_data.csv</h6>
+                    <div class="code-example">
+# 선박 클래스별 상세 정보 (용량, 속도, 비용 등)
+# 모든 인스턴스에서 공통으로 사용되는 선박 클래스 정의
+                    </div>
+                </div>
+            </div>
+
+            <div class="card usage-card">
+                <div class="card-body">
+                    <h5><i class="fas fa-cogs"></i> 데이터 활용 방법</h5>
+
+                    <h6>연구 및 개발</h6>
+                    <ul>
+                        <li><strong>알고리즘 벤치마킹:</strong> 새로운 LSND 알고리즘의 성능 평가</li>
+                        <li><strong>성능 비교:</strong> 기존 연구 결과와의 객관적 비교</li>
+                        <li><strong>확장성 테스트:</strong> 다양한 규모에서의 알고리즘 성능 검증</li>
+                        <li><strong>모델 검증:</strong> 수리적 모델의 정확성 확인</li>
+                    </ul>
+
+                    <h6>교육 및 학습</h6>
+                    <ul>
+                        <li><strong>학부/대학원 교육:</strong> 실제 데이터를 활용한 실습</li>
+                        <li><strong>최적화 소프트웨어 학습:</strong> Gurobi, CPLEX 등 솔버 활용</li>
+                        <li><strong>산업 이해:</strong> 실제 해운업계 구조와 문제 파악</li>
+                    </ul>
+
+                    <h6>권장 시작 순서</h6>
+                    <ol>
+                        <li><strong>Baltic</strong> - 기본 알고리즘 구현 및 검증</li>
+                        <li><strong>WAF</strong> - 허브-스포크 구조 이해</li>
+                        <li><strong>Mediterranean</strong> - 중간 규모 문제 해결</li>
+                        <li><strong>World Small</strong> - 글로벌 네트워크 이해</li>
+                        <li><strong>Pacific, Asia-Europe, World Large</strong> - 대규모 문제 도전</li>
+                    </ol>
+                </div>
+            </div>
+
+            <h2>4. 참고 문헌 및 관련 연구</h2>
+            <div class="card">
+                <div class="card-body">
+                    <h6>원본 논문</h6>
+                    <p>
+                        Brouer, B. D., Álvarez, J. F., Plum, C. E., Pisinger, D., & Sigurd, M. M. (2014).
+                        <strong>A base integer programming model and benchmark suite for liner-shipping network design.</strong>
+                        <em>Transportation Science, 48(2), 281-312.</em>
+                    </p>
+
+                    <h6>관련 연구</h6>
+                    <ul>
+                        <li>Plum, C. E., Pisinger, D., & Sigurd, M. M. (2014). A service flow model for the liner shipping network design problem.</li>
+                        <li>Reinhardt, L. B., & Pisinger, D. (2012). A branch and cut algorithm for the container shipping network design problem.</li>
+                        <li>Brouer, B. D., Pisinger, D., & Spoorendonk, S. (2011). Liner shipping cargo allocation with repositioning of empty containers.</li>
+                    </ul>
+
+                    <h6>데이터 인용 방법</h6>
+                    <div class="code-example">
+Brouer, B. D., Álvarez, J. F., Plum, C. E., Pisinger, D., & Sigurd, M. M. (2014).
+LINER-LIB 2012 benchmark data set.
+Available at: https://github.com/blof/LINERLIB/tree/master/data
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-info text-white">
+                    <h5><i class="fas fa-download"></i> 데이터 다운로드</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>GitHub 저장소:</strong></p>
+                    <a href="https://github.com/blof/LINERLIB/tree/master/data" target="_blank" class="btn btn-primary btn-block mb-3">
+                        <i class="fas fa-external-link-alt"></i> LINER-LIB 데이터
+                    </a>
+
+                    <h6>빠른 접근 - CSV 파일</h6>
+                    <div class="list-group list-group-flush">
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/ports.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> ports.csv - 모든 항구 정보
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/dist_dense.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> dist_dense.csv - 항구간 거리 (밀집형)
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/dist_sparse.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> dist_sparse.csv - 항구간 거리 (희소형)
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/fleet_data.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> fleet_data.csv - 선박 클래스
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/rots.json" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-code"></i> rots.json - 경로 정보
+                        </a>
+                    </div>
+
+                    <h6 class="mt-3">수요 데이터 (Demand)</h6>
+                    <div class="list-group list-group-flush">
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/Demand_Baltic.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> Demand_Baltic.csv
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/Demand_WAF.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> Demand_WAF.csv
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/Demand_Mediterranean.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> Demand_Mediterranean.csv
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/Demand_Pacific.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> Demand_Pacific.csv
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/Demand_EuropeAsia.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> Demand_EuropeAsia.csv
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/Demand_WorldSmall.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> Demand_WorldSmall.csv
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/Demand_WorldSmall_Fixed_Sep.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> Demand_WorldSmall_Fixed_Sep.csv
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/Demand_WorldLarge.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> Demand_WorldLarge.csv
+                        </a>
+                    </div>
+
+                    <h6 class="mt-3">선단 데이터 (Fleet)</h6>
+                    <div class="list-group list-group-flush">
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/fleet_Baltic.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> fleet_Baltic.csv
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/fleet_WAF.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> fleet_WAF.csv
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/fleet_Mediterranean.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> fleet_Mediterranean.csv
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/fleet_Pacific.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> fleet_Pacific.csv
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/fleet_EuropeAsia.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> fleet_EuropeAsia.csv
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/fleet_WorldSmall.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> fleet_WorldSmall.csv
+                        </a>
+                        <a href="https://raw.githubusercontent.com/blof/LINERLIB/master/data/fleet_WorldLarge.csv" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-csv"></i> fleet_WorldLarge.csv
+                        </a>
+                    </div>
+
+                    <hr>
+                    <h6>관련 페이지</h6>
+                    <a href="{% url 'complex_app:lsnd_introduction' %}" class="btn btn-outline-primary btn-sm btn-block">
+                        LSND 소개
+                    </a>
+                    <a href="{% url 'complex_app:lsnd_advanced_model' %}" class="btn btn-outline-primary btn-sm btn-block">
+                        상세 모델
+                    </a>
+
+                    <hr>
+                    <div class="text-muted small">
+                        <p><strong>데이터 라이선스:</strong></p>
+                        <p>LINER-LIB 데이터는 학술 연구 목적으로 자유롭게 사용 가능합니다. 상업적 사용 시 저작자 승인이 필요할 수 있습니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

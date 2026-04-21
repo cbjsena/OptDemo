@@ -238,6 +238,16 @@
                                 <a class="nav-link {% if active_submenu == 'Palletizing Demo' %}active{% endif %}"
                                    href="{% url 'complex_app:palletizing_demo' %}">Demo</a>
                             </li>
+
+                            <li class="nav-item mt-2"><strong class="sidebar-subtitle">Liner Shipping Network Design</strong></li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'lsnd_introduction' %}active{% endif %}"
+                                   href="{% url 'complex_app:lsnd_introduction' %}">Introduction</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'lsnd_advanced_model' %}active{% endif %}"
+                                   href="{% url 'complex_app:lsnd_advanced_model' %}">Advanced Model</a>
+                            </li>
                         {% endif %}
                     </ul>
                 {% else %}

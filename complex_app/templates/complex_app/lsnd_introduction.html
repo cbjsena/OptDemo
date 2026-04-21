@@ -1,0 +1,200 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Liner Shipping Network Design - Introduction{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Liner Shipping Network Design (LSND)</h1>
+    </div>
+
+    <p>
+        <strong>정기선 해운 네트워크 디자인(Liner Shipping Network Design, LSND)</strong> 문제는
+        해운 회사가 주어진 항구들 사이의 화물 수요를 충족시키기 위해
+        최적의 선박 항로(서비스 루트)와 화물 운송 경로를 동시에 결정하는 복합 최적화 문제입니다.
+    </p>
+    <p>
+        컨테이너 해운은 전 세계 무역량의 약 80%를 담당하며, 효율적인 네트워크 설계는 운영 비용 절감과 서비스 품질 향상에 직결됩니다.
+        LSND는 항로 설계(Network Design), 선대 배치(Fleet Deployment), 화물 흐름 할당(Cargo Routing)을 통합적으로 다루는 전략적 의사결정 문제입니다.
+    </p>
+
+    <div class="row">
+        <div class="col-lg-8">
+
+            <h3>1. 문제 개요</h3>
+            <p>
+                정기선(Liner) 해운은 정해진 일정표에 따라 고정된 항로를 <strong>순환 운항(cyclic rotation)</strong>하는 방식입니다.
+                하나의 서비스(service)는 항구들의 순환 경로이며, 주 1회 출항 빈도를 유지하기 위해
+                왕복 소요 시간(주)만큼의 동일 선박이 투입됩니다.
+            </p>
+            <p>LSND 문제는 다음 세 가지 핵심 의사결정을 <strong>동시에</strong> 포함합니다:</p>
+            <ul>
+                <li><strong>네트워크 설계 (Network Design):</strong>
+                    어떤 항구들을 어떤 순서로 순환 방문하는 서비스 루트를 구성할 것인가?
+                </li>
+                <li><strong>선대 배치 (Fleet Deployment):</strong>
+                    각 서비스에 어떤 선박 클래스(vessel class)를 배정할 것인가? 주간 빈도를 위해 몇 척이 필요한가?
+                </li>
+                <li><strong>화물 흐름 할당 (Cargo Routing):</strong>
+                    각 O-D 쌍의 화물 수요를 어떤 서비스 조합(환적 포함)을 통해 운송할 것인가? 어떤 수요를 거절(forfeit)할 것인가?
+                </li>
+            </ul>
+
+            <h3>2. 그래프 모델 구조</h3>
+            <p>
+                Brouer et al. (2014)의 기본 모델은 <strong>서비스 기반 그래프(Graph)</strong> 위에서의
+                <strong>다중 상품 흐름(Multi-Commodity Flow)</strong> 문제로 정형화됩니다.
+            </p>
+            <p>각 후보 서비스 \( s \)에 대해 다음과 같은 노드와 아크가 생성됩니다:</p>
+            <ul>
+                <li><strong>Port Call 노드:</strong> 서비스 \( s \)가 방문하는 각 항구에 대해 노드를 생성합니다.</li>
+                <li><strong>Sailing Arc (항해 아크):</strong> 서비스의 연속된 기항지 사이의 항해 구간입니다. 이 아크에 선박 용량 제약이 적용됩니다.</li>
+                <li><strong>Transshipment Arc (환적 아크):</strong> 같은 항구를 방문하는 서로 다른 서비스 간에 화물을 환적할 수 있게 연결합니다.</li>
+                <li><strong>Load/Unload Arc:</strong> 화물의 출발항/도착항에서 네트워크에 진입/퇴출하는 아크입니다.</li>
+            </ul>
+            <p>모든 서비스의 그래프를 합치면 전체 네트워크 그래프 \( G = (N, A) \)가 됩니다.</p>
+
+            <h3>3. 수리 모델 요약</h3>
+            <div class="model-definition-content">
+                <p>아래는 Brouer et al. (2014)의 <strong>기본 정수 프로그래밍 모델</strong>의 핵심 요소입니다.
+                    상세한 모델은 <a href="{% url 'complex_app:lsnd_advanced_model' %}">Advanced Model 페이지</a>를 참고하세요.</p>
+
+                <h4 class="model-definition-content"><strong>결정 변수:</strong></h4>
+                <ul>
+                    <li>\( x_{sv} \in \{0, 1\} \) : 서비스 \( s \)를 선박 클래스 \( v \)로 운영할지 여부</li>
+                    <li>\( f^k_a \geq 0 \) : 수요 \( k \)의 화물이 아크 \( a \)를 통해 운송되는 양 (FFE)</li>
+                    <li>\( \rho_k \geq 0 \) : 수요 \( k \) 중 거절(forfeit)되는 양 (FFE)</li>
+                </ul>
+                <hr>
+
+                <h4 class="model-definition-content"><strong>목적 함수:</strong></h4>
+                <p>총 이익 최대화 = 운임 수입 − 서비스 운영 비용 − 화물 처리 비용 − 거절 패널티</p>
+                <div class="math-block">
+                    $$ \max \; \underbrace{\sum_{k} r_k \cdot d_k}_{\text{최대 운임 수입}}
+                    - \underbrace{\sum_{s,v} C_{sv} \cdot x_{sv}}_{\text{서비스 비용}}
+                    - \underbrace{\sum_{k,a} c^k_a \cdot f^k_a}_{\text{화물 처리 비용}}
+                    - \underbrace{\sum_{k} \pi_k \cdot \rho_k}_{\text{거절 패널티}} $$
+                </div>
+                <p class="text-muted small">\( C_{sv} \): 서비스 \( s \)를 선박 클래스 \( v \)로 운영하는 총 비용 (용선료 × \( n_s \) 척 + 항만 비용 + 연료비 + 운하 통행료)</p>
+                <hr>
+
+                <h4 class="model-definition-content"><strong>주요 제약 조건:</strong></h4>
+                <ul>
+                    <li><strong>1. 서비스당 선박 클래스 선택:</strong>
+                        <p>각 서비스는 최대 하나의 선박 클래스로만 운영</p>
+                        <div class="math-block">$$ \sum_{v \in V_s} x_{sv} \leq 1 \quad \forall s \in S $$</div>
+                    </li>
+                    <li><strong>2. 선대 가용성:</strong>
+                        <p>각 선박 클래스의 총 투입 척수 ≤ 가용 척수</p>
+                        <div class="math-block">$$ \sum_{s} n_s \cdot x_{sv} \leq N_v \quad \forall v \in V $$</div>
+                        <p class="text-muted small">\( n_s = \lceil T_s / 7 \rceil \) : 서비스 \( s \)의 주간 빈도 유지에 필요한 선박 수</p>
+                    </li>
+                    <li><strong>3. 선박 용량:</strong>
+                        <p>각 항해 아크의 총 화물량 ≤ 해당 서비스의 선박 용량</p>
+                        <div class="math-block">$$ \sum_{k} f^k_a \leq \sum_{v} u_v \cdot x_{sv} \quad \forall a \in A^{\text{sail}}_s $$</div>
+                    </li>
+                    <li><strong>4. 수요 충족:</strong>
+                        <p>각 수요의 운송량 + 거절량 = 총 수요량</p>
+                        <div class="math-block">$$ \sum_{a \in \delta^+(o_k)} f^k_a + \rho_k = d_k \quad \forall k \in K $$</div>
+                    </li>
+                    <li><strong>5. 흐름 보존:</strong>
+                        <p>중간 노드에서 유입량 = 유출량</p>
+                        <div class="math-block">$$ \sum_{a \in \delta^-(i)} f^k_a = \sum_{a \in \delta^+(i)} f^k_a \quad \forall k, \; i \neq o_k, d_k $$</div>
+                    </li>
+                </ul>
+            </div>
+
+            <h3>4. LINER-LIB 2012 벤치마크</h3>
+            <p>
+                <strong>LINER-LIB</strong>는 Brouer et al. (2014)이 발표한 LSND 문제의 표준 벤치마크 데이터 세트입니다.
+                실제 글로벌 해운 데이터를 기반으로 구성되어 있으며, 다양한 규모의 7개 인스턴스를 포함합니다.
+                <a href="{% url 'complex_app:lsnd_benchmark_data' %}" class="btn btn-outline-info btn-sm ml-2">상세 데이터 정보 보기</a>
+            </p>
+            <table class="table table-sm table-bordered">
+                <thead class="thead-light">
+                    <tr><th>인스턴스</th><th>항구 수</th><th>O-D 쌍 수</th><th>선박 클래스</th><th>특징</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Baltic</strong></td><td>12</td><td>22</td><td>2</td><td>소규모, 발트해 피더 네트워크</td></tr>
+                    <tr><td><strong>WAF</strong></td><td>19</td><td>38</td><td>2</td><td>허브-스포크 구조, 서아프리카</td></tr>
+                    <tr><td><strong>Mediterranean</strong></td><td>39</td><td>365</td><td>3</td><td>지중해 지역, 중규모</td></tr>
+                    <tr><td><strong>Pacific</strong></td><td>45</td><td>722</td><td>4</td><td>태평양 횡단</td></tr>
+                    <tr><td><strong>Asia-Europe</strong></td><td>111</td><td>4000</td><td>6</td><td>아시아-유럽 대규모</td></tr>
+                    <tr><td><strong>World Small</strong></td><td>47</td><td>1764</td><td>6</td><td>글로벌 네트워크 축소판</td></tr>
+                    <tr><td><strong>World Large</strong></td><td>197</td><td>9630</td><td>6</td><td>글로벌 네트워크 전체</td></tr>
+                </tbody>
+            </table>
+
+            <h4>데이터 구성 요소</h4>
+            <ul>
+                <li><strong>항구 데이터:</strong> UN/LOCODE, 위치(위도/경도), 흘수 제한(draft), 항만 처리 비용(TEU당), 환적 비용, 피더 여부</li>
+                <li><strong>거리 데이터:</strong> 항구 간 해상 거리(nautical miles), 운하(수에즈/파나마) 경유 여부 및 통행료</li>
+                <li><strong>수요 데이터:</strong> O-D 쌍별 주간 수요량(FFE), 운임 수입(USD/FFE)</li>
+                <li><strong>선박 데이터:</strong> 선박 클래스별 용량(FFE/TEU), 흘수, 설계 속도(knots), 일일 용선료, 벙커 소비량, 가용 척수</li>
+            </ul>
+
+            <h3>5. 문제의 복잡성</h3>
+            <p>LSND는 <strong>NP-hard</strong> 문제입니다:</p>
+            <ul>
+                <li><strong>조합 폭발:</strong> 가능한 순환 서비스 루트의 수가 항구 수에 대해 지수적으로 증가합니다.</li>
+                <li><strong>이중 의사결정:</strong> 서비스 설계(이산)와 화물 라우팅(연속)이 상호 의존적입니다.</li>
+                <li><strong>환적 네트워크:</strong> 화물이 여러 서비스를 거쳐 환적될 수 있어 흐름이 복잡합니다.</li>
+                <li><strong>대규모:</strong> World Large 인스턴스는 197개 항구, 9,630개 O-D 쌍을 포함합니다.</li>
+            </ul>
+
+            <h3>6. 참고 문헌</h3>
+            <ul>
+                <li>Brouer, B. D., Álvarez, J. F., Plum, C. E., Pisinger, D., & Sigurd, M. M. (2014).
+                    <em>A base integer programming model and benchmark suite for liner-shipping network design.</em>
+                    Transportation Science, 48(2), 281-312.</li>
+                <li>Plum, C. E., Pisinger, D., & Sigurd, M. M. (2014).
+                    <em>A service flow model for the liner shipping network design problem.</em>
+                    European Journal of Operational Research, 235(2), 378-386.</li>
+            </ul>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h4>LSND 문제 특징</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>핵심 의사결정:</strong></p>
+                    <ul>
+                        <li>🚢 서비스 루트 설계 (순환 경로)</li>
+                        <li>⚓ 선대 배치 (선박 클래스 & 척수)</li>
+                        <li>📦 화물 흐름 할당 (환적 포함)</li>
+                        <li>❌ 수요 거절 (forfeit) 결정</li>
+                    </ul>
+                    <hr>
+                    <p><strong>LINER-LIB 벤치마크 (<a href="https://github.com/blof/LINERLIB/tree/master/data" target="_blank">데이터</a>):</strong></p>
+                    <ul>
+                        <li>7개 인스턴스 (12~197개 항구)</li>
+                        <li>실제 글로벌 해운 데이터 기반</li>
+                        <li>학술 연구 표준 데이터 세트</li>
+                    </ul>
+                    <a href="{% url 'complex_app:lsnd_benchmark_data' %}" class="btn btn-info btn-sm mb-2">
+                        📊 벤치마크 데이터 상세 정보
+                    </a>
+                    <hr>
+                    <a href="{% url 'complex_app:lsnd_advanced_model' %}" class="btn btn-primary btn-block mt-2">
+                        상세 모델 보기 &rarr;
+                    </a>
+                    <p class="text-muted mt-2 mb-0">
+                        <small>📌 데모 페이지는 준비 중입니다.</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

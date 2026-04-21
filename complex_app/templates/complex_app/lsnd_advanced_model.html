@@ -1,0 +1,316 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}LSND - Advanced Model{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">LSND — Base Integer Programming Model</h1>
+        <small class="text-muted">Brouer et al. (2014), Transportation Science 48(2), Chapter 6</small>
+    </div>
+
+    <p>
+        이 페이지에서는 Brouer et al. (2014)이 제시한 <strong>기본 정수 프로그래밍(Base IP) 모델</strong>을
+        상세히 소개합니다. 이 모델은 서비스 후보 집합이 사전에 주어진 상태에서,
+        어떤 서비스를 운영하고, 어떤 선박을 배정하며, 화물을 어떻게 라우팅할지를 결정합니다.
+    </p>
+
+    <div class="row">
+        <div class="col-lg-9">
+
+            <h3>1. 그래프 구성 (Graph Construction)</h3>
+            <div class="model-definition-content">
+                <p>네트워크는 모든 후보 서비스의 그래프를 합친 <strong>멀티 그래프</strong> \( G = (N, A) \)로 표현됩니다.</p>
+
+                <h4>1.1 노드 (Nodes)</h4>
+                <ul>
+                    <li><strong>Port Call 노드 \( (p, s) \):</strong> 항구 \( p \)에서 서비스 \( s \)의 기항을 나타내는 노드.
+                        같은 항구라도 서비스가 다르면 별도의 노드입니다.</li>
+                    <li><strong>Centroid 노드 \( \bar{p} \):</strong> 각 항구 \( p \)마다 하나의 중심 노드.
+                        화물 수요의 출발/도착점이며, 모든 Port Call 노드와 연결됩니다.</li>
+                </ul>
+
+                <h4>1.2 아크 (Arcs)</h4>
+                <table class="table table-sm table-bordered">
+                    <thead class="thead-light">
+                        <tr><th>아크 유형</th><th>표기</th><th>설명</th><th>비용/용량</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Sailing Arc</strong></td>
+                            <td>\( a \in A^{\text{sail}}_s \)</td>
+                            <td>서비스 \( s \)의 연속 기항지 \( (p_i, s) \to (p_{i+1}, s) \) 간 항해</td>
+                            <td>용량 제약 적용, 화물 처리 비용 없음</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Transshipment Arc</strong></td>
+                            <td>\( a \in A^{\text{trans}} \)</td>
+                            <td>같은 항구의 서로 다른 Port Call 노드 간 연결: \( (p, s_1) \leftrightarrow (p, s_2) \)</td>
+                            <td>환적 비용 (load + unload) 발생</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Load Arc</strong></td>
+                            <td>\( a \in A^{\text{load}} \)</td>
+                            <td>Centroid \( \bar{p} \)에서 Port Call \( (p, s) \)로 화물 적재</td>
+                            <td>적재 비용 발생</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Unload Arc</strong></td>
+                            <td>\( a \in A^{\text{unload}} \)</td>
+                            <td>Port Call \( (p, s) \)에서 Centroid \( \bar{p} \)로 화물 양하</td>
+                            <td>양하 비용 발생</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Forfeiting Arc</strong></td>
+                            <td>\( a \in A^{\text{forfeit}} \)</td>
+                            <td>Centroid \( \bar{o}_k \)에서 Centroid \( \bar{d}_k \)로의 직접 연결 (수요 거절)</td>
+                            <td>패널티 비용 \( \pi_k \)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>2. 집합과 파라미터 (Sets & Parameters)</h3>
+            <div class="model-definition-content">
+                <h4>2.1 집합 (Sets)</h4>
+                <table class="table table-sm table-bordered">
+                    <thead class="thead-light">
+                        <tr><th>기호</th><th>설명</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>\( P \)</td><td>항구(Port)의 집합</td></tr>
+                        <tr><td>\( V \)</td><td>선박 클래스(Vessel Class)의 집합</td></tr>
+                        <tr><td>\( S \)</td><td>후보 서비스(Service)의 집합 (순환 경로)</td></tr>
+                        <tr><td>\( V_s \subseteq V \)</td><td>서비스 \( s \)에 배정 가능한 선박 클래스 집합 (흘수 등 제약 고려)</td></tr>
+                        <tr><td>\( K \)</td><td>수요(Demand/Commodity)의 집합. 각 \( k = (o_k, d_k, d_k^{\text{qty}}) \)</td></tr>
+                        <tr><td>\( N \)</td><td>그래프의 노드 집합 (Port Call 노드 + Centroid 노드)</td></tr>
+                        <tr><td>\( A \)</td><td>그래프의 아크 집합 \( = A^{\text{sail}} \cup A^{\text{trans}} \cup A^{\text{load}} \cup A^{\text{unload}} \cup A^{\text{forfeit}} \)</td></tr>
+                        <tr><td>\( A^{\text{sail}}_s \)</td><td>서비스 \( s \)의 항해 아크 집합</td></tr>
+                        <tr><td>\( \delta^+(i), \delta^-(i) \)</td><td>노드 \( i \)에서 나가는/들어오는 아크 집합</td></tr>
+                    </tbody>
+                </table>
+
+                <h4>2.2 파라미터 (Parameters)</h4>
+                <table class="table table-sm table-bordered">
+                    <thead class="thead-light">
+                        <tr><th>기호</th><th>설명</th><th>단위</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>\( u_v \)</td><td>선박 클래스 \( v \)의 적재 용량</td><td>FFE</td></tr>
+                        <tr><td>\( N_v \)</td><td>선박 클래스 \( v \)의 가용 척수</td><td>척</td></tr>
+                        <tr><td>\( n_s \)</td><td>서비스 \( s \)의 주간 빈도 유지에 필요한 선박 수 \( = \lceil T_s / 7 \rceil \)</td><td>척</td></tr>
+                        <tr><td>\( T_s \)</td><td>서비스 \( s \)의 왕복 항해 소요 시간</td><td>일</td></tr>
+                        <tr><td>\( C_{sv} \)</td><td>서비스 \( s \)를 선박 클래스 \( v \)로 운영하는 총 주간 비용</td><td>USD/주</td></tr>
+                        <tr><td>\( c^k_a \)</td><td>수요 \( k \)의 화물이 아크 \( a \)를 이용할 때의 비용 (적재/양하/환적)</td><td>USD/FFE</td></tr>
+                        <tr><td>\( r_k \)</td><td>수요 \( k \)의 운임 수입</td><td>USD/FFE</td></tr>
+                        <tr><td>\( d_k \)</td><td>수요 \( k \)의 주간 수요량</td><td>FFE</td></tr>
+                        <tr><td>\( \pi_k \)</td><td>수요 \( k \)를 거절할 때의 패널티 (= \( r_k \), 운임 수입 상실)</td><td>USD/FFE</td></tr>
+                    </tbody>
+                </table>
+
+                <h4>2.3 서비스 비용 \( C_{sv} \)의 구성</h4>
+                <div class="math-block">
+                    $$ C_{sv} = \underbrace{n_s \cdot c^{\text{TC}}_v}_{\text{용선료 (Time Charter)}}
+                    + \underbrace{\sum_{(i,j) \in A^{\text{sail}}_s} c^{\text{bunker}}_{ij,v}}_{\text{연료비 (Bunker)}}
+                    + \underbrace{\sum_{p \in P_s} c^{\text{port}}_{p,v}}_{\text{항만 비용}}
+                    + \underbrace{c^{\text{canal}}_s}_{\text{운하 통행료}} $$
+                </div>
+                <ul>
+                    <li>\( c^{\text{TC}}_v \) : 선박 클래스 \( v \)의 주간 용선료 (일일 용선료 × 7)</li>
+                    <li>\( c^{\text{bunker}}_{ij,v} \) : 구간 \( (i,j) \)에서의 연료 소비 비용 (거리, 속도, 벙커가격에 의존)</li>
+                    <li>\( c^{\text{port}}_{p,v} \) : 항구 \( p \)에서의 항만 비용 (고정비 + 선박 크기 비례)</li>
+                    <li>\( c^{\text{canal}}_s \) : 수에즈/파나마 운하 통행료 (해당 시)</li>
+                </ul>
+            </div>
+
+            <h3>3. 수리 모델 (Base IP Formulation)</h3>
+            <div class="model-definition-content">
+
+                <h4>3.1 결정 변수 (Decision Variables)</h4>
+                <table class="table table-sm table-bordered">
+                    <thead class="thead-light">
+                        <tr><th>변수</th><th>유형</th><th>설명</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>\( x_{sv} \)</td><td>Binary \( \{0,1\} \)</td><td>서비스 \( s \)를 선박 클래스 \( v \)로 운영하면 1</td></tr>
+                        <tr><td>\( f^k_a \)</td><td>Continuous \( \geq 0 \)</td><td>수요 \( k \)의 화물이 아크 \( a \)를 통해 운송되는 양 (FFE)</td></tr>
+                        <tr><td>\( \rho_k \)</td><td>Continuous \( \geq 0 \)</td><td>수요 \( k \) 중 거절(forfeit)되는 양 (FFE), forfeiting arc의 흐름에 해당</td></tr>
+                    </tbody>
+                </table>
+                <hr>
+
+                <h4>3.2 목적 함수 (Objective Function)</h4>
+                <p>총 이익 최대화:</p>
+                <div class="math-block">
+                    $$ \max \; \underbrace{\sum_{k \in K} r_k \cdot d_k}_{\text{(a) 최대 운임 수입}}
+                    \;-\; \underbrace{\sum_{s \in S} \sum_{v \in V_s} C_{sv} \cdot x_{sv}}_{\text{(b) 서비스 운영 비용}}
+                    \;-\; \underbrace{\sum_{k \in K} \sum_{a \in A} c^k_a \cdot f^k_a}_{\text{(c) 화물 처리 비용}}
+                    \;-\; \underbrace{\sum_{k \in K} \pi_k \cdot \rho_k}_{\text{(d) 거절 패널티}} $$
+                </div>
+                <ul>
+                    <li><strong>(a)</strong> \( \sum r_k d_k \) 는 모든 수요를 운송했을 때의 최대 수입 (상수)</li>
+                    <li><strong>(b)</strong> 운영하기로 선택한 서비스의 총 비용 (용선료, 연료, 항만, 운하)</li>
+                    <li><strong>(c)</strong> 적재, 양하, 환적 시 발생하는 화물 처리 비용</li>
+                    <li><strong>(d)</strong> 거절된 수요에 대한 패널티 (운임 수입 상실분)</li>
+                </ul>
+                <hr>
+
+                <h4>3.3 제약 조건 (Constraints)</h4>
+
+                <h5>① 서비스당 선박 클래스 선택</h5>
+                <p>각 서비스는 운영하지 않거나, 정확히 하나의 선박 클래스로 운영합니다.</p>
+                <div class="math-block">
+                    $$ \sum_{v \in V_s} x_{sv} \leq 1 \quad \forall s \in S \tag{1} $$
+                </div>
+                <p class="text-muted small">
+                    \( V_s \subseteq V \) 는 서비스 \( s \)에 배정 가능한 선박 클래스 집합입니다.
+                    항구의 흘수(draft) 제한에 의해 일부 대형 선박은 배정 불가할 수 있습니다.
+                </p>
+
+                <h5>② 선대 가용성 (Fleet Availability)</h5>
+                <p>각 선박 클래스별로 투입되는 총 선박 수는 가용 척수를 초과할 수 없습니다.</p>
+                <div class="math-block">
+                    $$ \sum_{s \in S} n_s \cdot x_{sv} \leq N_v \quad \forall v \in V \tag{2} $$
+                </div>
+                <p class="text-muted small">
+                    \( n_s = \lceil T_s / 7 \rceil \): 서비스 \( s \)가 주 1회 출항 빈도를 유지하려면
+                    왕복 소요 시간을 7일로 나눈 값(올림)만큼의 선박이 루트에 동시 투입되어야 합니다.
+                </p>
+
+                <h5>③ 선박 용량 제약 (Capacity)</h5>
+                <p>각 항해 아크에서 운송되는 모든 수요의 총 화물량은 배정된 선박의 용량 이하여야 합니다.</p>
+                <div class="math-block">
+                    $$ \sum_{k \in K} f^k_a \leq \sum_{v \in V_s} u_v \cdot x_{sv} \quad \forall s \in S, \; \forall a \in A^{\text{sail}}_s \tag{3} $$
+                </div>
+                <p class="text-muted small">
+                    서비스 \( s \)가 운영되지 않으면 (\( x_{sv} = 0, \forall v \)) 우변이 0이 되어
+                    해당 서비스의 모든 항해 아크에 화물 흐름이 불가능합니다.
+                </p>
+
+                <h5>④ 수요 충족 (Demand Satisfaction)</h5>
+                <p>각 수요 \( k \)에 대해, 출발 centroid에서 나가는 흐름의 합(운송량 + 거절량)은 총 수요량과 같아야 합니다.</p>
+                <div class="math-block">
+                    $$ \sum_{a \in \delta^+(\bar{o}_k)} f^k_a + \rho_k = d_k \quad \forall k \in K \tag{4} $$
+                </div>
+                <p class="text-muted small">
+                    \( \rho_k > 0 \)이면 수요 \( k \)의 일부가 거절(forfeit)됩니다.
+                    이는 forfeiting arc를 통한 흐름으로도 모델링될 수 있습니다.
+                </p>
+
+                <h5>⑤ 흐름 보존 (Flow Conservation)</h5>
+                <p>각 수요 \( k \)에 대해, 출발/도착 노드를 제외한 모든 중간 노드에서 흐름이 보존됩니다.</p>
+                <div class="math-block">
+                    $$ \sum_{a \in \delta^-(i)} f^k_a = \sum_{a \in \delta^+(i)} f^k_a \quad \forall k \in K, \; \forall i \in N \setminus \{\bar{o}_k, \bar{d}_k\} \tag{5} $$
+                </div>
+                <p class="text-muted small">
+                    이 제약은 Port Call 노드와 Centroid 노드 모두에 적용됩니다.
+                    Centroid 노드에서의 흐름 보존은 환적 항구에서의 화물 중계를 가능하게 합니다.
+                </p>
+
+                <h5>⑥ 변수 범위</h5>
+                <div class="math-block">
+                    $$ x_{sv} \in \{0, 1\} \quad \forall s \in S, v \in V_s \tag{6} $$
+                    $$ f^k_a \geq 0 \quad \forall k \in K, a \in A \tag{7} $$
+                    $$ \rho_k \geq 0 \quad \forall k \in K \tag{8} $$
+                </div>
+            </div>
+
+            <h3>4. 모델 특성 및 난이도</h3>
+            <div class="model-definition-content">
+                <h4>4.1 문제 규모</h4>
+                <table class="table table-sm table-bordered">
+                    <thead class="thead-light">
+                        <tr><th>요소</th><th>규모</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>이진 변수 \( x_{sv} \)</td><td>\( |S| \times |V| \) (서비스 수 × 선박 클래스 수)</td></tr>
+                        <tr><td>연속 변수 \( f^k_a \)</td><td>\( |K| \times |A| \) (수요 수 × 아크 수) — 매우 대규모</td></tr>
+                        <tr><td>용량 제약</td><td>\( \sum_s |A^{\text{sail}}_s| \) (총 항해 아크 수)</td></tr>
+                        <tr><td>흐름 보존</td><td>\( |K| \times |N| \) (수요 × 노드 수)</td></tr>
+                    </tbody>
+                </table>
+
+                <h4>4.2 LP Relaxation과 해법</h4>
+                <p>
+                    이 모델의 LP 완화(relaxation)는 일반적으로 매우 약한(weak) 바운드를 제공합니다.
+                    이는 용량 제약 (3)에서 \( x_{sv} \)가 분수 값을 가질 수 있어,
+                    적은 비용으로 큰 용량을 확보하는 것이 가능해지기 때문입니다.
+                </p>
+                <p>실무에서 사용되는 해법:</p>
+                <ul>
+                    <li><strong>Column Generation:</strong> 서비스 후보를 동적으로 생성</li>
+                    <li><strong>Benders Decomposition:</strong> 서비스 선택과 화물 라우팅을 분리</li>
+                    <li><strong>Matheuristic:</strong> MIP + 휴리스틱 조합 (가장 실용적)</li>
+                    <li><strong>Heuristic:</strong> 서비스 삽입/제거 기반 탐색</li>
+                </ul>
+
+                <h4>4.3 모델의 가정과 한계</h4>
+                <ul>
+                    <li>서비스 후보 집합 \( S \)가 사전에 주어져야 합니다 (생성 방법은 별도 필요).</li>
+                    <li>단일 속도(설계 속도)를 가정합니다. Slow steaming 등 속도 최적화는 미포함.</li>
+                    <li>시간 제약(transit time)이 명시적으로 모델링되지 않습니다.</li>
+                    <li>빈 컨테이너 재배치(empty container repositioning) 문제는 다루지 않습니다.</li>
+                    <li>수요는 결정론적(deterministic)이며, 불확실성은 고려하지 않습니다.</li>
+                </ul>
+            </div>
+
+            <h3>5. 모델 확장 방향</h3>
+            <ul>
+                <li><strong>Speed Optimization:</strong> 각 구간별 항해 속도를 결정 변수로 추가 → 연료비 절감</li>
+                <li><strong>Transit Time 제약:</strong> 각 O-D 쌍의 총 운송 시간 상한 추가</li>
+                <li><strong>Butterfly 서비스:</strong> 동일 항구를 두 번 방문하는 8자형 서비스 허용</li>
+                <li><strong>Empty Container:</strong> 빈 컨테이너 재배치를 별도 commodity로 모델링</li>
+                <li><strong>Stochastic Demand:</strong> 수요 불확실성을 시나리오 기반으로 반영</li>
+                <li><strong>Multi-period:</strong> 계절별 수요 변동을 고려한 다기간 모델</li>
+            </ul>
+
+            <div class="mt-3 mb-4">
+                <a href="{% url 'complex_app:lsnd_introduction' %}" class="btn btn-outline-primary">
+                    &larr; Introduction으로 돌아가기
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">모델 요약</h5>
+                </div>
+                <div class="card-body small">
+                    <p><strong>변수:</strong></p>
+                    <ul class="mb-2">
+                        <li>\( x_{sv} \) — 서비스-선박 배정</li>
+                        <li>\( f^k_a \) — 화물 흐름</li>
+                        <li>\( \rho_k \) — 수요 거절</li>
+                    </ul>
+                    <p><strong>제약:</strong></p>
+                    <ol class="mb-2">
+                        <li>선박 클래스 선택</li>
+                        <li>선대 가용성</li>
+                        <li>선박 용량</li>
+                        <li>수요 충족</li>
+                        <li>흐름 보존</li>
+                    </ol>
+                    <p><strong>목적:</strong><br>이익 최대화<br><small class="text-muted">(수입 − 비용 − 패널티)</small></p>
+                    <hr>
+                    <p><strong>문제 유형:</strong><br>Mixed Integer Programming<br><small class="text-muted">(다중 상품 흐름 + 고정비용 네트워크 설계)</small></p>
+                    <hr>
+                    <a href="{% url 'complex_app:lsnd_introduction' %}" class="btn btn-sm btn-outline-secondary btn-block">
+                        Introduction
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}
+
