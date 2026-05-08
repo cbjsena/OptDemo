@@ -1,0 +1,222 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Vessel Deployment - Introduction{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Vessel Deployment (선박 배치 최적화)</h1>
+    </div>
+
+    <p>
+        <strong>선박 배치(Vessel Deployment)</strong> 문제는 해운 회사가 보유한 다양한 크기의 선박을
+        여러 항로(trade lane)에 배치하여, 각 항로의 수송 수요를 충족하면서 <strong>총 사용 선박 수를 최소화</strong>하는
+        전략적 의사결정 문제입니다.
+    </p>
+    <p>
+        이 문제는 정기선 해운(liner shipping)에서 핵심 운영 계획 중 하나로,
+        선대 규모, 항로별 수요량, 선박 크기별 용량이 핵심 입력 데이터가 됩니다.
+        효율적인 배치는 운영 비용을 절감하고 선대 활용률을 극대화합니다.
+    </p>
+
+    <div class="row">
+        <div class="col-lg-8">
+
+            <h3>1. 문제 개요</h3>
+            <p>
+                해운 회사는 다양한 크기(TEU 용량)의 컨테이너 선박을 보유하고 있습니다.
+                이 선박들을 여러 <strong>무역 항로(trade lane)</strong>에 배치해야 합니다.
+                각 항로에는 주간 단위로 운송해야 하는 <strong>수요(TEU)</strong>가 있으며,
+                배치된 선박의 총 용량이 이 수요를 충족해야 합니다.
+            </p>
+
+            <div class="alert alert-info">
+                <strong>핵심 질문:</strong> 모든 항로의 수요를 만족시키면서, 가능한 한 적은 수의 선박을 사용하려면
+                각 항로에 어떤 크기의 선박을 몇 척씩 배치해야 할까?
+            </div>
+
+            <h4>입력 데이터</h4>
+            <ul>
+                <li><strong>선박 크기(Vessel Sizes):</strong> 보유 선박의 TEU 용량 종류 (예: 21,000 / 18,000 / 15,000 / 12,000 / 10,000 / 8,000 / 6,000 / 5,000 TEU)</li>
+                <li><strong>선박 가용 수량(Fleet Availability):</strong> 각 크기별 보유 선박 척수</li>
+                <li><strong>항로 데이터(Routes):</strong> 각 항로의 명칭, 소속 무역 그룹(trade), 주간 수요(TEU)</li>
+            </ul>
+
+            <h4>의사결정</h4>
+            <ul>
+                <li>각 항로 \( r \)에 선박 크기 \( s \)를 몇 척 배치할 것인가? → 결정 변수 \( x_{rs} \)</li>
+            </ul>
+
+            <h3>2. 수리 모델</h3>
+            <div class="model-definition-content">
+
+                <h4><strong>집합 및 파라미터</strong></h4>
+                <ul>
+                    <li>\( R \) : 항로(route/lane)의 집합, \( |R| \) 개</li>
+                    <li>\( S \) : 선박 크기(vessel size)의 집합, \( |S| \) 개</li>
+                    <li>\( \text{cap}_s \) : 선박 크기 \( s \)의 용량 (TEU)</li>
+                    <li>\( D_r \) : 항로 \( r \)의 주간 수송 수요 (TEU)</li>
+                    <li>\( N_s \) : 선박 크기 \( s \)의 가용 척수</li>
+                </ul>
+                <hr>
+
+                <h4><strong>결정 변수</strong></h4>
+                <ul>
+                    <li>\( x_{rs} \in \mathbb{Z}_{\geq 0} \) : 항로 \( r \)에 배치하는 크기 \( s \) 선박의 수</li>
+                </ul>
+                <hr>
+
+                <h4><strong>목적 함수: 총 선박 수 최소화</strong></h4>
+                <div class="math-block">
+                    $$ \min \sum_{r \in R} \sum_{s \in S} x_{rs} $$
+                </div>
+                <p class="text-muted small">모든 항로에 배치되는 선박의 총 수를 최소화합니다.</p>
+                <hr>
+
+                <h4><strong>제약 조건</strong></h4>
+                <ul>
+                    <li><strong>1. 수요 충족 제약 (Demand Satisfaction):</strong>
+                        <p>각 항로에 배치된 선박의 총 용량이 해당 항로의 수요 이상이어야 합니다.</p>
+                        <div class="math-block">
+                            $$ \sum_{s \in S} \text{cap}_s \cdot x_{rs} \geq D_r \quad \forall r \in R $$
+                        </div>
+                    </li>
+                    <li><strong>2. 선대 가용성 제약 (Fleet Availability):</strong>
+                        <p>각 크기의 선박 총 사용 수는 보유 척수를 초과할 수 없습니다.</p>
+                        <div class="math-block">
+                            $$ \sum_{r \in R} x_{rs} \leq N_s \quad \forall s \in S $$
+                        </div>
+                    </li>
+                    <li><strong>3. 비음수 정수 제약:</strong>
+                        <div class="math-block">
+                            $$ x_{rs} \geq 0, \quad x_{rs} \in \mathbb{Z} \quad \forall r \in R, \; s \in S $$
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <h3>3. 데모 예제 데이터</h3>
+            <p>
+                본 데모에서는 6개 무역 그룹(trade), 18개 항로, 8가지 선박 크기를 포함하는 실제 규모의 예제를 사용합니다.
+            </p>
+
+            <h4>무역 그룹 (Trade Groups)</h4>
+            <table class="table table-sm table-bordered">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Trade</th>
+                        <th>설명</th>
+                        <th>항로 수</th>
+                        <th>주요 선박 크기</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>FE</strong></td><td>극동 (Far East)</td><td>4</td><td>21,000 ~ 12,000 TEU</td></tr>
+                    <tr><td><strong>MD</strong></td><td>지중해 (Mediterranean)</td><td>2</td><td>12,000 ~ 8,000 TEU</td></tr>
+                    <tr><td><strong>PS</strong></td><td>태평양 남부 (Pacific South)</td><td>5</td><td>15,000 ~ 8,000 TEU</td></tr>
+                    <tr><td><strong>PN</strong></td><td>태평양 북부 (Pacific North)</td><td>2</td><td>12,000 ~ 8,000 TEU</td></tr>
+                    <tr><td><strong>EC</strong></td><td>동안 (East Coast)</td><td>3</td><td>12,000 ~ 8,000 TEU</td></tr>
+                    <tr><td><strong>ME</strong></td><td>중동 (Middle East)</td><td>2</td><td>6,000 ~ 5,000 TEU</td></tr>
+                </tbody>
+            </table>
+
+            <h4>선박 가용 수량</h4>
+            <table class="table table-sm table-bordered">
+                <thead class="thead-light">
+                    <tr>
+                        <th>선박 크기 (TEU)</th>
+                        <th>21,000</th><th>18,000</th><th>15,000</th><th>12,000</th>
+                        <th>10,000</th><th>8,000</th><th>6,000</th><th>5,000</th>
+                        <th><strong>합계</strong></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>가용 척수</strong></td>
+                        <td>20</td><td>6</td><td>18</td><td>58</td>
+                        <td>47</td><td>19</td><td>9</td><td>8</td>
+                        <td><strong>185</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>4. 문제의 특성</h3>
+            <ul>
+                <li><strong>문제 유형:</strong> 혼합 정수 프로그래밍 (Mixed Integer Programming, MIP)</li>
+                <li><strong>결정 변수 수:</strong> 항로 수 × 선박 크기 수 (예: 18 × 8 = 144개)</li>
+                <li><strong>제약 수:</strong> 항로별 수요 제약 + 선박 크기별 가용성 제약 (예: 18 + 8 = 26개)</li>
+                <li><strong>난이도:</strong> 데모 규모에서는 MIP 솔버로 빠르게 풀 수 있으나, 추가 제약(운항 속도, 연료비, 항만 호환성 등)이 추가되면 복잡도가 증가합니다.</li>
+            </ul>
+
+            <h3>5. 실무 확장 고려사항</h3>
+            <p>실제 해운 업계에서는 다음과 같은 추가 요소들이 고려됩니다:</p>
+            <ul>
+                <li><strong>비용 최소화:</strong> 선박 수 대신 총 운영 비용(용선료 + 연료비 + 항만비)을 최소화</li>
+                <li><strong>항로-선박 호환성:</strong> 특정 수로나 항구의 흘수(draft) 제한으로 대형 선박이 진입할 수 없는 경우</li>
+                <li><strong>주간 빈도 유지:</strong> 정기선은 주 1회 출항을 보장해야 하므로, 왕복 소요 시간에 따라 필요 선박 수가 결정</li>
+                <li><strong>환적(Transshipment):</strong> 대형 선박이 허브 항에서만 운항하고, 소형 피더 선박이 연결하는 구조</li>
+                <li><strong>속도 최적화(Slow Steaming):</strong> 운항 속도를 낮추면 연료비가 줄지만 더 많은 선박이 필요</li>
+            </ul>
+
+            <h3>6. 참고 문헌</h3>
+            <ul>
+                <li>Christiansen, M., Fagerholt, K., Nygreen, B., & Ronen, D. (2013).
+                    <em>Ship routing and scheduling in the new millennium.</em>
+                    European Journal of Operational Research, 228(3), 467-483.</li>
+                <li>Brouer, B. D., Álvarez, J. F., Plum, C. E., Pisinger, D., & Sigurd, M. M. (2014).
+                    <em>A base integer programming model and benchmark suite for liner-shipping network design.</em>
+                    Transportation Science, 48(2), 281-312.</li>
+                <li>Notteboom, T. E., & Vernimmen, B. (2009).
+                    <em>The effect of high fuel costs on liner service configuration in container shipping.</em>
+                    Journal of Transport Geography, 17(5), 325-337.</li>
+            </ul>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h4>Vessel Deployment 문제 특징</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>핵심 의사결정:</strong></p>
+                    <ul>
+                        <li>🚢 각 항로에 어떤 크기의 선박을 배치할 것인가?</li>
+                        <li>📊 각 크기별 선박을 몇 척 배치할 것인가?</li>
+                        <li>⚖️ 총 선박 수를 어떻게 최소화할 것인가?</li>
+                    </ul>
+                    <hr>
+                    <p><strong>데모 규모:</strong></p>
+                    <ul>
+                        <li>6개 무역 그룹 (Trade)</li>
+                        <li>18개 항로 (Lane)</li>
+                        <li>8가지 선박 크기</li>
+                        <li>총 185척 가용 선박</li>
+                    </ul>
+                    <hr>
+                    <p><strong>솔버:</strong></p>
+                    <ul>
+                        <li>OR-Tools CBC (MIP)</li>
+                        <li>정수 프로그래밍</li>
+                        <li>빠른 최적해 도출</li>
+                    </ul>
+                    <hr>
+                    <a href="{% url 'complex_app:vessel_deployment_demo' %}" class="btn btn-primary btn-block mt-2">
+                        데모 실행하기 &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+{% endblock %}
+
