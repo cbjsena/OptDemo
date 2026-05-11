@@ -7,18 +7,16 @@
 {% block styles %}
 <style>
     .deployment-table input[type="number"] {
-        width: 60px;
+        width: 70px;
         text-align: center;
     }
-    .trade-group-header {
-        background-color: #e9ecef !important;
-        font-weight: bold;
+    .trade-section {
+        border-left: 4px solid #007bff;
+        padding-left: 10px;
+        margin-bottom: 10px;
     }
     .result-changed {
         background-color: #d4edda;
-    }
-    .result-same {
-        background-color: #fff;
     }
     .fleet-bar {
         height: 20px;
@@ -26,6 +24,9 @@
     }
     .summary-card .card-body h3 {
         margin-bottom: 0;
+    }
+    .lane-row td {
+        vertical-align: middle !important;
     }
 </style>
 {% endblock %}
@@ -35,7 +36,8 @@
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">Vessel Deployment Demo</h1>
     </div>
-    <p>각 항로의 수송 수요를 충족하면서 사용하는 총 선박 수를 최소화하는 배치안을 OR-Tools MIP 솔버로 구합니다.</p>
+    <p>각 Trade의 수송 수요를 충족하면서 사용하는 총 선박 수를 최소화하는 배치안을 OR-Tools MIP 솔버로 구합니다.
+       운송양 = <code>cap<sub>s</sub> × x<sub>rs</sub> / V<sub>r</sub></code></p>
 
     <form method="POST">
         {% csrf_token %}
@@ -70,56 +72,61 @@
             </div>
         </div>
 
-        <!-- 항로별 배치 데이터 -->
+        <!-- Trade별 수요 & Lane별 선박 수 -->
         <div class="card mb-3">
-            <div class="card-header"><strong>📋 항로별 수요 (TEU)</strong></div>
-            <div class="card-body table-responsive deployment-table">
-                <table class="table table-sm table-bordered mb-0 text-center">
+            <div class="card-header"><strong>📋 Trade별 수요 & Lane별 선박 수</strong></div>
+            <div class="card-body">
+                <table class="table table-sm table-bordered text-center mb-0">
                     <thead class="thead-dark">
                         <tr>
-                            <th>Trade</th>
-                            <th>항로</th>
-                            <th>수요 (TEU)</th>
-                            {% for size in vessel_sizes %}
-                            <th class="small">{{ size|floatformat:0 }}</th>
-                            {% endfor %}
-                            <th>합계</th>
+                            <th style="width:80px;">Trade</th>
+                            <th style="width:120px;">수요 (TEU)</th>
+                            <th>Lane별 선박 수 (V<sub>r</sub>)</th>
+                            <th style="width:80px;">총 선박 수</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for route in routes_data %}
+                        {% for trade in trades_data %}
                         <tr>
-                            <td class="font-weight-bold">{{ route.trade }}</td>
-                            <td>{{ route.name }}</td>
-                            <td>
-                                <input type="number" min="0" step="1"
+                            <td class="font-weight-bold align-middle">{{ trade.code }}</td>
+                            <td class="align-middle">
+                                <input type="number" min="0" step="1000"
                                        class="form-control form-control-sm text-center"
-                                       style="width:90px;"
-                                       name="demand_{{ forloop.counter0 }}"
-                                       value="{{ route.demand|floatformat:0 }}" required>
+                                       name="trade_demand_{{ forloop.counter0 }}"
+                                       value="{{ trade.demand }}" required>
                             </td>
-                            {% for dep in route.deployment %}
                             <td>
-                                <input type="number" min="0" step="1"
-                                       class="form-control form-control-sm text-center"
-                                       name="dep_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}"
-                                       value="{{ dep }}">
+                                <div class="d-flex flex-wrap justify-content-center">
+                                    {% for lane_name in trade.lane_names %}
+                                    <div class="mx-1 mb-1 text-center">
+                                        <small class="text-muted d-block">{{ lane_name }}</small>
+                                        <input type="number" min="1" step="1"
+                                               class="form-control form-control-sm text-center lane-vessel-input"
+                                               style="width:60px;"
+                                               name="lane_vessels_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}"
+                                               value="{{ trade.lane_vessels|get_item:forloop.counter0 }}"
+                                               data-trade-idx="{{ forloop.parentloop.counter0 }}" required>
+                                    </div>
+                                    {% endfor %}
+                                </div>
                             </td>
-                            {% endfor %}
-                            <td class="font-weight-bold">{{ route.total_vessels }}</td>
+                            <td class="font-weight-bold align-middle trade-total" id="trade-total-{{ forloop.counter0 }}">
+                                {% for v in trade.lane_vessels %}
+                                    {{ v }}
+                                {% endfor %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
+                    <tfoot>
+                        <tr class="table-info">
+                            <td class="font-weight-bold">합계</td>
+                            <td class="font-weight-bold" id="total-demand">-</td>
+                            <td></td>
+                            <td class="font-weight-bold" id="total-vessels">{{ original_total_vessels }}</td>
+                        </tr>
+                    </tfoot>
                 </table>
-                <input type="hidden" name="num_routes" value="{{ routes_data|length }}">
-                <input type="hidden" name="num_sizes" value="{{ vessel_sizes|length }}">
-                {% for size in vessel_sizes %}
-                <input type="hidden" name="size_{{ forloop.counter0 }}" value="{{ size|floatformat:0 }}">
-                {% endfor %}
-                {% for route in routes_data %}
-                <input type="hidden" name="route_name_{{ forloop.counter0 }}" value="{{ route.name }}">
-                <input type="hidden" name="route_trade_{{ forloop.counter0 }}" value="{{ route.trade }}">
-                {% endfor %}
             </div>
         </div>
 
@@ -142,7 +149,7 @@
         <div class="col-md-3">
             <div class="card text-white bg-primary">
                 <div class="card-body text-center">
-                    <small>기존 총 선박 수</small>
+                    <small>입력 총 선박 수</small>
                     <h3>{{ original_total_vessels }}</h3>
                 </div>
             </div>
@@ -156,7 +163,7 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-white {% if results.total_vessels_used < original_total_vessels %}bg-info{% else %}bg-secondary{% endif %}">
+            <div class="card text-white {% if vessel_saving > 0 %}bg-info{% else %}bg-secondary{% endif %}">
                 <div class="card-body text-center">
                     <small>절감 척수</small>
                     <h3>{{ vessel_saving }}</h3>
@@ -181,34 +188,63 @@
                 <thead class="thead-dark">
                     <tr>
                         <th>Trade</th>
-                        <th>항로</th>
-                        <th>수요</th>
+                        <th>Lane</th>
+                        <th>V<sub>r</sub></th>
                         {% for size in results.vessel_sizes %}
-                        <th>{{ size }}</th>
+                        <th>{{ size|floatformat:0 }}</th>
                         {% endfor %}
                         <th>선박 수</th>
-                        <th>공급 용량</th>
-                        <th>여유</th>
+<!--                        <th>총 용량</th>-->
+                        <th>운송양</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in results.deployment_matrix %}
-                    <tr>
+                    <tr class="lane-row">
                         <td class="font-weight-bold">{{ row.trade }}</td>
                         <td>{{ row.name }}</td>
-                        <td>{{ row.demand|floatformat:0 }}</td>
+                        <td>{{ row.V_r }}</td>
                         {% for count in row.deployment %}
                         <td {% if count > 0 %}class="table-success font-weight-bold"{% endif %}>
                             {{ count }}
                         </td>
                         {% endfor %}
                         <td class="font-weight-bold">{{ row.total_vessels }}</td>
-                        <td>{{ row.total_capacity|floatformat:0 }}</td>
-                        <td>
-                            {% widthratio row.total_capacity 1 1 as cap %}
-                            {% widthratio row.demand 1 1 as dem %}
-                            {{ row.total_capacity|add:0|floatformat:0 }}
+<!--                        <td>{{ row.total_capacity|floatformat:0 }}</td>-->
+                        <td class="font-weight-bold">{{ row.transport|floatformat:0 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Trade 그룹별 요약 -->
+    <div class="card mb-3">
+        <div class="card-header"><strong>🌍 Trade 그룹별 요약</strong></div>
+        <div class="card-body">
+            <table class="table table-sm table-bordered text-center">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Trade</th>
+                        <th>Lane 수</th>
+                        <th>수요 (TEU)</th>
+                        <th>운송양 (TEU)</th>
+                        <th>여유 (TEU)</th>
+                        <th>배치 선박 수</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ts in results.trade_summary %}
+                    <tr>
+                        <td class="font-weight-bold">{{ ts.code }}</td>
+                        <td>{{ ts.num_routes }}</td>
+                        <td>{{ ts.demand|floatformat:0 }}</td>
+                        <td>{{ ts.transport|floatformat:0 }}</td>
+                        <td {% if ts.surplus >= 0 %}class="text-success"{% else %}class="text-danger font-weight-bold"{% endif %}>
+                            {{ ts.surplus|floatformat:0 }}
                         </td>
+                        <td>{{ ts.vessels }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -217,7 +253,7 @@
     </div>
 
     <!-- 선박 크기별 활용률 -->
-    <div class="card mb-3">
+    <div class="card mb-4">
         <div class="card-header"><strong>📈 선박 크기별 활용 현황</strong></div>
         <div class="card-body">
             <table class="table table-sm table-bordered text-center">
@@ -253,36 +289,38 @@
             </table>
         </div>
     </div>
-
-    <!-- Trade 그룹별 요약 -->
-    <div class="card mb-4">
-        <div class="card-header"><strong>🌍 Trade 그룹별 요약</strong></div>
-        <div class="card-body">
-            <table class="table table-sm table-bordered text-center">
-                <thead class="thead-light">
-                    <tr>
-                        <th>Trade</th>
-                        <th>항로 수</th>
-                        <th>수요 (TEU)</th>
-                        <th>공급 용량 (TEU)</th>
-                        <th>배치 선박 수</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for trade_name, ts in results.trade_summary.items %}
-                    <tr>
-                        <td class="font-weight-bold">{{ trade_name }}</td>
-                        <td>{{ ts.routes }}</td>
-                        <td>{{ ts.demand|floatformat:0 }}</td>
-                        <td>{{ ts.capacity|floatformat:0 }}</td>
-                        <td>{{ ts.vessels }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
     {% endif %}
 </div>
 {% endblock %}
 
+{% block scripts %}
+<script>
+// Trade별 총 선박 수 자동 계산
+document.addEventListener('DOMContentLoaded', function() {
+    function updateTotals() {
+        let grandTotalVessels = 0;
+        let grandTotalDemand = 0;
+        const tradeRows = document.querySelectorAll('tr:has(.lane-vessel-input)');
+        tradeRows.forEach(function(row, idx) {
+            const inputs = row.querySelectorAll('.lane-vessel-input');
+            let tradeTotal = 0;
+            inputs.forEach(function(inp) { tradeTotal += parseInt(inp.value) || 0; });
+            const totalCell = document.getElementById('trade-total-' + idx);
+            if (totalCell) totalCell.textContent = tradeTotal;
+            grandTotalVessels += tradeTotal;
+
+            const demandInput = row.querySelector('input[name^="trade_demand_"]');
+            if (demandInput) grandTotalDemand += parseInt(demandInput.value) || 0;
+        });
+        const totalVesselsEl = document.getElementById('total-vessels');
+        if (totalVesselsEl) totalVesselsEl.textContent = grandTotalVessels;
+        const totalDemandEl = document.getElementById('total-demand');
+        if (totalDemandEl) totalDemandEl.textContent = grandTotalDemand.toLocaleString();
+    }
+    document.querySelectorAll('.lane-vessel-input, input[name^="trade_demand_"]').forEach(function(inp) {
+        inp.addEventListener('input', updateTotals);
+    });
+    updateTotals();
+});
+</script>
+{% endblock %}

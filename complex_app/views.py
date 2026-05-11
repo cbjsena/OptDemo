@@ -28,31 +28,21 @@ DEFAULT_VESSEL_AVAILABILITY = {
     '10000': 47, '8000': 19, '6000': 9, '5000': 8,
 }
 
-DEFAULT_ROUTES = [
-    {'name': 'FE1', 'trade': 'FE', 'deployment': [15, 0, 0, 0, 0, 0, 0, 0]},
-    {'name': 'FE2', 'trade': 'FE', 'deployment': [5, 3, 6, 0, 0, 0, 0, 0]},
-    {'name': 'FE3', 'trade': 'FE', 'deployment': [0, 3, 7, 5, 0, 0, 0, 0]},
-    {'name': 'FE4', 'trade': 'FE', 'deployment': [0, 0, 0, 10, 4, 0, 0, 0]},
-    {'name': 'MD1', 'trade': 'MD', 'deployment': [0, 0, 0, 7, 5, 2, 0, 0]},
-    {'name': 'MD2', 'trade': 'MD', 'deployment': [0, 0, 0, 0, 8, 5, 0, 0]},
-    {'name': 'PS1', 'trade': 'PS', 'deployment': [0, 0, 0, 3, 3, 0, 0, 0]},
-    {'name': 'PS2', 'trade': 'PS', 'deployment': [0, 0, 0, 0, 3, 3, 0, 0]},
-    {'name': 'PS3', 'trade': 'PS', 'deployment': [0, 0, 0, 4, 2, 0, 0, 0]},
-    {'name': 'PS4', 'trade': 'PS', 'deployment': [0, 0, 5, 1, 0, 0, 0, 0]},
-    {'name': 'PS5', 'trade': 'PS', 'deployment': [0, 0, 0, 6, 1, 0, 0, 0]},
-    {'name': 'PN1', 'trade': 'PN', 'deployment': [0, 0, 0, 0, 5, 1, 0, 0]},
-    {'name': 'PN2', 'trade': 'PN', 'deployment': [0, 0, 0, 7, 0, 0, 0, 0]},
-    {'name': 'EC1', 'trade': 'EC', 'deployment': [0, 0, 0, 10, 3, 0, 0, 0]},
-    {'name': 'EC2', 'trade': 'EC', 'deployment': [0, 0, 0, 0, 8, 6, 0, 0]},
-    {'name': 'EC3', 'trade': 'EC', 'deployment': [0, 0, 0, 5, 5, 2, 0, 0]},
-    {'name': 'ME1', 'trade': 'ME', 'deployment': [0, 0, 0, 0, 0, 0, 4, 4]},
-    {'name': 'ME2', 'trade': 'ME', 'deployment': [0, 0, 0, 0, 0, 0, 5, 4]},
+# Trade 기본 설정: code, 설명, Lane 수, 수요(TEU), Lane별 선박 수
+DEFAULT_TRADES = [
+    {'code': 'FE', 'desc': '극동 (Far East)', 'num_routes': 4, 'demand': 64000,
+     'lane_vessels': [15, 14, 15, 14]},
+    {'code': 'MD', 'desc': '지중해 (Mediterranean)', 'num_routes': 2, 'demand': 19000,
+     'lane_vessels': [14, 13]},
+    {'code': 'PS', 'desc': '태평양 남부 (Pacific South)', 'num_routes': 5, 'demand': 57000,
+     'lane_vessels': [6, 6, 6, 6, 7]},
+    {'code': 'PN', 'desc': '태평양 북부 (Pacific North)', 'num_routes': 2, 'demand': 21000,
+     'lane_vessels': [6, 7]},
+    {'code': 'EC', 'desc': '동안 (East Coast)', 'num_routes': 3, 'demand': 31000,
+     'lane_vessels': [13, 14, 12]},
+    {'code': 'ME', 'desc': '중동 (Middle East)', 'num_routes': 2, 'demand': 10000,
+     'lane_vessels': [8, 9]},
 ]
-
-
-def _compute_route_demand(deployment, vessel_sizes):
-    """배치 수 × 선박 크기 합계로 수요 계산"""
-    return sum(d * s for d, s in zip(deployment, vessel_sizes))
 
 
 @log_view_activity
@@ -111,7 +101,7 @@ def vessel_deployment_introduction_view(request):
 
 @log_view_activity
 def vessel_deployment_demo_view(request):
-    """Vessel Deployment 데모 뷰"""
+    """Vessel Deployment 데모 뷰 - Trade별 수요 + Lane별 선박 수 입력"""
     source = request.POST if request.method == 'POST' else request.GET
     vessel_sizes = list(DEFAULT_VESSEL_SIZES)
 
@@ -121,49 +111,41 @@ def vessel_deployment_demo_view(request):
         key = f'avail_{size}'
         vessel_availability[str(size)] = int(source.get(key, DEFAULT_VESSEL_AVAILABILITY.get(str(size), 0)))
 
-    # 항로 데이터 구성
-    routes_data = []
-    if request.method == 'POST':
-        num_routes = int(source.get('num_routes', len(DEFAULT_ROUTES)))
-        num_sizes = int(source.get('num_sizes', len(vessel_sizes)))
-        # POST에서 vessel_sizes 복원
-        vessel_sizes = []
-        for s_idx in range(num_sizes):
-            vessel_sizes.append(int(source.get(f'size_{s_idx}', DEFAULT_VESSEL_SIZES[s_idx])))
+    # Trade 데이터 구성
+    trades_data = []
+    for t_idx, default_trade in enumerate(DEFAULT_TRADES):
+        code = default_trade['code']
+        desc = default_trade['desc']
+        num_routes = default_trade['num_routes']
+        demand = int(source.get(f'trade_demand_{t_idx}', default_trade['demand']))
 
-        for r_idx in range(num_routes):
-            name = source.get(f'route_name_{r_idx}', f'R{r_idx+1}')
-            trade = source.get(f'route_trade_{r_idx}', '')
-            demand = int(source.get(f'demand_{r_idx}', 0))
-            deployment = []
-            for s_idx in range(len(vessel_sizes)):
-                deployment.append(int(source.get(f'dep_{r_idx}_{s_idx}', 0)))
-            routes_data.append({
-                'name': name,
-                'trade': trade,
-                'demand': demand,
-                'deployment': deployment,
-                'total_vessels': sum(deployment),
-            })
-    else:
-        for route in DEFAULT_ROUTES:
-            demand = _compute_route_demand(route['deployment'], vessel_sizes)
-            routes_data.append({
-                'name': route['name'],
-                'trade': route['trade'],
-                'demand': demand,
-                'deployment': list(route['deployment']),
-                'total_vessels': sum(route['deployment']),
-            })
+        # Lane별 선박 수
+        lane_vessels = []
+        lane_names = []
+        for l_idx in range(num_routes):
+            lane_name = f"{code}{l_idx + 1}"
+            lane_names.append(lane_name)
+            v_count = int(source.get(f'lane_vessels_{t_idx}_{l_idx}', default_trade['lane_vessels'][l_idx]))
+            lane_vessels.append(v_count)
 
-    original_total_vessels = sum(r['total_vessels'] for r in routes_data)
+        trades_data.append({
+            'code': code,
+            'desc': desc,
+            'num_routes': num_routes,
+            'demand': demand,
+            'lane_vessels': lane_vessels,
+            'lane_names': lane_names,
+        })
+
+    # 기존 총 선박 수 = 모든 Lane의 선박 수 합
+    original_total_vessels = sum(v for t in trades_data for v in t['lane_vessels'])
 
     context = {
         'active_model': 'Complex Optimization',
         'active_submenu': 'vessel_deployment_demo',
         'vessel_sizes': vessel_sizes,
         'vessel_availability': vessel_availability,
-        'routes_data': routes_data,
+        'trades_data': trades_data,
         'original_total_vessels': original_total_vessels,
         'results': None,
         'error_message': None,
@@ -175,19 +157,20 @@ def vessel_deployment_demo_view(request):
     if request.method == 'POST':
         try:
             # 솔버 입력 데이터 구성
-            solver_routes = []
-            for route in routes_data:
-                solver_routes.append({
-                    'name': route['name'],
-                    'trade': route['trade'],
-                    'demand': route['demand'],
+            solver_trades = []
+            for trade in trades_data:
+                solver_trades.append({
+                    'code': trade['code'],
+                    'num_routes': trade['num_routes'],
+                    'demand': trade['demand'],
+                    'lane_vessels': trade['lane_vessels'],
                 })
 
             input_data = {
                 'problem_type': 'vessel_deployment',
                 'vessel_sizes': vessel_sizes,
                 'vessel_availability': vessel_availability,
-                'routes': solver_routes,
+                'trades': solver_trades,
             }
 
             results, error_msg, processing_time = VesselDeploymentSolver(input_data).solve()

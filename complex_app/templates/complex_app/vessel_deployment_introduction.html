@@ -16,12 +16,12 @@
 
     <p>
         <strong>선박 배치(Vessel Deployment)</strong> 문제는 해운 회사가 보유한 다양한 크기의 선박을
-        여러 항로(trade lane)에 배치하여, 각 항로의 수송 수요를 충족하면서 <strong>총 사용 선박 수를 최소화</strong>하는
-        전략적 의사결정 문제입니다.
+        여러 항로(lane)에 배치하여, 각 <strong>Trade의 수송 수요</strong>를 충족하면서
+        <strong>총 사용 선박 수를 최소화</strong>하는 전략적 의사결정 문제입니다.
     </p>
     <p>
         이 문제는 정기선 해운(liner shipping)에서 핵심 운영 계획 중 하나로,
-        선대 규모, 항로별 수요량, 선박 크기별 용량이 핵심 입력 데이터가 됩니다.
+        Trade별 수요량, Lane별 운행 선박 수, 선박 크기별 용량 및 가용 수량이 핵심 입력 데이터가 됩니다.
         효율적인 배치는 운영 비용을 절감하고 선대 활용률을 극대화합니다.
     </p>
 
@@ -31,26 +31,37 @@
             <h3>1. 문제 개요</h3>
             <p>
                 해운 회사는 다양한 크기(TEU 용량)의 컨테이너 선박을 보유하고 있습니다.
-                이 선박들을 여러 <strong>무역 항로(trade lane)</strong>에 배치해야 합니다.
-                각 항로에는 주간 단위로 운송해야 하는 <strong>수요(TEU)</strong>가 있으며,
-                배치된 선박의 총 용량이 이 수요를 충족해야 합니다.
+                이 선박들을 여러 <strong>Trade</strong>에 속하는 <strong>Lane</strong>(항로)에 배치해야 합니다.
             </p>
 
+            <h4>문제 구조</h4>
+            <ol>
+                <li><strong>Trade별 Lane 개수:</strong> 각 Trade에는 정해진 수의 Lane이 존재합니다.</li>
+                <li><strong>Lane 명칭:</strong> Trade 이름 + 숫자로 구성됩니다.
+                    예) FE Trade에 4개 Lane → FE1, FE2, FE3, FE4</li>
+                <li><strong>Lane별 선박 수:</strong> 각 Lane에 운행할 총 선박 수(\( V_r \))가 사전에 지정됩니다.</li>
+                <li><strong>Trade별 수요 충족:</strong> Trade에 속하는 모든 Lane의 운송양 합이 해당 Trade의 수요 이상이어야 합니다.</li>
+                <li><strong>Lane의 운송양 계산:</strong> Lane \( r \)에 배치된 선박 크기 \( s \)의 운송양은
+                    <strong>\( \text{cap}_s \times x_{rs} / V_r \)</strong> 입니다.
+                    즉, 선박 수가 많을수록 한 척당 운항 빈도가 줄어들기 때문에 총 용량을 Lane의 선박 수로 나눕니다.</li>
+            </ol>
+
             <div class="alert alert-info">
-                <strong>핵심 질문:</strong> 모든 항로의 수요를 만족시키면서, 가능한 한 적은 수의 선박을 사용하려면
-                각 항로에 어떤 크기의 선박을 몇 척씩 배치해야 할까?
+                <strong>핵심 질문:</strong> 모든 Trade의 수요를 만족시키면서, 가능한 한 적은 수의 선박을 사용하려면
+                각 Lane에 어떤 크기의 선박을 몇 척씩 배치해야 할까?
             </div>
 
             <h4>입력 데이터</h4>
             <ul>
                 <li><strong>선박 크기(Vessel Sizes):</strong> 보유 선박의 TEU 용량 종류 (예: 21,000 / 18,000 / 15,000 / 12,000 / 10,000 / 8,000 / 6,000 / 5,000 TEU)</li>
-                <li><strong>선박 가용 수량(Fleet Availability):</strong> 각 크기별 보유 선박 척수</li>
-                <li><strong>항로 데이터(Routes):</strong> 각 항로의 명칭, 소속 무역 그룹(trade), 주간 수요(TEU)</li>
+                <li><strong>선박 가용 수량(Fleet Availability):</strong> 각 크기별 보유 선박 척수 \( N_s \)</li>
+                <li><strong>Trade 데이터:</strong> 각 Trade의 수요(TEU)와 Lane 개수</li>
+                <li><strong>Lane별 선박 수:</strong> 각 Lane에서 운행하는 총 선박 수 \( V_r \) (고정 입력값)</li>
             </ul>
 
             <h4>의사결정</h4>
             <ul>
-                <li>각 항로 \( r \)에 선박 크기 \( s \)를 몇 척 배치할 것인가? → 결정 변수 \( x_{rs} \)</li>
+                <li>각 Lane \( r \)에 선박 크기 \( s \)를 몇 척 배치할 것인가? → 결정 변수 \( x_{rs} \)</li>
             </ul>
 
             <h3>2. 수리 모델</h3>
@@ -58,42 +69,63 @@
 
                 <h4><strong>집합 및 파라미터</strong></h4>
                 <ul>
-                    <li>\( R \) : 항로(route/lane)의 집합, \( |R| \) 개</li>
-                    <li>\( S \) : 선박 크기(vessel size)의 집합, \( |S| \) 개</li>
+                    <li>\( T \) : Trade의 집합</li>
+                    <li>\( R_k \) : Trade \( k \)에 속하는 Lane(항로)의 집합</li>
+                    <li>\( R = \bigcup_{k \in T} R_k \) : 전체 Lane의 집합</li>
+                    <li>\( S \) : 선박 크기(vessel size)의 집합</li>
                     <li>\( \text{cap}_s \) : 선박 크기 \( s \)의 용량 (TEU)</li>
-                    <li>\( D_r \) : 항로 \( r \)의 주간 수송 수요 (TEU)</li>
+                    <li>\( D_k \) : Trade \( k \)의 수송 수요 (TEU)</li>
+                    <li>\( V_r \) : Lane \( r \)의 운행 선박 수 (고정 입력값)</li>
                     <li>\( N_s \) : 선박 크기 \( s \)의 가용 척수</li>
                 </ul>
                 <hr>
 
                 <h4><strong>결정 변수</strong></h4>
                 <ul>
-                    <li>\( x_{rs} \in \mathbb{Z}_{\geq 0} \) : 항로 \( r \)에 배치하는 크기 \( s \) 선박의 수</li>
+                    <li>\( x_{rs} \in \mathbb{Z}_{\geq 0} \) : Lane \( r \)에 배치하는 크기 \( s \) 선박의 수</li>
                 </ul>
+                <hr>
+
+                <h4><strong>운송양 계산</strong></h4>
+                <p>Lane \( r \)의 총 운송양은 다음과 같이 계산됩니다:</p>
+                <div class="math-block">
+                    $$ \text{Transport}(r) = \sum_{s \in S} \frac{\text{cap}_s \cdot x_{rs}}{V_r} $$
+                </div>
+                <p class="text-muted small">
+                    Lane에 배치된 선박이 많을수록 한 척당 운항 빈도가 줄어들기 때문에,
+                    총 용량을 해당 Lane의 선박 수 \( V_r \)로 나누어 실제 주간 운송량을 계산합니다.
+                    \( V_r \)은 입력값(상수)이므로 모델은 선형(MIP)을 유지합니다.
+                </p>
                 <hr>
 
                 <h4><strong>목적 함수: 총 선박 수 최소화</strong></h4>
                 <div class="math-block">
                     $$ \min \sum_{r \in R} \sum_{s \in S} x_{rs} $$
                 </div>
-                <p class="text-muted small">모든 항로에 배치되는 선박의 총 수를 최소화합니다.</p>
+                <p class="text-muted small">모든 Lane에 배치되는 선박의 총 수를 최소화합니다.</p>
                 <hr>
 
                 <h4><strong>제약 조건</strong></h4>
                 <ul>
-                    <li><strong>1. 수요 충족 제약 (Demand Satisfaction):</strong>
-                        <p>각 항로에 배치된 선박의 총 용량이 해당 항로의 수요 이상이어야 합니다.</p>
+                    <li><strong>1. Trade별 수요 충족 제약 (Demand Satisfaction):</strong>
+                        <p>각 Trade에 속하는 모든 Lane의 운송양 합이 해당 Trade의 수요 이상이어야 합니다.</p>
                         <div class="math-block">
-                            $$ \sum_{s \in S} \text{cap}_s \cdot x_{rs} \geq D_r \quad \forall r \in R $$
+                            $$ \sum_{r \in R_k} \sum_{s \in S} \frac{\text{cap}_s \cdot x_{rs}}{V_r} \geq D_k \quad \forall k \in T $$
                         </div>
                     </li>
-                    <li><strong>2. 선대 가용성 제약 (Fleet Availability):</strong>
+                    <li><strong>2. Lane별 선박 수 제약 (Lane Vessel Count):</strong>
+                        <p>각 Lane에 배치되는 선박의 총 수는 지정된 \( V_r \)과 같아야 합니다.</p>
+                        <div class="math-block">
+                            $$ \sum_{s \in S} x_{rs} = V_r \quad \forall r \in R $$
+                        </div>
+                    </li>
+                    <li><strong>3. 선대 가용성 제약 (Fleet Availability):</strong>
                         <p>각 크기의 선박 총 사용 수는 보유 척수를 초과할 수 없습니다.</p>
                         <div class="math-block">
                             $$ \sum_{r \in R} x_{rs} \leq N_s \quad \forall s \in S $$
                         </div>
                     </li>
-                    <li><strong>3. 비음수 정수 제약:</strong>
+                    <li><strong>4. 비음수 정수 제약:</strong>
                         <div class="math-block">
                             $$ x_{rs} \geq 0, \quad x_{rs} \in \mathbb{Z} \quad \forall r \in R, \; s \in S $$
                         </div>
@@ -101,28 +133,38 @@
                 </ul>
             </div>
 
+            <div class="alert alert-warning mt-3">
+                <strong><i class="fas fa-lightbulb"></i> 모델 해석:</strong>
+                운송양 공식 \( \text{cap}_s \times x_{rs} / V_r \)은 정기선 해운의 특성을 반영합니다.
+                예를 들어, Lane에 10척이 운행 중이고 그 중 5척이 21,000 TEU 선박이면,
+                해당 선박의 운송 기여분은 \( 21000 \times 5 / 10 = 10500 \) TEU입니다.
+                이는 주 1회 출항 기준으로 왕복에 필요한 선박 수를 고려한 것입니다.
+            </div>
+
             <h3>3. 데모 예제 데이터</h3>
             <p>
-                본 데모에서는 6개 무역 그룹(trade), 18개 항로, 8가지 선박 크기를 포함하는 실제 규모의 예제를 사용합니다.
+                본 데모에서는 6개 Trade, 18개 Lane, 8가지 선박 크기를 포함하는 실제 규모의 예제를 사용합니다.
             </p>
 
-            <h4>무역 그룹 (Trade Groups)</h4>
+            <h4>Trade 설정</h4>
             <table class="table table-sm table-bordered">
                 <thead class="thead-light">
                     <tr>
                         <th>Trade</th>
                         <th>설명</th>
-                        <th>항로 수</th>
-                        <th>주요 선박 크기</th>
+                        <th>Lane 수</th>
+                        <th>수요 (TEU)</th>
+                        <th>Lane별 선박 수</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td><strong>FE</strong></td><td>극동 (Far East)</td><td>4</td><td>21,000 ~ 12,000 TEU</td></tr>
-                    <tr><td><strong>MD</strong></td><td>지중해 (Mediterranean)</td><td>2</td><td>12,000 ~ 8,000 TEU</td></tr>
-                    <tr><td><strong>PS</strong></td><td>태평양 남부 (Pacific South)</td><td>5</td><td>15,000 ~ 8,000 TEU</td></tr>
-                    <tr><td><strong>PN</strong></td><td>태평양 북부 (Pacific North)</td><td>2</td><td>12,000 ~ 8,000 TEU</td></tr>
-                    <tr><td><strong>EC</strong></td><td>동안 (East Coast)</td><td>3</td><td>12,000 ~ 8,000 TEU</td></tr>
-                    <tr><td><strong>ME</strong></td><td>중동 (Middle East)</td><td>2</td><td>6,000 ~ 5,000 TEU</td></tr>
+                    <tr><td><strong>FE</strong></td><td>극동 (Far East)</td><td>4</td><td>64,000</td><td>각 Lane별 지정</td></tr>
+                    <tr><td><strong>MD</strong></td><td>지중해 (Mediterranean)</td><td>2</td><td>19,000</td><td>각 Lane별 지정</td></tr>
+                    <tr><td><strong>PS</strong></td><td>태평양 남부 (Pacific South)</td><td>5</td><td>57,000</td><td>각 Lane별 지정</td></tr>
+                    <tr><td><strong>PN</strong></td><td>태평양 북부 (Pacific North)</td><td>2</td><td>21,000</td><td>각 Lane별 지정</td></tr>
+                    <tr><td><strong>EC</strong></td><td>동안 (East Coast)</td><td>3</td><td>31,000</td><td>각 Lane별 지정</td></tr>
+                    <tr><td><strong>ME</strong></td><td>중동 (Middle East)</td><td>2</td><td>10,000</td><td>각 Lane별 지정</td></tr>
+                    <tr class="table-info"><td colspan="3"><strong>합계</strong></td><td><strong>202,000</strong></td><td></td></tr>
                 </tbody>
             </table>
 
@@ -149,8 +191,9 @@
             <h3>4. 문제의 특성</h3>
             <ul>
                 <li><strong>문제 유형:</strong> 혼합 정수 프로그래밍 (Mixed Integer Programming, MIP)</li>
-                <li><strong>결정 변수 수:</strong> 항로 수 × 선박 크기 수 (예: 18 × 8 = 144개)</li>
-                <li><strong>제약 수:</strong> 항로별 수요 제약 + 선박 크기별 가용성 제약 (예: 18 + 8 = 26개)</li>
+                <li><strong>결정 변수 수:</strong> Lane 수 × 선박 크기 수 (예: 18 × 8 = 144개)</li>
+                <li><strong>제약 수:</strong> Trade별 수요 제약 + Lane별 선박 수 제약 + 선박 크기별 가용성 제약 (예: 6 + 18 + 8 = 32개)</li>
+                <li><strong>선형성:</strong> Lane별 선박 수 \( V_r \)이 입력값(상수)이므로 운송양 공식의 분모가 상수 → 선형(MIP) 유지</li>
                 <li><strong>난이도:</strong> 데모 규모에서는 MIP 솔버로 빠르게 풀 수 있으나, 추가 제약(운항 속도, 연료비, 항만 호환성 등)이 추가되면 복잡도가 증가합니다.</li>
             </ul>
 
@@ -186,17 +229,18 @@
                 <div class="card-body">
                     <p><strong>핵심 의사결정:</strong></p>
                     <ul>
-                        <li>🚢 각 항로에 어떤 크기의 선박을 배치할 것인가?</li>
-                        <li>📊 각 크기별 선박을 몇 척 배치할 것인가?</li>
-                        <li>⚖️ 총 선박 수를 어떻게 최소화할 것인가?</li>
+                        <li>🚢 각 Lane에 어떤 크기의 선박을 배치할 것인가?</li>
+                        <li>📊 Lane별 지정된 선박 수를 어떤 크기로 구성할 것인가?</li>
+                        <li>⚖️ Trade 수요를 충족하며 총 선박 수를 최소화</li>
                     </ul>
                     <hr>
                     <p><strong>데모 규모:</strong></p>
                     <ul>
-                        <li>6개 무역 그룹 (Trade)</li>
-                        <li>18개 항로 (Lane)</li>
+                        <li>6개 Trade</li>
+                        <li>18개 Lane</li>
                         <li>8가지 선박 크기</li>
                         <li>총 185척 가용 선박</li>
+                        <li>총 수요 202,000 TEU</li>
                     </ul>
                     <hr>
                     <p><strong>솔버:</strong></p>

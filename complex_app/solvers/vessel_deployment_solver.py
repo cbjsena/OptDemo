@@ -1,5 +1,4 @@
 import logging
-from ortools.linear_solver import pywraplp
 from common_utils.ortools_solvers import BaseOrtoolsLinearSolver
 
 logger = logging.getLogger(__name__)
@@ -12,9 +11,9 @@ class VesselDeploymentSolver(BaseOrtoolsLinearSolver):
 
     목적: 모든 Trade의 수요를 충족시키면서 사용하는 선박 수를 최소화
     제약:
-      1. Trade별 수요 충족 (해당 Trade 내 모든 항로의 총 용량 >= Trade 수요)
-      2. 선박 크기별 가용 수량 제약
-      3. 항로별 운행 선박 수 제한
+      1. Trade별 수요 충족: Σ(r∈Rk) Σ(s∈S) cap_s × x_rs / V_r >= D_k
+      2. Lane별 선박 수 제약: Σ(s∈S) x_rs = V_r
+      3. 선박 크기별 가용 수량 제약: Σ(r∈R) x_rs <= N_s
     """
 
     def __init__(self, input_data):
@@ -24,20 +23,21 @@ class VesselDeploymentSolver(BaseOrtoolsLinearSolver):
         self.vessel_availability = self.input_data.get('vessel_availability', {})
         self.trades = self.input_data.get('trades', [])
 
-        # trades에서 routes를 자동 생성
+        # trades에서 routes를 자동 생성, Lane별 선박 수(V_r) 포함
         self.routes = []
         self.trade_route_indices = {}  # trade_code -> [route indices]
         idx = 0
         for trade in self.trades:
             code = trade['code']
             num_routes = trade['num_routes']
-            max_vessels = trade.get('max_vessels_per_route', 999)
+            lane_vessels = trade.get('lane_vessels', [])
             self.trade_route_indices[code] = []
             for i in range(num_routes):
+                v_r = lane_vessels[i] if i < len(lane_vessels) else 10
                 self.routes.append({
                     'name': f"{code}{i + 1}",
                     'trade': code,
-                    'max_vessels': max_vessels,
+                    'V_r': v_r,  # Lane별 운행 선박 수 (고정)
                 })
                 self.trade_route_indices[code].append(idx)
                 idx += 1
@@ -47,7 +47,7 @@ class VesselDeploymentSolver(BaseOrtoolsLinearSolver):
         self.x = {}
 
     def _create_variables(self):
-        """결정 변수 생성: x[r][s] = 항로 r에 크기 s 선박 배치 수"""
+        """결정 변수 생성: x[r][s] = Lane r에 크기 s 선박 배치 수"""
         logger.info("--- 1. Creating Decision Variables ---")
 
         for r in range(self.num_routes):
@@ -55,45 +55,48 @@ class VesselDeploymentSolver(BaseOrtoolsLinearSolver):
             for s in range(self.num_sizes):
                 size = self.vessel_sizes[s]
                 avail = self.vessel_availability.get(str(size), 0)
+                upper = min(avail, route['V_r'])
                 var_name = f'x_{route["name"]}_{size}'
-                self.x[r, s] = self.solver.IntVar(0, avail, var_name)
+                self.x[r, s] = self.solver.IntVar(0, upper, var_name)
 
         logger.info(f"Created {len(self.x)} decision variables "
-                    f"({self.num_routes} routes x {self.num_sizes} vessel sizes)")
+                    f"({self.num_routes} lanes x {self.num_sizes} vessel sizes)")
 
     def _add_constraints(self):
         """제약 조건 추가"""
         logger.info("--- 2. Adding Constraints ---")
 
         # 제약 1: Trade별 수요 충족
+        # Σ(r∈Rk) Σ(s∈S) cap_s × x_rs / V_r >= D_k
         for trade in self.trades:
             code = trade['code']
             demand = trade['demand']
             route_indices = self.trade_route_indices[code]
+
             constraint_expr = sum(
-                self.x[r, s] * self.vessel_sizes[s]
+                self.x[r, s] * (self.vessel_sizes[s] / self.routes[r]['V_r'])
                 for r in route_indices
                 for s in range(self.num_sizes)
             )
             self.solver.Add(constraint_expr >= demand)
-            logger.info(f"  Trade demand: {code} (routes: {len(route_indices)}) >= {demand} TEU")
+            logger.info(f"  Trade demand: {code} (lanes: {len(route_indices)}) >= {demand} TEU")
 
-        # 제약 2: 선박 크기별 가용 수량 제약
+        # 제약 2: Lane별 선박 수 제약 (등호)
+        # Σ(s∈S) x_rs = V_r
+        for r in range(self.num_routes):
+            route = self.routes[r]
+            v_r = route['V_r']
+            constraint_expr = sum(self.x[r, s] for s in range(self.num_sizes))
+            self.solver.Add(constraint_expr == v_r)
+            logger.info(f"  Lane vessel count: {route['name']} == {v_r}")
+
+        # 제약 3: 선박 크기별 가용 수량 제약
         for s in range(self.num_sizes):
             size = self.vessel_sizes[s]
             avail = self.vessel_availability.get(str(size), 0)
             constraint_expr = sum(self.x[r, s] for r in range(self.num_routes))
             self.solver.Add(constraint_expr <= avail)
             logger.info(f"  Fleet constraint: size {size} <= {avail}")
-
-        # 제약 3: 항로별 운행 선박 수 제한
-        for r in range(self.num_routes):
-            route = self.routes[r]
-            max_v = route.get('max_vessels', 999)
-            if max_v < 999:
-                constraint_expr = sum(self.x[r, s] for s in range(self.num_sizes))
-                self.solver.Add(constraint_expr <= max_v)
-                logger.info(f"  Route vessel limit: {route['name']} <= {max_v}")
 
     def _set_objective_function(self):
         """목적 함수: 총 선박 수 최소화"""
@@ -114,12 +117,15 @@ class VesselDeploymentSolver(BaseOrtoolsLinearSolver):
 
         for r in range(self.num_routes):
             route = self.routes[r]
+            v_r = route['V_r']
             row = {
                 'name': route['name'],
                 'trade': route.get('trade', ''),
+                'V_r': v_r,
                 'deployment': [],
                 'total_vessels': 0,
                 'total_capacity': 0,
+                'transport': 0,
             }
             for s in range(self.num_sizes):
                 count = int(self.x[r, s].solution_value())
@@ -127,6 +133,7 @@ class VesselDeploymentSolver(BaseOrtoolsLinearSolver):
                 row['total_vessels'] += count
                 row['total_capacity'] += count * self.vessel_sizes[s]
 
+            row['transport'] = round(row['total_capacity'] / v_r) if v_r > 0 else 0
             total_vessels_used += row['total_vessels']
             deployment_matrix.append(row)
 
@@ -150,13 +157,15 @@ class VesselDeploymentSolver(BaseOrtoolsLinearSolver):
             route_indices = self.trade_route_indices[code]
             vessels = sum(deployment_matrix[r]['total_vessels'] for r in route_indices)
             capacity = sum(deployment_matrix[r]['total_capacity'] for r in route_indices)
+            transport = sum(deployment_matrix[r]['transport'] for r in route_indices)
             trade_summary.append({
                 'code': code,
                 'demand': trade['demand'],
                 'num_routes': trade['num_routes'],
                 'vessels': vessels,
                 'capacity': capacity,
-                'surplus': capacity - trade['demand'],
+                'transport': transport,
+                'surplus': transport - trade['demand'],
             })
 
         results = {
