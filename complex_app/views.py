@@ -2,7 +2,7 @@ from django.shortcuts import render
 
 from core.decorators import log_view_activity
 from .solvers.palletizing_solver import PalletizingLogicSolver, PalletizingSolver
-from .solvers.vessel_deployment_solver import VesselDeploymentSolver
+from .solvers.vessel_deployment_solver import VesselDeploymentSolver, VesselDeploymentLaneSolver
 
 
 DEFAULT_PALLET = {
@@ -28,20 +28,26 @@ DEFAULT_VESSEL_AVAILABILITY = {
     '10000': 47, '8000': 19, '6000': 9, '5000': 8,
 }
 
-# Trade 기본 설정: code, 설명, Lane 수, 수요(TEU), Lane별 선박 수
+# Trade 기본 설정: code, 설명, Lane 수, 수요(TEU), Lane별 선박 수, Lane별 수요
 DEFAULT_TRADES = [
     {'code': 'FE', 'desc': '극동 (Far East)', 'num_routes': 4, 'demand': 64000,
-     'lane_vessels': [15, 14, 15, 14]},
+     'lane_vessels': [15, 14, 15, 14],
+     'lane_demands': [18000, 16000, 16000, 14000]},
     {'code': 'MD', 'desc': '지중해 (Mediterranean)', 'num_routes': 2, 'demand': 19000,
-     'lane_vessels': [14, 13]},
+     'lane_vessels': [14, 13],
+     'lane_demands': [10000, 9000]},
     {'code': 'PS', 'desc': '태평양 남부 (Pacific South)', 'num_routes': 5, 'demand': 57000,
-     'lane_vessels': [6, 6, 6, 6, 7]},
+     'lane_vessels': [6, 6, 6, 6, 7],
+     'lane_demands': [12000, 12000, 11000, 11000, 11000]},
     {'code': 'PN', 'desc': '태평양 북부 (Pacific North)', 'num_routes': 2, 'demand': 21000,
-     'lane_vessels': [6, 7]},
+     'lane_vessels': [6, 7],
+     'lane_demands': [10000, 11000]},
     {'code': 'EC', 'desc': '동안 (East Coast)', 'num_routes': 3, 'demand': 31000,
-     'lane_vessels': [13, 14, 12]},
+     'lane_vessels': [13, 14, 12],
+     'lane_demands': [11000, 11000, 9000]},
     {'code': 'ME', 'desc': '중동 (Middle East)', 'num_routes': 2, 'demand': 10000,
-     'lane_vessels': [8, 9]},
+     'lane_vessels': [8, 9],
+     'lane_demands': [5000, 5000]},
 ]
 
 
@@ -196,6 +202,109 @@ def vessel_deployment_demo_view(request):
             context['error_message'] = f"처리 중 오류 발생: {e}"
 
     return render(request, 'complex_app/vessel_deployment_demo.html', context)
+
+
+@log_view_activity
+def vessel_deployment_demo2_view(request):
+    """Vessel Deployment Demo2 - Lane별 수요 + Trade별 수요 충족"""
+    source = request.POST if request.method == 'POST' else request.GET
+    vessel_sizes = list(DEFAULT_VESSEL_SIZES)
+
+    # 가용 수량
+    vessel_availability = {}
+    for size in vessel_sizes:
+        key = f'avail_{size}'
+        vessel_availability[str(size)] = int(source.get(key, DEFAULT_VESSEL_AVAILABILITY.get(str(size), 0)))
+
+    # Trade 데이터 구성 (Lane별 수요 포함)
+    trades_data = []
+    for t_idx, default_trade in enumerate(DEFAULT_TRADES):
+        code = default_trade['code']
+        desc = default_trade['desc']
+        num_routes = default_trade['num_routes']
+
+        lane_vessels = []
+        lane_demands = []
+        lane_names = []
+        for l_idx in range(num_routes):
+            lane_name = f"{code}{l_idx + 1}"
+            lane_names.append(lane_name)
+            v_count = int(source.get(f'lane_vessels_{t_idx}_{l_idx}', default_trade['lane_vessels'][l_idx]))
+            lane_vessels.append(v_count)
+            d_lane = int(source.get(f'lane_demand_{t_idx}_{l_idx}', default_trade['lane_demands'][l_idx]))
+            lane_demands.append(d_lane)
+
+        # Trade 수요 = Lane 수요 합계 (자동 계산)
+        trade_demand = sum(lane_demands)
+
+        trades_data.append({
+            'code': code,
+            'desc': desc,
+            'num_routes': num_routes,
+            'demand': trade_demand,
+            'lane_vessels': lane_vessels,
+            'lane_demands': lane_demands,
+            'lane_names': lane_names,
+        })
+
+    original_total_vessels = sum(v for t in trades_data for v in t['lane_vessels'])
+
+    context = {
+        'active_model': 'Complex Optimization',
+        'active_submenu': 'vessel_deployment_demo2',
+        'vessel_sizes': vessel_sizes,
+        'vessel_availability': vessel_availability,
+        'trades_data': trades_data,
+        'original_total_vessels': original_total_vessels,
+        'results': None,
+        'error_message': None,
+        'success_message': None,
+        'processing_time_seconds': "N/A",
+        'vessel_saving': 0,
+    }
+
+    if request.method == 'POST':
+        try:
+            solver_trades = []
+            for trade in trades_data:
+                solver_trades.append({
+                    'code': trade['code'],
+                    'num_routes': trade['num_routes'],
+                    'demand': trade['demand'],
+                    'lane_vessels': trade['lane_vessels'],
+                    'lane_demands': trade['lane_demands'],
+                })
+
+            input_data = {
+                'problem_type': 'vessel_deployment_lane',
+                'vessel_sizes': vessel_sizes,
+                'vessel_availability': vessel_availability,
+                'trades': solver_trades,
+            }
+
+            results, error_msg, processing_time = VesselDeploymentLaneSolver(input_data).solve()
+            context['processing_time_seconds'] = processing_time
+
+            if error_msg:
+                context['error_message'] = error_msg
+            elif results:
+                context['results'] = results
+                context['vessel_saving'] = original_total_vessels - results['total_vessels_used']
+                context['success_message'] = (
+                    f"최적화 완료: 총 선박 {results['total_vessels_used']}척 "
+                    f"(기존 {original_total_vessels}척 대비 "
+                    f"{original_total_vessels - results['total_vessels_used']}척 절감, "
+                    f"소요시간: {processing_time}초)"
+                )
+            else:
+                context['error_message'] = "최적화 결과를 가져오지 못했습니다."
+
+        except ValueError as ve:
+            context['error_message'] = f"입력값 오류: {ve}"
+        except Exception as e:
+            context['error_message'] = f"처리 중 오류 발생: {e}"
+
+    return render(request, 'complex_app/vessel_deployment_demo2.html', context)
 
 
 def _parse_positive_float(source, key, label):

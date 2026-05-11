@@ -3,7 +3,8 @@ from django.urls import path
 from .views import (palletizing_introduction_view, palletizing_demo_view,
                     complex_app_introduction_view, lsnd_introduction_view,
                     lsnd_advanced_model_view, lsnd_benchmark_data_view,
-                    vessel_deployment_introduction_view, vessel_deployment_demo_view)
+                    vessel_deployment_introduction_view, vessel_deployment_demo_view,
+                    vessel_deployment_demo2_view)
 
 app_name = 'complex_app'
 
@@ -16,4 +17,5 @@ urlpatterns = [
     path('lsnd/benchmark-data/', lsnd_benchmark_data_view, name='lsnd_benchmark_data'),
     path('vessel-deployment/introduction/', vessel_deployment_introduction_view, name='vessel_deployment_introduction'),
     path('vessel-deployment/demo/', vessel_deployment_demo_view, name='vessel_deployment_demo'),
+    path('vessel-deployment/demo2/', vessel_deployment_demo2_view, name='vessel_deployment_demo2'),
 ]
