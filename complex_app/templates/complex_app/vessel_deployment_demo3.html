@@ -1,0 +1,335 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load complex_app_filters %}
+
+{% block title %}Vessel Deployment - Demo3 (Advanced){% endblock %}
+
+{% block styles %}
+<style>
+    .deployment-table input[type="number"] { width: 70px; text-align: center; }
+    .trade-section { border-left: 4px solid #dc3545; padding-left: 10px; margin-bottom: 10px; }
+    .result-changed { background-color: #d4edda; }
+    .fleet-bar { height: 20px; border-radius: 3px; }
+    .summary-card .card-body h3 { margin-bottom: 0; }
+    .lane-row td { vertical-align: middle !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Vessel Deployment Demo3 <small class="text-muted">(Advanced - Lane 수 &amp; V<sub>r</sub> 최적화)</small></h1>
+    </div>
+    <p>Lane 수와 Lane별 선박 수(V<sub>r</sub>)를 <strong>결정 변수</strong>로 포함하여, Trade별 수요를 충족하면서
+       총 선박 수를 최소화합니다. V<sub>r</sub> 이산 분해를 통한 선형화 기법을 적용합니다.</p>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- 선박 가용 수량 -->
+        <div class="card mb-3">
+            <div class="card-header"><strong>🚢 선박 가용 수량 (Fleet Availability)</strong></div>
+            <div class="card-body table-responsive">
+                <table class="table table-sm table-bordered mb-0 text-center">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>선박 크기 (TEU)</th>
+                            {% for size in vessel_sizes %}
+                            <th>{{ size|floatformat:0 }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="font-weight-bold">가용 척수</td>
+                            {% for size in vessel_sizes %}
+                            <td>
+                                <input type="number" min="0" step="1"
+                                       class="form-control form-control-sm text-center"
+                                       name="avail_{{ size|floatformat:0 }}"
+                                       value="{{ vessel_availability|get_item:size }}" required>
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 솔버 & V_r 범위 설정 -->
+        <div class="card mb-3">
+            <div class="card-header"><strong>⚙️ 솔버 & V<sub>r</sub> 범위 설정</strong></div>
+            <div class="card-body">
+                <div class="form-row mb-3">
+                    <div class="col-md-6">
+                        <label><strong>솔버 선택</strong></label>
+                        <div class="d-flex align-items-center mt-1">
+                            <div class="custom-control custom-radio mr-4">
+                                <input type="radio" id="solver_gurobi" name="solver_method" value="gurobi"
+                                       class="custom-control-input"
+                                       {% if solver_method == 'gurobi' %}checked{% endif %}>
+                                <label class="custom-control-label" for="solver_gurobi">
+                                    <span class="badge badge-danger">Gurobi</span> 상용 솔버 <small class="text-muted">(정식 라이선스 필요)</small>
+                                </label>
+                            </div>
+                            <div class="custom-control custom-radio">
+                                <input type="radio" id="solver_ortools" name="solver_method" value="ortools"
+                                       class="custom-control-input"
+                                       {% if solver_method == 'ortools' %}checked{% endif %}>
+                                <label class="custom-control-label" for="solver_ortools">
+                                    <span class="badge badge-primary">OR-Tools SAT</span> 오픈소스 솔버
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-md-3">
+                        <label>V<sub>min</sub> (Lane 최소 선박 수)</label>
+                        <input type="number" min="1" max="30" step="1"
+                               class="form-control" name="v_min" value="{{ v_min }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label>V<sub>max</sub> (Lane 최대 선박 수)</label>
+                        <input type="number" min="1" max="30" step="1"
+                               class="form-control" name="v_max" value="{{ v_max }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label>&nbsp;</label>
+                        <p class="form-control-plaintext text-muted">
+                            각 Lane의 선박 수는 V<sub>min</sub> ~ V<sub>max</sub> 범위에서 최적값이 결정됩니다.
+                            범위가 넓을수록 해 공간이 커져 풀이 시간이 증가합니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trade별 수요 & 최대 Lane 수 -->
+        <div class="card mb-3">
+            <div class="card-header"><strong>📋 Trade별 수요 & 최대 Lane 수</strong></div>
+            <div class="card-body">
+                <table class="table table-sm table-bordered text-center mb-0">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th style="width:80px;">Trade</th>
+                            <th>설명</th>
+                            <th style="width:130px;">수요 (TEU)</th>
+                            <th style="width:130px;">최대 Lane 수</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trade in trades_data %}
+                        <tr>
+                            <td class="font-weight-bold align-middle">{{ trade.code }}</td>
+                            <td class="align-middle text-left">{{ trade.desc }}</td>
+                            <td class="align-middle">
+                                <input type="number" min="0" step="1000"
+                                       class="form-control form-control-sm text-center trade-demand-input"
+                                       name="trade_demand_{{ forloop.counter0 }}"
+                                       value="{{ trade.demand }}" required>
+                            </td>
+                            <td class="align-middle">
+                                <input type="number" min="1" max="15" step="1"
+                                       class="form-control form-control-sm text-center"
+                                       name="max_lanes_{{ forloop.counter0 }}"
+                                       value="{{ trade.max_lanes }}" required>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-info">
+                            <td class="font-weight-bold" colspan="2">합계</td>
+                            <td class="font-weight-bold" id="total-demand">-</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-danger mb-3">
+            <i class="fas fa-play"></i> Advanced 최적화 실행
+        </button>
+        <a href="{% url 'complex_app:vessel_deployment_demo3' %}" class="btn btn-warning mb-3 ml-2">Default</a>
+        <a href="{% url 'complex_app:vessel_deployment_demo' %}" class="btn btn-outline-secondary mb-3 ml-2">Demo1로 이동</a>
+        <a href="{% url 'complex_app:vessel_deployment_demo2' %}" class="btn btn-outline-secondary mb-3 ml-2">Demo2로 이동</a>
+    </form>
+
+    {% if error_message %}
+    <div class="alert alert-danger"><strong>오류:</strong> {{ error_message }}</div>
+    {% endif %}
+    {% if success_message and not error_message %}
+    <div class="alert alert-success">{{ success_message }}</div>
+    {% endif %}
+
+    {% if results %}
+    <!-- 요약 카드 -->
+    <div class="row mb-3 summary-card">
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body text-center">
+                    <small>최적화 총 선박 수</small>
+                    <h3>{{ results.total_vessels_used }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body text-center">
+                    <small>활성 Lane 수</small>
+                    <h3>{{ results.deployment_matrix|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <small>V<sub>r</sub> 범위</small>
+                    <h3>{{ results.v_min }} ~ {{ results.v_max }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <small>소요 시간</small>
+                    <h3>{{ processing_time_seconds }}초</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 최적화 결과 배치 테이블 -->
+    <div class="card mb-3">
+        <div class="card-header"><strong>📊 최적화 결과 - 배치 매트릭스 (활성 Lane만 표시)</strong></div>
+        <div class="card-body table-responsive">
+            <table class="table table-sm table-bordered mb-0 text-center">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Trade</th>
+                        <th>Lane</th>
+                        <th>V<sub>r</sub></th>
+                        {% for size in results.vessel_sizes %}
+                        <th>{{ size|floatformat:0 }}</th>
+                        {% endfor %}
+                        <th>선박 수</th>
+                        <th>운송양</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in results.deployment_matrix %}
+                    <tr class="lane-row">
+                        <td class="font-weight-bold">{{ row.trade }}</td>
+                        <td>{{ row.name }}</td>
+                        <td><span class="badge badge-info">{{ row.V_r }}</span></td>
+                        {% for count in row.deployment %}
+                        <td {% if count > 0 %}class="table-success font-weight-bold"{% endif %}>
+                            {{ count }}
+                        </td>
+                        {% endfor %}
+                        <td class="font-weight-bold">{{ row.total_vessels }}</td>
+                        <td class="font-weight-bold">{{ row.transport|floatformat:0 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Trade 그룹별 요약 -->
+    <div class="card mb-3">
+        <div class="card-header"><strong>🌍 Trade 그룹별 요약</strong></div>
+        <div class="card-body">
+            <table class="table table-sm table-bordered text-center">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Trade</th>
+                        <th>최대 Lane</th>
+                        <th>활성 Lane</th>
+                        <th>수요 (TEU)</th>
+                        <th>운송양 (TEU)</th>
+                        <th>여유 (TEU)</th>
+                        <th>배치 선박 수</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ts in results.trade_summary %}
+                    <tr>
+                        <td class="font-weight-bold">{{ ts.code }}</td>
+                        <td>{{ ts.max_lanes }}</td>
+                        <td><span class="badge badge-primary">{{ ts.active_lanes }}</span></td>
+                        <td>{{ ts.demand|floatformat:0 }}</td>
+                        <td>{{ ts.transport|floatformat:0 }}</td>
+                        <td {% if ts.surplus >= 0 %}class="text-success"{% else %}class="text-danger font-weight-bold"{% endif %}>
+                            {{ ts.surplus|floatformat:0 }}
+                        </td>
+                        <td>{{ ts.vessels }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 선박 크기별 활용률 -->
+    <div class="card mb-4">
+        <div class="card-header"><strong>📈 선박 크기별 활용 현황</strong></div>
+        <div class="card-body">
+            <table class="table table-sm table-bordered text-center">
+                <thead class="thead-light">
+                    <tr>
+                        <th>선박 크기 (TEU)</th>
+                        <th>사용</th>
+                        <th>가용</th>
+                        <th>활용률</th>
+                        <th>현황</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fu in results.fleet_usage %}
+                    <tr>
+                        <td class="font-weight-bold">{{ fu.size }}</td>
+                        <td>{{ fu.used }}</td>
+                        <td>{{ fu.available }}</td>
+                        <td>{{ fu.utilization }}%</td>
+                        <td style="width:30%;">
+                            <div class="progress" style="height:20px;">
+                                <div class="progress-bar {% if fu.utilization > 90 %}bg-danger{% elif fu.utilization > 60 %}bg-warning{% else %}bg-success{% endif %}"
+                                     role="progressbar"
+                                     style="width: {{ fu.utilization }}%;"
+                                     aria-valuenow="{{ fu.utilization }}" aria-valuemin="0" aria-valuemax="100">
+                                    {{ fu.utilization }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function updateTotalDemand() {
+        let total = 0;
+        document.querySelectorAll('.trade-demand-input').forEach(function(inp) {
+            total += parseInt(inp.value) || 0;
+        });
+        const el = document.getElementById('total-demand');
+        if (el) el.textContent = total.toLocaleString();
+    }
+    document.querySelectorAll('.trade-demand-input').forEach(function(inp) {
+        inp.addEventListener('input', updateTotalDemand);
+    });
+    updateTotalDemand();
+});
+</script>
+{% endblock %}
+

@@ -262,6 +262,14 @@
                                 <a class="nav-link {% if active_submenu == 'vessel_deployment_demo2' %}active{% endif %}"
                                    href="{% url 'complex_app:vessel_deployment_demo2' %}">Demo2 (Lane 수요)</a>
                             </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'vessel_deployment_advanced_model' %}active{% endif %}"
+                                   href="{% url 'complex_app:vessel_deployment_advanced_model' %}">Advanced Model</a>
+                            </li>
+                            <li class="nav-item nested">
+                                <a class="nav-link {% if active_submenu == 'vessel_deployment_demo3' %}active{% endif %}"
+                                   href="{% url 'complex_app:vessel_deployment_demo3' %}">Demo3 (Advanced)</a>
+                            </li>
                         {% endif %}
                     </ul>
                 {% else %}

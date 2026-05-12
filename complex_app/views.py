@@ -3,6 +3,9 @@ from django.shortcuts import render
 from core.decorators import log_view_activity
 from .solvers.palletizing_solver import PalletizingLogicSolver, PalletizingSolver
 from .solvers.vessel_deployment_solver import VesselDeploymentSolver, VesselDeploymentLaneSolver
+from .solvers.vessel_deployment_advanced_solver import (
+    VesselDeploymentAdvancedSolver, VesselDeploymentAdvancedOrtoolsSolver
+)
 
 
 DEFAULT_PALLET = {
@@ -305,6 +308,133 @@ def vessel_deployment_demo2_view(request):
             context['error_message'] = f"처리 중 오류 발생: {e}"
 
     return render(request, 'complex_app/vessel_deployment_demo2.html', context)
+
+
+@log_view_activity
+def vessel_deployment_advanced_model_view(request):
+    context = {
+        'active_model': 'Complex Optimization',
+        'active_submenu': 'vessel_deployment_advanced_model',
+    }
+    return render(request, 'complex_app/vessel_deployment_advanced_model.html', context)
+
+
+# Demo3 기본 데이터: Trade별 최대 Lane 수
+DEFAULT_TRADES_DEMO3 = [
+    {'code': 'FE', 'desc': '극동 (Far East)', 'demand': 64000, 'max_lanes': 6},
+    {'code': 'MD', 'desc': '지중해 (Mediterranean)', 'demand': 19000, 'max_lanes': 4},
+    {'code': 'PS', 'desc': '태평양 남부 (Pacific South)', 'demand': 57000, 'max_lanes': 7},
+    {'code': 'PN', 'desc': '태평양 북부 (Pacific North)', 'demand': 21000, 'max_lanes': 4},
+    {'code': 'EC', 'desc': '동안 (East Coast)', 'demand': 31000, 'max_lanes': 5},
+    {'code': 'ME', 'desc': '중동 (Middle East)', 'demand': 10000, 'max_lanes': 3},
+]
+
+
+@log_view_activity
+def vessel_deployment_demo3_view(request):
+    """Vessel Deployment Demo3 - Advanced: Lane 수 & V_r 최적화"""
+    source = request.POST if request.method == 'POST' else request.GET
+    vessel_sizes = list(DEFAULT_VESSEL_SIZES)
+
+    # 가용 수량
+    vessel_availability = {}
+    for size in vessel_sizes:
+        key = f'avail_{size}'
+        vessel_availability[str(size)] = int(source.get(key, DEFAULT_VESSEL_AVAILABILITY.get(str(size), 0)))
+
+    # 솔버 선택 (기본: OR-Tools SAT, Gurobi는 정식 라이선스 필요)
+    solver_method = source.get('solver_method', 'ortools')
+
+    # V_r 범위
+    v_min = int(source.get('v_min', 3))
+    v_max = int(source.get('v_max', 15))
+    v_min = max(1, min(v_min, 30))
+    v_max = max(v_min, min(v_max, 30))
+
+    # Trade 데이터 구성
+    trades_data = []
+    for t_idx, default_trade in enumerate(DEFAULT_TRADES_DEMO3):
+        code = default_trade['code']
+        desc = default_trade['desc']
+        demand = int(source.get(f'trade_demand_{t_idx}', default_trade['demand']))
+        max_lanes = int(source.get(f'max_lanes_{t_idx}', default_trade['max_lanes']))
+        max_lanes = max(1, min(max_lanes, 15))
+
+        trades_data.append({
+            'code': code,
+            'desc': desc,
+            'demand': demand,
+            'max_lanes': max_lanes,
+        })
+
+    context = {
+        'active_model': 'Complex Optimization',
+        'active_submenu': 'vessel_deployment_demo3',
+        'vessel_sizes': vessel_sizes,
+        'vessel_availability': vessel_availability,
+        'v_min': v_min,
+        'v_max': v_max,
+        'solver_method': solver_method,
+        'trades_data': trades_data,
+        'results': None,
+        'error_message': None,
+        'success_message': None,
+        'processing_time_seconds': "N/A",
+    }
+
+    if request.method == 'POST':
+        try:
+            solver_trades = []
+            for trade in trades_data:
+                solver_trades.append({
+                    'code': trade['code'],
+                    'demand': trade['demand'],
+                    'max_lanes': trade['max_lanes'],
+                })
+
+            input_data = {
+                'problem_type': 'vessel_deployment_advanced',
+                'vessel_sizes': vessel_sizes,
+                'vessel_availability': vessel_availability,
+                'trades': solver_trades,
+                'v_min': v_min,
+                'v_max': v_max,
+            }
+
+            results, error_msg, processing_time = (
+                VesselDeploymentAdvancedSolver(input_data).solve()
+                if solver_method == 'gurobi'
+                else VesselDeploymentAdvancedOrtoolsSolver(input_data).solve()
+            )
+            context['processing_time_seconds'] = processing_time
+            solver_label = 'Gurobi' if solver_method == 'gurobi' else 'OR-Tools SAT'
+
+            if error_msg:
+                context['error_message'] = error_msg
+            elif results:
+                context['results'] = results
+                active_lanes = len(results['deployment_matrix'])
+                context['success_message'] = (
+                    f"[{solver_label}] 최적화 완료: 총 선박 {results['total_vessels_used']}척, "
+                    f"활성 Lane {active_lanes}개 "
+                    f"(소요시간: {processing_time}초)"
+                )
+            else:
+                context['error_message'] = "최적화 결과를 가져오지 못했습니다."
+
+        except ValueError as ve:
+            context['error_message'] = f"입력값 오류: {ve}"
+        except Exception as e:
+            error_str = str(e)
+            if 'size-limited license' in error_str or 'Model too large' in error_str:
+                context['error_message'] = (
+                    "Gurobi 제한 라이선스로는 이 규모의 모델을 풀 수 없습니다. "
+                    "OR-Tools SAT 솔버를 사용하거나 Gurobi 정식 라이선스를 설치하세요."
+                )
+            else:
+                context['error_message'] = f"처리 중 오류 발생: {e}"
+
+    return render(request, 'complex_app/vessel_deployment_demo3.html', context)
 
 
 def _parse_positive_float(source, key, label):

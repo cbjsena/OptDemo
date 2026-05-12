@@ -1,0 +1,176 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Vessel Deployment - Advanced Model{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'core/css/instruction.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/model.definition.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid introduction-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Vessel Deployment - Advanced Model</h1>
+    </div>
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'complex_app:complex_app_introduction' %}">Complex Optimization</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'complex_app:vessel_deployment_introduction' %}">Vessel Deployment</a></li>
+            <li class="breadcrumb-item active">Advanced Model</li>
+        </ol>
+    </nav>
+
+    <div class="alert alert-info">
+        <strong><i class="fas fa-info-circle"></i></strong>
+        기본 모델에서 <strong>Lane 수와 Lane별 선박 수를 고정 입력</strong>으로 받던 것을 <strong>결정 변수</strong>로 확장한 모델입니다.
+        Trade별 수요만 주어졌을 때, 최적의 Lane 구성과 선박 배치를 동시에 결정합니다.
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+
+            <h3>1. 동기: 왜 Lane 수를 결정 변수로?</h3>
+            <p>기본 모델에서는 Lane 개수와 \( V_r \)이 입력값이었습니다. 실무에서는:</p>
+            <ul>
+                <li>"FE Trade에 항로를 4개 운영할 것인가, 5개로 늘릴 것인가?"</li>
+                <li>"각 항로에 몇 척을 투입해야 최적인가?"</li>
+                <li>"총 선박 수를 최소화하는 최적의 네트워크 구성은?"</li>
+            </ul>
+            <p>이러한 <strong>전략적 계획</strong> 단계의 의사결정을 지원합니다.</p>
+
+            <h3>2. 핵심 난점: 비선형성</h3>
+            <p>운송양 \( \sum_s \text{cap}_s \cdot x_{rs} / V_r \)에서 \( V_r = \sum_s x_{rs} \)가 결정 변수이면 <strong>분모에 결정 변수</strong>가 들어가 비선형입니다.</p>
+            <div class="alert alert-warning">
+                <strong><i class="fas fa-exclamation-triangle"></i></strong>
+                \( w_r = \sum_s \text{cap}_s \cdot x_{rs} / \sum_s x_{rs} \)는 두 결정 변수의 비율로, 일반 MIP 솔버로 직접 풀 수 없습니다.
+            </div>
+
+            <h3>3. 선형화 기법: V<sub>r</sub> 이산 분해</h3>
+            <p>\( V_r \)이 정수인 점을 활용합니다. 각 값 \( v \in \{V^{\min}, \ldots, V^{\max}\} \)에 대해 이진 변수 \( \delta_{rv} \)로 선택하고, 배치 변수를 값별로 분리합니다:</p>
+            <div class="math-block">
+                $$ x_{rsv} \in \mathbb{Z}_{\geq 0} : \text{Lane } r, \text{ 크기 } s, \text{ 단 } V_r = v \text{일 때} $$
+            </div>
+            <p>운송양 분모가 상수 \( v \)로 바뀌어 <strong>완전히 선형</strong>:</p>
+            <div class="math-block">
+                $$ w_r = \sum_{v \in \mathcal{V}} \sum_{s \in S} \frac{\text{cap}_s}{v} \cdot x_{rsv} $$
+            </div>
+
+            <h3>4. 수리 모델</h3>
+            <div class="model-definition-content">
+                <h4><strong>집합 및 파라미터</strong></h4>
+                <ul>
+                    <li>\( T \) : Trade 집합</li>
+                    <li>\( \bar{R}_k \) : Trade \( k \)의 후보 Lane 집합</li>
+                    <li>\( S \) : 선박 크기 집합</li>
+                    <li>\( \mathcal{V} = \{V^{\min}, \ldots, V^{\max}\} \) : Lane당 가능한 선박 수 범위</li>
+                    <li>\( \text{cap}_s, D_k, N_s \) : 용량, 수요, 가용 척수</li>
+                </ul>
+                <hr>
+                <h4><strong>결정 변수</strong></h4>
+                <ul>
+                    <li>\( x_{rsv} \in \mathbb{Z}_{\geq 0} \) : Lane \( r \)에 크기 \( s \) 선박 수 (단, \( V_r = v \))</li>
+                    <li>\( \delta_{rv} \in \{0, 1\} \) : Lane \( r \)의 선박 수가 \( v \)인지 여부</li>
+                </ul>
+                <hr>
+                <h4><strong>목적 함수</strong></h4>
+                <div class="math-block">$$ \min \sum_{r \in \bar{R}} \sum_{s \in S} \sum_{v \in \mathcal{V}} x_{rsv} $$</div>
+                <hr>
+                <h4><strong>제약 조건</strong></h4>
+
+                <h5>1. Lane 활성화</h5>
+                <div class="math-block">$$ \sum_{v \in \mathcal{V}} \delta_{rv} \leq 1 \quad \forall r \in \bar{R} $$</div>
+
+                <h5>2. 선박 수 연결</h5>
+                <div class="math-block">$$ \sum_{s \in S} x_{rsv} = v \cdot \delta_{rv} \quad \forall r, v $$</div>
+
+                <h5>3. Trade별 수요 충족</h5>
+                <div class="math-block">$$ \sum_{r \in \bar{R}_k} \sum_{v \in \mathcal{V}} \sum_{s \in S} \frac{\text{cap}_s}{v} \cdot x_{rsv} \geq D_k \quad \forall k \in T $$</div>
+
+                <h5>4. 선대 가용성</h5>
+                <div class="math-block">$$ \sum_{r \in \bar{R}} \sum_{v \in \mathcal{V}} x_{rsv} \leq N_s \quad \forall s \in S $$</div>
+
+                <h5>5. 정수/이진</h5>
+                <div class="math-block">$$ x_{rsv} \geq 0, \; x_{rsv} \in \mathbb{Z}, \quad \delta_{rv} \in \{0, 1\} $$</div>
+            </div>
+
+            <h3>5. 모델 규모 비교</h3>
+            <table class="table table-sm table-bordered">
+                <thead class="thead-light">
+                    <tr><th></th><th>Demo1 (기본)</th><th>Demo3 (Advanced)</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Lane 수</td><td>고정 18개</td><td>후보 최대 48개</td></tr>
+                    <tr><td>V<sub>r</sub></td><td>고정</td><td>결정 변수 (3~15)</td></tr>
+                    <tr><td>정수 변수</td><td>144</td><td>~4,992</td></tr>
+                    <tr><td>이진 변수</td><td>0</td><td>~624</td></tr>
+                    <tr><td>제약 수</td><td>32</td><td>~1,310</td></tr>
+                    <tr><td>풀이 시간</td><td>&lt; 1초</td><td>수 초 ~ 수십 초</td></tr>
+                </tbody>
+            </table>
+
+            <h3>6. 선형화 예시</h3>
+            <div class="alert alert-info">
+                <strong><i class="fas fa-lightbulb"></i></strong>
+                "FE1에 10척 배치" &rarr; "FE1에서 V=10 옵션 선택, 해당 옵션 내에서 선박 크기 배분"
+                <ul class="mb-0 mt-2">
+                    <li>\( \delta_{\text{FE1},10} = 1 \)</li>
+                    <li>\( x_{\text{FE1},\text{21k},10} = 5 \), \( x_{\text{FE1},\text{15k},10} = 5 \)</li>
+                    <li>운송양 = \( (21000 \times 5 + 15000 \times 5) / 10 = 18000 \) TEU</li>
+                </ul>
+            </div>
+
+            <h3>7. Demo 비교 요약</h3>
+            <table class="table table-sm table-bordered text-center">
+                <thead class="thead-dark">
+                    <tr><th></th><th>Demo1</th><th>Demo2</th><th>Demo3</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="text-left font-weight-bold">수요 단위</td><td>Trade</td><td>Lane</td><td>Trade</td></tr>
+                    <tr><td class="text-left font-weight-bold">Lane 수</td><td>고정</td><td>고정</td><td><strong>결정</strong></td></tr>
+                    <tr><td class="text-left font-weight-bold">V<sub>r</sub></td><td>고정</td><td>고정</td><td><strong>결정</strong></td></tr>
+                    <tr><td class="text-left font-weight-bold">실무 의미</td><td>전술 계획</td><td>운영 계획</td><td><strong>전략 계획</strong></td></tr>
+                    <tr><td class="text-left font-weight-bold">복잡도</td><td><span class="badge badge-success">낮음</span></td><td><span class="badge badge-warning">중간</span></td><td><span class="badge badge-danger">높음</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-danger text-white">
+                    <h4>Advanced Model 특징</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>기본 모델 대비 확장:</strong></p>
+                    <ul>
+                        <li>🔢 Lane 수 &rarr; <strong>결정 변수</strong></li>
+                        <li>🔢 V<sub>r</sub> &rarr; <strong>결정 변수</strong></li>
+                        <li>🧮 비선형 &rarr; <strong>선형화</strong></li>
+                        <li>📊 이진 변수 도입</li>
+                    </ul>
+                    <hr>
+                    <p><strong>모델 규모:</strong></p>
+                    <ul>
+                        <li>~5,616 변수</li>
+                        <li>~1,310 제약</li>
+                        <li>624 이진 변수</li>
+                    </ul>
+                    <hr>
+                    <a href="{% url 'complex_app:vessel_deployment_demo3' %}" class="btn btn-danger btn-block mt-2">
+                        Demo3 실행하기 &rarr;
+                    </a>
+                    <a href="{% url 'complex_app:vessel_deployment_introduction' %}" class="btn btn-outline-primary btn-block btn-sm mt-2">
+                        &larr; 기본 모델
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+{% endblock %}
+
