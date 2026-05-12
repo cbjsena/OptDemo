@@ -238,3 +238,16 @@ Cloud Run은 내부적으로 PORT=8080을 설정
 TODO
 3. media 폴더 반영 -> os.path 형태를 blob 형태로 변경 필요
 4. 배포 시 collectstatic 실행 안됨 -> settins에  dotenv_path = BASE_DIR / '.env.dev'
+
+render.com
+1. Build Command: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput
+2. Start Command: gunicorn optdemo_project.wsgi:application --bind 0.0.0.0:$PORT
+3. Add Environment Variable:
+    Key                 Value                                       설명
+    SECRET_KEY          render-optdemo-secret-key-change-this-2026  아무 긴 문자열 (운영용이므로 변경 권장)
+    DEBUG               False                                       운영 환경
+    ALLOWED_HOSTS       .onrender.com                               Render 도메인 허용
+    DATABASE_BACKEND    sqlite3                                     SQLite 사용 (DB 서비스 불필요)
+    PYTHON_VERSION      3.11.9                                      Python 버전 지정
+    SAVE_MODEL_FILE     False                                       MPS 파일 저장 비활성화
+    SAVE_MODEL_DB       False                                       DB 저장 비활성화
